@@ -1,9 +1,2 @@
 fastapi
 uvicorn
-pydantic
-python-dotenv
-sqlalchemy
-motor
-httpx
-pytest
-pytest-asyncio
