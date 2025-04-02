@@ -1,2 +1,8 @@
 fastapi
 uvicorn
+pytest
+requests
+httpx
+sqlalchemy
+pydantic
+pydantic_settings
