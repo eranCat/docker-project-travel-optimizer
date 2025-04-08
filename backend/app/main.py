@@ -1,114 +1,38 @@
-from fastapi import FastAPI, HTTPException, Request
-from postgres_dao import PostgresDAO, UserModel
-from settings import settings
+from fastapi import FastAPI, Depends
+from app.models import PathRequest, PathResponse
+from app.aco_engine import ACOEngine
+from app.db import SessionLocal, engine, Base
+from app.db_models import PathResult
+from sqlalchemy.orm import Session
 
-app = FastAPI(title=settings.PROJECT_NAME)
+# Create DB tables (for production, use Alembic migrations)
+Base.metadata.create_all(bind=engine)
 
-dao = PostgresDAO(settings.DATABASE_URL)
+app = FastAPI()
 
-@app.get("/")
-def root():
-    return {"message": "Welcome to the Travel Itinerary Optimizer API!"}
+# Dependency to get DB session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-@app.post("/users", status_code=201)
-async def create_user(request: Request):
-    """
-    Create a new user and store it in the database using SQLAlchemy.
-    """
-    user_data = await request.json()
-    required_fields = ["age", "interests", "dislikes", "location", "destination"]
-    for field in required_fields:
-        if field not in user_data:
-            raise HTTPException(status_code=400, detail=f"Missing field: {field}")
-    
-    # Convert list fields to comma-separated strings if necessary
-    interests = (
-        ",".join(user_data["interests"]) 
-        if isinstance(user_data["interests"], list) 
-        else user_data["interests"]
+@app.post("/find-path/", response_model=PathResponse)
+def find_path(request: PathRequest, db: Session = Depends(get_db)):
+    engine_instance = ACOEngine(request)
+    path, distance = engine_instance.run()
+
+    # Save result to DB; here, computed_path is stored as a CSV string:
+    computed_path = ",".join(path)
+    db_result = PathResult(
+        start=request.start,
+        end=request.end,
+        computed_path=computed_path,
+        total_distance=distance
     )
-    dislikes = (
-        ",".join(user_data["dislikes"]) 
-        if isinstance(user_data["dislikes"], list) 
-        else user_data["dislikes"]
-    )
+    db.add(db_result)
+    db.commit()
+    db.refresh(db_result)
 
-    # Create a SQLAlchemy UserModel instance
-    user_model = UserModel(
-        age=user_data["age"],
-        interests=interests,
-        dislikes=dislikes,
-        location=user_data["location"],
-        destination=user_data["destination"]
-    )
-    
-    user_id = dao.save_user(user_model)
-    return {"message": "User created successfully", "user_id": user_id}
-
-@app.get("/users/{user_id}")
-async def get_user(user_id: int):
-    """
-    Retrieve a user from the database by ID.
-    """
-    user_model = dao.get_user(user_id)
-    if not user_model:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Manually build a dictionary response from the SQLAlchemy model
-    return {
-        "id": user_model.id,
-        "age": user_model.age,
-        "interests": user_model.interests.split(","),
-        "dislikes": user_model.dislikes.split(","),
-        "location": user_model.location,
-        "destination": user_model.destination
-    }
-
-@app.get("/users")
-def get_all_users():
-    """
-    Retrieve all users from the database.
-    """
-    user_models = dao.get_all_users()
-    users = []
-    for user_model in user_models:
-        users.append({
-            "id": user_model.id,
-            "age": user_model.age,
-            "interests": user_model.interests.split(","),
-            "dislikes": user_model.dislikes.split(","),
-            "location": user_model.location,
-            "destination": user_model.destination
-        })
-    return users
-
-
-# @app.put("/users/{user_id}")
-# async def update_user(user_id: int, request: Request):
-#     """
-#     Update an existing user in the database.
-#     """
-#     user_data = await request.json()
-#     required_fields = ["age", "interests", "dislikes", "location", "destination"]
-#     for field in required_fields:
-#         if field not in user_data:
-#             raise HTTPException(status_code=400, detail=f"Missing field: {field}")
-#
-#     session = dao.Session()
-#     try:
-#         user_model = session.query(UserModel).filter_by(id=user_id).first()
-#         if not user_model:
-#             raise HTTPException(status_code=404, detail="User not found")
-#
-#         # Update the fields
-#         user_model.age = user_data["age"]
-#         user_model.interests = ",".join(user_data["interests"]) if isinstance(user_data["interests"], list) else user_data["interests"]
-#         user_model.dislikes = ",".join(user_data["dislikes"]) if isinstance(user_data["dislikes"], list) else user_data["dislikes"]
-#         user_model.location = user_data["location"]
-#         user_model.destination = user_data["destination"]
-#
-#         session.commit()
-#         session.refresh(user_model)
-#         return {"message": "User updated successfully", "user_id": user_id}
-#     finally:
-#         session.close()
+    return PathResponse(optimal_path=path, total_distance=distance)

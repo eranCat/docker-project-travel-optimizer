@@ -1,32 +1,11 @@
-# ACO Pathfinder Backend with Docker Compose
+# ACO Pathfinder Backend with Database Integration
 
-This project contains:
-- `aco-api`: A FastAPI backend using Ant Colony Optimization
-- `frontend`: Placeholder for future frontend (Node.js)
+This project includes:
+- **aco-api**: A FastAPI backend that computes optimal paths using an ACO-based algorithm and saves the results in a PostgreSQL database.
+- **db**: PostgreSQL container, defined in the `docker-compose.yml`.
 
-## Run the whole system:
-```bash
-docker-compose up --build
-```
+## Running the Project
 
-### Backend Endpoint
-
-POST `/find-path/`
-
-Request:
-```json
-{
-  "nodes": ["A", "B"],
-  "edges": [{"from_node": "A", "to_node": "B", "distance": 10}],
-  "start": "A",
-  "end": "B"
-}
-```
-
-Response:
-```json
-{
-  "optimal_path": ["A", "B"],
-  "total_distance": 42.0
-}
-```
+1. Build and start the services:
+   ```bash
+   docker-compose up --build

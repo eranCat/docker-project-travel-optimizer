@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from app.db import Base  # Use this if it's really required
+
 
 class Edge(BaseModel):
     from_node: str

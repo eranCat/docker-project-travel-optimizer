@@ -1,19 +1,36 @@
 services:
   aco-api:
     build: ./aco-api
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/aco_db
+    depends_on:
+      - db
     networks:
       - aco-net
 
-  frontend:
-    build: ./frontend
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: aco_db
     ports:
-      - "3000:3000"
+      - "5432:5432"
     networks:
       - aco-net
-    depends_on:
-      - aco-api
+
+  # Commenting out the frontend service if not needed:
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - aco-api
+  #   networks:
+  #     - aco-net
 
 networks:
   aco-net:

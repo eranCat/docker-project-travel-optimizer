@@ -1,0 +1,8 @@
+{
+    "name": "frontend-placeholder",
+    "version": "1.0.0",
+    "scripts": {
+      "start": "echo 'Frontend placeholder, nothing to start.' && sleep 3600"
+    }
+  }
+  
