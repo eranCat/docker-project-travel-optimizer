@@ -9,3 +9,21 @@ This project includes:
 1. Build and start the services:
    ```bash
    docker-compose up --build
+   ```
+
+2. Access the API documentation at:
+   ```
+   http://localhost:8000/docs
+   ```
+
+## Running the Tests
+
+1. Ensure the services are running:
+   ```bash
+   docker-compose up --build
+   ```
+
+2. Run the tests using the following command:
+   ```bash
+   docker-compose exec aco-api pytest -v app/unit_tests.py
+   ```
