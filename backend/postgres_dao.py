@@ -47,6 +47,13 @@ class PostgresDAO:
         finally:
             session.close()
 
+    def get_all_users(self) -> list:
+        session = self.Session()
+        try:
+            return session.query(UserModel).all()
+        finally:
+            session.close()
+
     def close(self):
         """Dispose of the database engine."""
         self.engine.dispose()

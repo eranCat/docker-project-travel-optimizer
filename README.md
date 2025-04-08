@@ -1,13 +1,32 @@
-# Travel Optimizer
+# ACO Pathfinder Backend with Docker Compose
 
-This project is designed to optimize travel plans using advanced algorithms and data analysis.
+This project contains:
+- `aco-api`: A FastAPI backend using Ant Colony Optimization
+- `frontend`: Placeholder for future frontend (Node.js)
 
-## Features
-- Efficient route planning
-- Cost optimization
-- User-friendly interface
+## Run the whole system:
+```bash
+docker-compose up --build
+```
 
-## Getting Started
-1. Clone the repository.
-2. Set up the virtual environment (`venv`).
-3. Install dependencies using `pip install -r requirements.txt`.
+### Backend Endpoint
+
+POST `/find-path/`
+
+Request:
+```json
+{
+  "nodes": ["A", "B"],
+  "edges": [{"from_node": "A", "to_node": "B", "distance": 10}],
+  "start": "A",
+  "end": "B"
+}
+```
+
+Response:
+```json
+{
+  "optimal_path": ["A", "B"],
+  "total_distance": 42.0
+}
+```

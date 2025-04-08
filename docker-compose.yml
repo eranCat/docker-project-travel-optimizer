@@ -1,10 +1,20 @@
 services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: backend_service
+  aco-api:
+    build: ./aco-api
     ports:
       - "8000:8000"
-volumes:
-  backend_data: {}
+    networks:
+      - aco-net
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - aco-net
+    depends_on:
+      - aco-api
+
+networks:
+  aco-net:
+    driver: bridge
