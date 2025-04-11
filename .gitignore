@@ -1,3 +1,20 @@
-.vscode
+# PyCharm
+.idea/
 
-.venv
+# VSCode
+.vscode/
+
+# Python virtual environments
+env/
+venv/
+.venv/
+*.env
+
+# Byte-compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+*.log
