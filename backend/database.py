@@ -3,7 +3,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
 from .config import DATABASE_URL
 from .models.user import User
-from .base_model import Base
+from .base import Base
 
 engine = create_engine(DATABASE_URL)
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from ..schemes.user_schema import UserSchema
+from ..schemas.user_schema import UserSchema
 from ..database import get_db, get_all_users, create_user as db_create_user
 from ..models.user import User
 

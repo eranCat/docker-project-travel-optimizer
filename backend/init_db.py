@@ -1,8 +1,11 @@
 from sqlalchemy import create_engine, event, text
+import traceback
+
 from .config import DATABASE_URL, SCHEMA
-from .database import Base 
+from .database import Base
 
 engine = create_engine(DATABASE_URL, echo=True)
+
 
 # Define the search_path event listener
 def set_search_path(dbapi_connection, connection_record):
@@ -10,10 +13,20 @@ def set_search_path(dbapi_connection, connection_record):
     cursor.execute("SET search_path TO " + SCHEMA)
     cursor.close()
 
+
 # Attach the event listener
 event.listen(engine, "connect", set_search_path)
 
+
 def init():
+    try:
+        Base.metadata.drop_all(bind=engine)
+        print("Dropping existing tables...")
+    except Exception as e:
+        print("💥 drop_all failed:")
+        traceback.print_exc()
+        raise
+
     # Remove the event listener temporarily so that schema creation uses the default search path ("public")
     event.remove(engine, "connect", set_search_path)
 
