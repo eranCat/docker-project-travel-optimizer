@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.sql import func
-from database import Base
+from ..base_model import Base
+
 
 class POI(Base):
     __tablename__ = "pois"

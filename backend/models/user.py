@@ -1,7 +1,9 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.sql import func
-from database import Base
-from config import SCHEMA
+
+from ..base_model import Base
+from ..config import SCHEMA
+
 
 class User(Base):
     __tablename__ = "users"
