@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, event, text
 import traceback
 
 from .config import DATABASE_URL, SCHEMA
-from .database import Base
+from .base import Base
 
 engine = create_engine(DATABASE_URL, echo=True)
 
