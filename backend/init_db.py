@@ -19,13 +19,13 @@ event.listen(engine, "connect", set_search_path)
 
 
 def init():
-    try:
-        Base.metadata.drop_all(bind=engine) # only in dev!
-        print("Dropping existing tables...")
-    except Exception as e:
-        print("💥 drop_all failed:")
-        traceback.print_exc()
-        raise
+    # try:
+    #     Base.metadata.drop_all(bind=engine) # only in dev!
+    #     print("Dropping existing tables...")
+    # except Exception as e:
+    #     print("💥 drop_all failed:")
+    #     traceback.print_exc()
+    #     raise
 
     # Remove the event listener temporarily so that schema creation uses the default search path ("public")
     event.remove(engine, "connect", set_search_path)

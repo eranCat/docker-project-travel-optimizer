@@ -5,3 +5,7 @@ psycopg2-binary
 python-dotenv
 pydantic
 httpx
+requests
+spacy
+langdetect
+ollama

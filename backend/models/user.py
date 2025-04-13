@@ -14,6 +14,8 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
+    interests_text = Column(String, nullable=True)
+
 
     # Relationship for favorite POIs and saved paths
     favorite_pois = relationship(
