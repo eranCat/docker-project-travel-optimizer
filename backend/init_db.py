@@ -20,7 +20,7 @@ event.listen(engine, "connect", set_search_path)
 
 def init():
     try:
-        Base.metadata.drop_all(bind=engine)
+        Base.metadata.drop_all(bind=engine) # only in dev!
         print("Dropping existing tables...")
     except Exception as e:
         print("💥 drop_all failed:")
