@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 
 class UserSchema(BaseModel):
@@ -11,3 +12,7 @@ class UserSchema(BaseModel):
     model_config = {
     "from_attributes": True
 }
+
+class UserUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None

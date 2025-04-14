@@ -16,3 +16,11 @@ if not POSTGRES_DB:
 SCHEMA = os.getenv("SCHEMA")
 if not SCHEMA:
     raise ValueError("SCHEMA environment variable is not set.")
+
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+if not ADMIN_EMAIL:
+    raise ValueError("ADMIN_EMAIL environment variable is not set.")
+
+SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
