@@ -14,5 +14,11 @@ class UserSchema(BaseModel):
 }
 
 class UserUpdateRequest(BaseModel):
-    name: Optional[str] = None
-    email: Optional[str] = None
+    name: str
+    email: str
+    password: str
+
+class CreateUserRequest(BaseModel):
+    name: str
+    email: str
+    password: str

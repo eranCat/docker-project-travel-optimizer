@@ -11,4 +11,3 @@ langdetect
 ollama
 python-jose[cryptography]
 passlib[bcrypt]
-fastapi-users

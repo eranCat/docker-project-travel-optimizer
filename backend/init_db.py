@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, event, text
 import traceback
 
-from .config import DATABASE_URL, SCHEMA
+from .config import CLEAR_TABLES, DATABASE_URL, SCHEMA
 from .base import Base
 
 engine = create_engine(DATABASE_URL, echo=True)
@@ -19,13 +19,14 @@ event.listen(engine, "connect", set_search_path)
 
 
 def init():
-    # try:
-    #     Base.metadata.drop_all(bind=engine) # only in dev!
-    #     print("Dropping existing tables...")
-    # except Exception as e:
-    #     print("💥 drop_all failed:")
-    #     traceback.print_exc()
-    #     raise
+    if CLEAR_TABLES.lower() == "true":
+        try:
+            Base.metadata.drop_all(bind=engine) # only in dev!
+            print("Dropping existing tables...")
+        except Exception as e:
+            print("💥 drop_all failed:")
+            traceback.print_exc()
+            raise
 
     # Remove the event listener temporarily so that schema creation uses the default search path ("public")
     event.remove(engine, "connect", set_search_path)
