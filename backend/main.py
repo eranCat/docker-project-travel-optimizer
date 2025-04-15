@@ -1,5 +1,4 @@
 from app_instance import app
-from config import settings
 from routers import auth, user, poi, saved_path,interests
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi.exceptions import HTTPException
@@ -8,8 +7,16 @@ from error_handlers import (
     sqlalchemy_exception_handler,
     unhandled_exception_handler
 )
-from tests.health_check import run_startup_tests
-from tests.test_user import test_user_login_logout
+import logging
+
+# Only show ERRORs from SQLAlchemy
+logging.getLogger("sqlalchemy.engine").setLevel(logging.ERROR)
+
+# Suppress other noisy FastAPI loggers
+logging.getLogger("uvicorn.access").setLevel(logging.ERROR)
+logging.getLogger("uvicorn.error").setLevel(logging.ERROR)
+logging.getLogger("httpx").setLevel(logging.ERROR)
+
 
 # Register custom handlers
 app.add_exception_handler(HTTPException, http_exception_handler)

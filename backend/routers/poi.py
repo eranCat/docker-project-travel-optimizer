@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List
 
-from services.maps.overpass_service import get_pois_from_overpass
+from services.maps.overpass_service import get_pois_from_overpass,get_overpass_tags_from_interests
 from database import get_db
 from models.poi import POI
 from models.user import User
@@ -14,7 +14,6 @@ from schemas.poi_query import POIInterestQuery
 from schemas.llm_suggestion import LLMPOISuggestion
 from dependencies.auth import get_current_user
 from services.geocoding import geocode_location
-from services.llm.llm_poi_service import get_overpass_tags_from_interests
 
 router = APIRouter()
     

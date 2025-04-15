@@ -8,12 +8,17 @@ services:
       - "8000:8000"
     env_file:
       - .env
-    volumes:                                    
-      - ./backend:/app                          
+    volumes:
+      - ./backend:/app
     depends_on:
       - postgres
       - ollama
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 
   postgres:
     image: postgres:15
@@ -27,6 +32,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    logging:
+      driver: "none"
 
   ollama:
     image: ollama/ollama:latest
@@ -41,19 +48,14 @@ services:
       - |
         echo "🚀 Starting Ollama server..." &&
         ollama serve &
-
-        echo "⏳ Waiting for server to start..." &&
-        sleep 5  # give server time to bind to port
-
-        echo "📦 Pulling llama3..." &&
-        ollama pull llama3
-
-        echo "🔥 Warming up llama3..." &&
+        sleep 5
+        ollama pull llama3 >/dev/null 2>&1
         ollama run llama3 "Say hello." || true
-
-        echo "✅ Model is ready." &&
+        echo "🦙 Llama3 model is ready."
         wait
     restart: unless-stopped
+    logging:
+      driver: "none"
 
 volumes:
   postgres_data:

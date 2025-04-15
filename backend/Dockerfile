@@ -9,4 +9,4 @@ RUN pip install --upgrade pip \
     && pip install -r requirements.txt \
     && pip install watchdog
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "error"]
