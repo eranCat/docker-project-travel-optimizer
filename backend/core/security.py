@@ -1,8 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from typing import Union
 from jose import JWTError, jwt
-from backend.config import SECRET_KEY, ALGORITHM
 from passlib.context import CryptContext
+from config import settings
+
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.algorithm
+
 
 def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None) -> str:
     to_encode = data.copy()

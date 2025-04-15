@@ -1,16 +1,16 @@
 from sqlalchemy import create_engine, event, text
 import traceback
 
-from .config import CLEAR_TABLES, DATABASE_URL, SCHEMA
-from .base import Base
+from config import settings
+from base import Base
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(settings.database_url, echo=True)
 
 
 # Define the search_path event listener
 def set_search_path(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
-    cursor.execute("SET search_path TO " + SCHEMA)
+    cursor.execute("SET search_path TO " + settings.db_schema)
     cursor.close()
 
 
@@ -19,7 +19,7 @@ event.listen(engine, "connect", set_search_path)
 
 
 def init():
-    if CLEAR_TABLES.lower() == "true":
+    if settings.clear_tables:
         try:
             Base.metadata.drop_all(bind=engine) # only in dev!
             print("Dropping existing tables...")
@@ -33,7 +33,7 @@ def init():
 
     # Create the schema if it doesn't exist (using default search path so that it can be created)
     with engine.connect() as conn:
-        conn.execute(text("CREATE SCHEMA IF NOT EXISTS " + SCHEMA))
+        conn.execute(text("CREATE SCHEMA IF NOT EXISTS " + settings.db_schema))
         conn.commit()
 
     # Reattach the event listener so that every new connection uses the target schema

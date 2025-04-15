@@ -11,3 +11,7 @@ langdetect
 ollama
 python-jose[cryptography]
 passlib[bcrypt]
+bcrypt==3.2.0
+pydantic-settings
+pytest
+python-multipart

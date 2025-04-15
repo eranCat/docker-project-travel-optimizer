@@ -7,6 +7,7 @@ class POICreate(BaseModel):
     description: Optional[str] = None
     latitude: float
     longitude: float
+    address: Optional[str] = None
     categories: Optional[List[str]] = None
 
     model_config = {

@@ -2,8 +2,11 @@
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from backend.init_db import init as init_db
-from fastapi.security import HTTPBearer, OAuth2PasswordBearer
+from config import settings
+from init_db import init as init_db
+from fastapi.security import OAuth2PasswordBearer
+from tests.health_check import run_startup_tests
+from tests.test_user import test_user_login_logout
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
@@ -11,7 +14,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 async def lifespan(app: FastAPI):
     print("🚀 Starting up app...")
     load_dotenv()
-    init_db()
+    if settings.env == "dev":
+        init_db()
+    else:
+        print("Skipping table drop in production 🚫")
+
+    if settings.env == "dev":
+        run_startup_tests()
+        test_user_login_logout(app)
+
     yield
     print("🛑 App shutdown complete.")
 

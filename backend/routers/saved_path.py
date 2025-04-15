@@ -2,10 +2,10 @@ from typing import List
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from backend.database import get_db
-from ..schemas.saved_path import SavedPathCreate, SavedPathSchema
-from backend.models.saved_path import SavedPath
-from backend.models.user import User
+from database import get_db
+from schemas.saved_path import SavedPathCreate, SavedPathSchema
+from models.saved_path import SavedPath
+from models.user import User
 
 router = APIRouter()
 

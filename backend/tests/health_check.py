@@ -1,10 +1,9 @@
-import os
-from backend.config import ADMIN_EMAIL, ADMIN_PASSWORD
-from backend.core.security import hash_password
-from backend.models.poi import POI
+from config import settings
+from core.security import hash_password
+from models.poi import POI
 from sqlalchemy import text
-from backend.database import get_db
-from backend.models.user import User
+from database import get_db
+from models.user import User
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -17,8 +16,8 @@ def run_startup_tests():
         db.execute(text("SELECT 1"))
 
         # Get email from env or fallback
-        test_email = ADMIN_EMAIL
-        test_pass = hash_password(ADMIN_PASSWORD)
+        test_email = settings.admin_email
+        test_pass = hash_password(settings.admin_password)
         user = db.query(User).filter(User.email == test_email).first()
         if not user:
             user = User(name="Admin", email=test_email,hashed_password=test_pass)

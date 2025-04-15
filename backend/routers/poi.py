@@ -1,3 +1,4 @@
+import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -5,16 +6,15 @@ from sqlalchemy import func
 from typing import List
 import json
 
-from backend.database import get_db
-from backend.models.poi import POI
-from backend.models.user import User
-from backend.schemas.poi import POICreate
-from backend.schemas.poi_query import POIInterestQuery
-from backend.schemas.llm_suggestion import LLMPOISuggestion
-from backend.dependencies.auth import get_current_user
-from backend.services.geocoding import geocode_location
-from backend.services.llm.prompt_builder import build_poi_prompt
-from backend.services.llm.llm_query import query_llm
+from database import get_db
+from models.poi import POI
+from models.user import User
+from schemas.poi import POICreate
+from schemas.poi_query import POIInterestQuery
+from schemas.llm_suggestion import LLMPOISuggestion
+from dependencies.auth import get_current_user
+from services.geocoding import geocode_location
+from services.llm.llm_poi_service import get_pois_from_ollama
 
 router = APIRouter()
 
@@ -39,14 +39,22 @@ def match_pois_with_ollama(query: POIInterestQuery, db: Session = Depends(get_db
         ) <= query.radius_km
     ).all()
 
-    # 4. LLM match
-    prompt = build_poi_prompt(query, nearby_pois)
-    llm_response = query_llm(prompt)
+    # Filter valid POIs before sending to LLM
+    valid_pois = [
+        POICreate(**{
+            "name": poi.name,
+            "description": poi.description or "No description available.",
+            "address": poi.address or "No address provided.",
+            "latitude": poi.latitude,
+            "longitude": poi.longitude,
+            "categories": poi.categories or ["unknown"]
+        })
+        for poi in nearby_pois
+        if poi.name and poi.latitude and poi.longitude
+    ]
 
-    try:
-        suggestions = json.loads(llm_response)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="LLM response was not valid JSON")
+    # 4. LLM match
+    suggestions = get_pois_from_ollama(query.interests, query.location, valid_pois,query.num_results)
 
     return suggestions
 

@@ -6,10 +6,8 @@ from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 from sqlalchemy.sql import func
-from ..base import Base
-from ..config import SCHEMA
-
-from .saved_path_entry import saved_path_entry
+from base import Base
+from config import settings
 
 
 # Define an item representing one point in the path
@@ -41,14 +39,14 @@ class SavedPathCreate(BaseModel):
 
 class SavedPath(Base):
     __tablename__ = "saved_paths"
-    __table_args__ = {"schema": SCHEMA}
+    __table_args__ = {"schema": settings.db_schema}
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
     # Foreign key to the user table
-    user_id = Column(Integer, ForeignKey(SCHEMA+".users.id"))
+    user_id = Column(Integer, ForeignKey(settings.db_schema+".users.id"))
 
     # Relationship to the User model
     user = relationship("User", back_populates="saved_paths")

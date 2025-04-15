@@ -1,39 +1,45 @@
-from dotenv import load_dotenv
-import os
+# backend/config.py
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
+from typing import Literal
 
-load_dotenv()
+class Settings(BaseSettings):
+    # Environment
+    env: Literal["dev", "prod"] = "dev"
 
-ENV=os.getenv("ENV", "dev")
-if ENV not in ["dev", "prod"]:
-    raise ValueError("ENV must be either 'dev' or 'prod'.")
+    # Control flags
+    clear_tables: bool = False
 
-CLEAR_TABLES = os.getenv("CLEAR_TABLES", "false")
+    # Database
+    database_url: str
+    postgres_db: str
+    db_schema: str
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set.")
+    # Admin credentials
+    admin_email: str
+    admin_password: str
 
-print("DATABASE_URL:", DATABASE_URL)
+    postgres_user: str
+    postgres_password: str
 
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-if not POSTGRES_DB:
-    raise ValueError("POSTGRES_DB environment variable is not set.")
 
-SCHEMA = os.getenv("SCHEMA")
-if not SCHEMA:
-    raise ValueError("SCHEMA environment variable is not set.")
+    # Security
+    secret_key: str = "blablablablublublue"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
 
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
-if not ADMIN_EMAIL:
-    raise ValueError("ADMIN_EMAIL environment variable is not set.")
+    # LLM-related
+    ollama_url: str
+    ollama_model: str
 
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
-if not ADMIN_PASSWORD:
-    raise ValueError("ADMIN_PASSWORD environment variable is not set.")
+    @field_validator("env")
+    @classmethod
+    def validate_env(cls, v):
+        if v not in ["dev", "prod"]:
+            raise ValueError("ENV must be either 'dev' or 'prod'")
+        return v
 
-SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
-if not SECRET_KEY:
-    raise ValueError("SECRET_KEY environment variable is not set.")
+    class Config:
+        env_file = ".env"
 
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+settings = Settings()

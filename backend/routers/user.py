@@ -4,13 +4,13 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from backend.config import ADMIN_EMAIL
-from backend.core.security import hash_password
-from backend.dependencies.auth import get_current_user, create_access_token
+from config import settings
+from core.security import hash_password
+from dependencies.auth import get_current_user, create_access_token
 
-from ..schemas.user_schema import UserSchema, UserUpdateRequest, CreateUserRequest
-from ..database import get_db, get_all_users, create_user as db_create_user
-from ..models.user import User
+from schemas.user_schema import UserSchema, UserUpdateRequest, CreateUserRequest
+from database import get_db, get_all_users, create_user as db_create_user
+from models.user import User
 
 router = APIRouter()
 
@@ -74,7 +74,7 @@ def update_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if current_user.id != user.id and current_user.email != ADMIN_EMAIL:
+    if current_user.id != user.id and current_user.email != settings.admin_email:
         raise HTTPException(status_code=403, detail="You are not allowed to update this user")
 
     if update.name:
@@ -94,7 +94,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # if user.email == ADMIN_EMAIL:
+    # if user.email == settings.admin_email:
     #     raise HTTPException(status_code=403, detail="Cannot delete admin user")
 
     db.delete(user)

@@ -1,9 +1,8 @@
 from fastapi.testclient import TestClient
-from backend.app_instance import app
-from backend.schemas.auth import LoginRequest
-from backend.schemas.user_schema import CreateUserRequest
+from schemas.auth import LoginRequest
+from schemas.user_schema import CreateUserRequest
 
-def test_user_login_logout():
+def test_user_login_logout(app):
     print("🔍 Running Login + Logout Test (via HTTP routes)...")
 
     client = TestClient(app)

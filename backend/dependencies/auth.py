@@ -3,12 +3,16 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from backend.core.security import decode_access_token, verify_password
-from backend.database import get_db
-from backend.models.user import User
-from backend.config import SECRET_KEY, ALGORITHM
+from core.security import decode_access_token, verify_password
+from database import get_db
+from models.user import User
 from datetime import datetime, timedelta
-from backend.app_instance import oauth2_scheme
+from app_instance import oauth2_scheme
+from config import settings
+
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.algorithm
+
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
