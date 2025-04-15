@@ -19,33 +19,40 @@ def load_osm_tag_reference() -> Dict[str, List[str]]:
         return {}
 
 def get_overpass_tags_from_interests(interests: str) -> List[dict]:
-    # Load pre-cached valid OSM tags
+    # Load known OSM tags
     osm_tags = load_osm_tag_reference()
 
-    # Build tag info section for the prompt
+    # Add tag info section for LLM context
     tag_info = "\n".join(
-        f'- "{key}": {", ".join(values[:10])}'  # limit to 10 values per key for clarity
+        f'- "{key}": {", ".join(values[:10])}'
         for key, values in osm_tags.items() if values
     )
 
+    # Add inference instructions to loosen mapping
     prompt = f"""
-    You are a travel assistant AI. The user will provide their interests (e.g., "food and sports").
-    Your job is to return a JSON array of OpenStreetMap-compatible tags that can be used with Overpass API.
+You are a travel assistant AI. The user will provide their interests (e.g., "food, yoga, fashion").
+Your task is to return a JSON array of OpenStreetMap-compatible tags (key-value pairs) that can be used with the Overpass API.
 
-    Each item in the array should be an object with:
-    - "key": the OSM tag key (e.g., "amenity", "leisure")
-    - "value": the corresponding tag value (e.g., "restaurant", "stadium")
+Each item in the array must be an object with:
+- "key": the OSM tag key (e.g., "amenity", "leisure")
+- "value": the corresponding tag value (e.g., "restaurant", "stadium")
 
-    Only include key-value tags that exist in OpenStreetMap's documented tagging conventions.
-    Avoid any tag with an empty value or unknown keys.
+Only include tags that are valid according to OpenStreetMap tagging conventions.
 
-    Here are valid tag examples:
-    {tag_info}
+You may also infer mappings from user interests to the closest available tags.
+Examples:
+- "yoga" → "leisure" = "fitness_centre"
+- "sports" → "leisure" = "pitch", "sport" = "soccer"
+- "fashion" → "shop" = "clothes" or "shop" = "boutique"
+- "shopping" → "shop" = "mall", "supermarket", "clothes"
 
-    Respond ONLY with a JSON array of key-value objects.
+Here are valid OpenStreetMap tag examples you can choose from:
+{tag_info}
 
-    User interests: {interests}
-    """.strip()
+Respond ONLY with a JSON array of key-value objects.
+
+User interests: {interests}
+""".strip()
 
     print("🧠 Sending Overpass tag prompt to Ollama:\n", prompt)
 
@@ -71,7 +78,12 @@ def get_overpass_tags_from_interests(interests: str) -> List[dict]:
         parsed = json.loads(match.group(0))
         print("🔍 Parsed Overpass tags:\n", parsed)
 
-        # Permissive mode: accept all syntactically valid tags
+        # Optional: log unexpected values
+        for tag in parsed:
+            if tag.get("key") not in osm_tags or tag.get("value") not in osm_tags.get(tag["key"], []):
+                print(f"⚠️ Unexpected tag (not in cache): {tag}")
+
+        # Allow all key-value pairs for now — rely on Overpass to fail silently if needed
         valid_tags = [
             tag for tag in parsed
             if isinstance(tag, dict)

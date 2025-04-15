@@ -129,6 +129,8 @@ def get_pois_from_overpass(
             el_lon = center.get("lon")
 
         if not el_lat or not el_lon:
+            el_lat = 0
+            el_lon = 0
             continue
 
         address = extract_address(tags)
@@ -137,7 +139,11 @@ def get_pois_from_overpass(
                 continue
             address = "No address"
 
-        description = tags.get("description") or tags.get("note") or f"A place tagged with '{category}'"
+        description = (
+            tags.get("description")
+            or tags.get("note")
+            or f"A {category.replace('_', ' ')} in {tags.get('addr:city', 'the area')}"
+        )
 
         poi = LLMPOISuggestion(
             name=name,
