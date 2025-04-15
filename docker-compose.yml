@@ -49,7 +49,7 @@ services:
         ollama pull llama3
 
         echo "🔥 Warming up llama3..." &&
-        ollama run llama3 -p "Say hello." || true
+        ollama run llama3 "Say hello." || true
 
         echo "✅ Model is ready." &&
         wait

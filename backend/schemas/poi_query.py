@@ -4,5 +4,6 @@ from typing import Optional
 class POIInterestQuery(BaseModel):
     interests: str
     location: str
-    radius_km: Optional[float] = 20.0
-    num_results: Optional[int] = 5
+    radius_km: float = 10
+    num_results: int = 10
+    debug: Optional[bool] = False

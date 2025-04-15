@@ -1,7 +1,7 @@
 # backend/schemas/route.py
 from pydantic import BaseModel
 from typing import List
-from poi import POICreate
+from schemas.poi import POICreate
 
 class SuggestRouteRequest(BaseModel):
     location: str
