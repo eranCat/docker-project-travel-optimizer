@@ -16,3 +16,4 @@ pydantic-settings
 pytest
 python-multipart
 overpy
+geopy

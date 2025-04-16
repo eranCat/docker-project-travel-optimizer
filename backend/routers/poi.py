@@ -33,11 +33,11 @@ def match_pois_with_overpass(
             location=location,
             overpass_tags=overpass_tags,
             radius_km=query.radius_km,
-            num_results=query.num_results,
             debug=query.debug
         )
 
-        return pois
+        minAmount = min(query.num_results, len(pois))
+        return pois[:minAmount]
 
     except Exception as e:
         print("❌ Exception caught in /match-pois-overpass", file=sys.stderr)

@@ -1,7 +1,7 @@
 # backend/routers/route.py
 from fastapi import APIRouter
 from schemas.route import SuggestRouteRequest, RouteResponse
-from services.llm.llm_poi_service import get_mocked_pois
+
 from services.route_optimizer import optimize_route
 
 router = APIRouter(prefix="/route", tags=["Route"])
