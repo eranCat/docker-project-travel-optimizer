@@ -1,41 +1,53 @@
-from config import settings
-from core.security import hash_password
-from models.poi import POI
+import unittest
+from sqlalchemy.orm import Session
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from config import settings
 from database import get_db
 from models.user import User
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
+from models.poi import POI
+from core.security import hash_password
 
 
-def run_startup_tests():
-    print("✅ Running startup checks...")
+class TestStartupDatabaseState(unittest.TestCase):
 
-    db: Session = next(get_db())
-    try:
-        db.execute(text("SELECT 1"))
+    def setUp(self):
+        self.db: Session = next(get_db())
 
-        # Get email from env or fallback
+    def test_create_admin_and_test_poi(self):
+        try:
+            self.db.execute(text("SELECT 1"))
+
+            # Admin setup
+            test_email = settings.admin_email
+            test_pass = hash_password(settings.admin_password)
+            user = self.db.query(User).filter(User.email == test_email).first()
+            if not user:
+                user = User(name="Admin", email=test_email, hashed_password=test_pass)
+                self.db.add(user)
+                self.db.commit()
+
+            # POI check
+            poi = self.db.query(POI).filter_by(name="Startup Test POI").first()
+            if not poi:
+                poi = POI(name="Startup Test POI", latitude=0.0, longitude=0.0)
+                user.favorite_pois.append(poi)
+                self.db.add(poi)
+                self.db.commit()
+
+            # Verify presence
+            self.assertIsNotNone(self.db.query(User).filter(User.email == test_email).first())
+            self.assertIsNotNone(self.db.query(POI).filter_by(name="Startup Test POI").first())
+
+        except SQLAlchemyError as e:
+            self.fail(f"Startup test failed: {str(e)}")
+
+    def tearDown(self):
+        # Clean up test data
         test_email = settings.admin_email
-        test_pass = hash_password(settings.admin_password)
-        user = db.query(User).filter(User.email == test_email).first()
-        if not user:
-            user = User(name="Admin", email=test_email,hashed_password=test_pass)
-            db.add(user)
-            db.commit()
-            print(f"🧪 Created admin test user ({test_email})")
+        user = self.db.query(User).filter(User.email == test_email).first()
+        if user:
+            self.db.delete(user)
+            self.db.commit()
 
-        # Check if POIs exist or insert one
-        poi = db.query(POI).filter_by(name="Startup Test POI").first()
-        if not poi:
-            poi = POI(name="Startup Test POI", latitude=0.0, longitude=0.0)
-            user.favorite_pois.append(poi)
-            db.add(poi)
-            db.commit()
-            print("🧪 Inserted test POI linked to admin")
-        db.delete(user)
-        db.commit()
-        print("✅ Startup tests passed.")
-    except SQLAlchemyError as e:
-        print("❌ Startup check failed:", e)
-        raise
+
