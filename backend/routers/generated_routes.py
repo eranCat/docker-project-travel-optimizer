@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from services.llm.interest_parser import get_interest_tags_from_ollama
 from services.geocoding import geocode_location
-from services.maps.overpass_service import get_pois_from_overpass
+from services.maps.overpass_service import get_pois_from_overpass,order_pois_by_proximity
 from schemas.poi import POISchema
 from database import get_db
 
@@ -52,17 +52,15 @@ def generate_routes(
         if not tags:
             raise HTTPException(status_code=400, detail="LLM did not return any tags for the provided interests.")
 
-        # Fetch more POIs to ensure enough valid options
         pois = get_pois_from_overpass((lat, lon), tags, radius_km, debug=False)
-
         poisLen = len(pois)
+
         if not pois or poisLen < 2:
             raise HTTPException(status_code=404, detail="Not enough POIs found covering the interests.")
-
         if poisLen < num_pois:
             raise HTTPException(
                 status_code=404, 
-                detail="Not enough valid POIs (with name, address, and category) to generate a route. only {} found.".format(poisLen)
+                detail=f"Not enough valid POIs (with name, address, and category) to generate a route. Only {poisLen} found."
             )
 
         logging.debug(f"✅ Valid POIs: {poisLen}")
@@ -71,18 +69,35 @@ def generate_routes(
         ))
         logging.debug(f"📋 All POI categories: {all_categories}")
 
+        # Group POIs by category
+        category_map = {cat: [] for cat in all_categories}
+        for poi in pois:
+            for cat in poi.categories:
+                if cat in category_map:
+                    category_map[cat].append(poi)
+
         candidate_routes = []
         seen_signatures = set()
 
-        for _ in range(num_routes * 2):  # Attempt more times to find distinct routes
-            if poisLen < num_pois:
-                break
-            sampled_pois = random.sample(pois, num_pois)
-            perturbed = perturb_route(sampled_pois, p=0.3)
+        for _ in range(num_routes * 4):  # Try extra times to ensure enough distinct routes
+            base = [random.choice(category_map[cat]) for cat in all_categories if category_map[cat]]
+            remaining_slots = num_pois - len(base)
+
+            if remaining_slots > 0:
+                remaining_pois = [p for p in pois if p not in base]
+                if len(remaining_pois) < remaining_slots:
+                    continue
+                base += random.sample(remaining_pois, remaining_slots)
+
+            start = random.choice(base)
+            ordered = order_pois_by_proximity(start, base)
+            perturbed = perturb_route(ordered, p=0.3)
+
             route_signature = tuple(poi.id for poi in perturbed)
             if route_signature not in seen_signatures:
                 seen_signatures.add(route_signature)
                 candidate_routes.append(perturbed)
+
             if len(candidate_routes) >= num_routes:
                 break
 

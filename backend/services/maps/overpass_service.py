@@ -266,3 +266,18 @@ def filter_pois_missing_data(overpass_tags, debug, elements):
         raw_pois.append(poi)
     return raw_pois
 
+def order_pois_by_proximity(start_poi, poi_list):
+    remaining = poi_list[:]
+    ordered = [start_poi]
+    remaining.remove(start_poi)
+
+    current = start_poi
+    while remaining:
+        next_poi = min(remaining, key=lambda p: geodesic(
+            (current.latitude, current.longitude), (p.latitude, p.longitude)
+        ).meters)
+        ordered.append(next_poi)
+        remaining.remove(next_poi)
+        current = next_poi
+
+    return ordered
