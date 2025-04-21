@@ -3,22 +3,22 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from config import settings
 from init_db import init as init_db
-from routers import auth, user, poi, saved_path, interests,generated_routes  
+from routers import auth, user, poi, saved_path, generated_routes
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi.exceptions import HTTPException
 from error_handlers import (
     http_exception_handler,
     sqlalchemy_exception_handler,
-    unhandled_exception_handler
+    unhandled_exception_handler,
 )
 import logging
 from utils.ollama_wait import wait_for_ollama_ready
 
-wait_for_ollama_ready() # Wait for Ollama to be ready before starting the app
+wait_for_ollama_ready()  # Wait for Ollama to be ready before starting the app
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("🚀 Starting up app...")
+    print("🚀 Starting up app... 🚀")
     load_dotenv()
     if settings.env == "dev":
         init_db()
@@ -55,5 +55,4 @@ app.include_router(user.router, prefix="/users", tags=["Users"])
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(poi.router, prefix="/api", tags=["POIs"])
 app.include_router(saved_path.router, prefix="/paths", tags=["Saved Paths"])
-app.include_router(interests.router, prefix="/api")
 app.include_router(generated_routes.router, prefix="/routes")

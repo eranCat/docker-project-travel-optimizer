@@ -1,17 +1,26 @@
 import logging, random
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from typing import List
-from services.llm.interest_parser import get_interest_tags_from_ollama
+from typing import List, Set, Tuple
+from schemas.overpass import OverpassTag
+from schemas.route_request import RouteGenerationRequest
 from services.geocoding import geocode_location
-from services.maps.overpass_service import get_pois_from_overpass,order_pois_by_proximity
+from services.maps.overpass_service import (
+    get_overpass_tags_from_interests,
+    get_pois_from_overpass,
+    order_pois_by_proximity,
+)
 from schemas.poi import POISchema
 from database import get_db
 
 router = APIRouter()
 
+
 def calculate_distance(poi1, poi2) -> float:
-    return ((poi1.latitude - poi2.latitude) ** 2 + (poi1.longitude - poi2.longitude) ** 2) ** 0.5
+    return (
+        (poi1.latitude - poi2.latitude) ** 2 + (poi1.longitude - poi2.longitude) ** 2
+    ) ** 0.5
+
 
 def order_route_with_starting_point(poi_list: List, start_index: int) -> List:
     remaining = poi_list.copy()
@@ -24,6 +33,7 @@ def order_route_with_starting_point(poi_list: List, start_index: int) -> List:
         remaining.remove(next_poi)
     return route
 
+
 def perturb_route(route: List, p: float = 0.3) -> List:
     if len(route) > 2 and random.random() < p:
         i = random.randint(1, len(route) - 1)
@@ -32,79 +42,92 @@ def perturb_route(route: List, p: float = 0.3) -> List:
             route[i], route[j] = route[j], route[i]
     return route
 
+
 @router.post("/generate-paths", response_model=List[List[POISchema]])
-def generate_routes(
-    interests: str,
-    location: str,
-    radius_km: float = 2.0,
-    num_routes: int = 3,
-    num_pois: int = 5,
-    db: Session = Depends(get_db)
-):
+def generate_routes(request: RouteGenerationRequest, db: Session = Depends(get_db)):
     try:
-        coords = geocode_location(location)
-        logging.debug(f"DEBUG: coords type: {type(coords)}, value: {coords}")
-        if coords is None or len(coords) != 2:
-            raise HTTPException(status_code=400, detail="Invalid coordinates returned by geocode_location")
-        lat, lon = coords
+        lat, lon = geocode_location(request.location)
+        if lat is None or lon is None:
+            raise HTTPException(status_code=400, detail="Invalid location")
 
-        tags = get_interest_tags_from_ollama(interests)
-        if not tags:
-            raise HTTPException(status_code=400, detail="LLM did not return any tags for the provided interests.")
-
-        pois = get_pois_from_overpass((lat, lon), tags, radius_km, debug=False)
-        poisLen = len(pois)
-
-        if not pois or poisLen < 2:
-            raise HTTPException(status_code=404, detail="Not enough POIs found covering the interests.")
-        if poisLen < num_pois:
+        raw_tags = get_overpass_tags_from_interests(request.interests)
+        if not raw_tags:
             raise HTTPException(
-                status_code=404, 
-                detail=f"Not enough valid POIs (with name, address, and category) to generate a route. Only {poisLen} found."
+                status_code=400,
+                detail="LLM did not return any relevant tags for your interests. Try using more general or different interests.",
+            )
+        try:
+            tags = [
+                tag if isinstance(tag, OverpassTag) else OverpassTag(**tag)
+                for tag in raw_tags
+                if isinstance(tag, (dict, OverpassTag))
+            ]
+            logging.debug(f"🧩 Normalized Overpass tags: {tags}")
+        except Exception as e:
+            raise HTTPException(
+                status_code=422, detail=f"Invalid Overpass parameters: {str(e)}"
             )
 
-        logging.debug(f"✅ Valid POIs: {poisLen}")
-        all_categories = sorted(set(
-            cat for poi in pois for cat in poi.categories if cat
-        ))
-        logging.debug(f"📋 All POI categories: {all_categories}")
+        pois = get_pois_from_overpass((lat, lon), tags, request.radius_km)
 
-        # Group POIs by category
-        category_map = {cat: [] for cat in all_categories}
-        for poi in pois:
-            for cat in poi.categories:
-                if cat in category_map:
-                    category_map[cat].append(poi)
+        if not pois or len(pois) < 2:
+            raise HTTPException(status_code=404, detail="Not enough POIs found.")
 
-        candidate_routes = []
-        seen_signatures = set()
+        logging.debug(f"🧠 Tags: {tags}")
+        logging.debug(f"📍 Coordinates: lat={lat}, lon={lon}")
+        logging.debug(f"📦 Found {len(pois)} POIs")
 
-        for _ in range(num_routes * 4):  # Try extra times to ensure enough distinct routes
-            base = [random.choice(category_map[cat]) for cat in all_categories if category_map[cat]]
-            remaining_slots = num_pois - len(base)
-
-            if remaining_slots > 0:
-                remaining_pois = [p for p in pois if p not in base]
-                if len(remaining_pois) < remaining_slots:
-                    continue
-                base += random.sample(remaining_pois, remaining_slots)
-
-            start = random.choice(base)
-            ordered = order_pois_by_proximity(start, base)
-            perturbed = perturb_route(ordered, p=0.3)
-
-            route_signature = tuple(poi.id for poi in perturbed)
-            if route_signature not in seen_signatures:
-                seen_signatures.add(route_signature)
-                candidate_routes.append(perturbed)
-
-            if len(candidate_routes) >= num_routes:
-                break
-
-        if not candidate_routes:
-            raise HTTPException(status_code=404, detail="Could not generate distinct route options.")
-
-        return candidate_routes
+        return generate_candidate_routes(pois, request.num_routes, request.num_pois)
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate routes: {str(e)}")
+        logging.exception("❌ Failed to generate routes")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate routes: {str(e)}"
+        )
+
+
+def generate_candidate_routes(
+    pois: List[POISchema], num_routes: int, num_pois: int
+) -> List[List[POISchema]]:
+    all_categories = sorted(set(cat for poi in pois for cat in poi.categories if cat))
+    category_map = {cat: [] for cat in all_categories}
+    for poi in pois:
+        for cat in poi.categories:
+            if cat in category_map:
+                category_map[cat].append(poi)
+
+    routes = []
+    seen_signatures: Set[Tuple[str]] = set()
+
+    for _ in range(num_routes * 4):  # retry buffer
+        base = [
+            random.choice(category_map[cat])
+            for cat in all_categories
+            if category_map[cat]
+        ]
+        remaining_slots = num_pois - len(base)
+
+        if remaining_slots > 0:
+            remaining_pois = [p for p in pois if p not in base]
+            if len(remaining_pois) < remaining_slots:
+                continue
+            base += random.sample(remaining_pois, remaining_slots)
+
+        start = random.choice(base)
+        ordered = order_pois_by_proximity(start, base)
+        perturbed = perturb_route(ordered, p=0.3)
+
+        signature = tuple(poi.id for poi in perturbed)
+        if signature not in seen_signatures:
+            seen_signatures.add(signature)
+            routes.append(perturbed)
+
+        if len(routes) >= num_routes:
+            break
+
+    if not routes:
+        raise HTTPException(
+            status_code=404, detail="Could not generate distinct route options."
+        )
+
+    return routes

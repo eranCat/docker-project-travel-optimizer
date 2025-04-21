@@ -2,15 +2,14 @@ import logging
 import requests
 import json
 import re
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from fastapi import HTTPException
 from pathlib import Path
 from collections import defaultdict
+from schemas.overpass import OverpassQueryParams, OverpassTag
 from config import settings
 from schemas.llm_suggestion import LLMPOISuggestion
-from services.route_optimizer import haversine_distance
 from geopy.distance import geodesic
-import random
 
 
 # Config
@@ -21,13 +20,15 @@ OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
 
 # --- Utilities ---
 
+
 def load_osm_tag_reference() -> Dict[str, List[str]]:
     try:
         with open(OSM_TAGS_CACHE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        print(f"⚠️ Failed to load OSM tags cache: {e}")
+        logging.debug(f"⚠️ Failed to load OSM tags cache: {e}")
         return {}
+
 
 def extract_address(tags: dict) -> str | None:
     # Prefer full address if available
@@ -51,7 +52,13 @@ def extract_address(tags: dict) -> str | None:
         return ", ".join(parts)
 
     # Try fallback fields
-    for fallback_key in ["location", "place", "road", "addr:place", "addr:neighbourhood"]:
+    for fallback_key in [
+        "location",
+        "place",
+        "road",
+        "addr:place",
+        "addr:neighbourhood",
+    ]:
         if fallback := tags.get(fallback_key):
             return fallback
 
@@ -61,9 +68,14 @@ def extract_address(tags: dict) -> str | None:
 
     return None  # nothing worked
 
+
 def extract_primary_category(tags: dict, overpass_tags: List[dict]) -> str | None:
     # 1. First try matching LLM tags
-    valid_tag_set = {(tag["key"], tag["value"]) for tag in overpass_tags if tag.get("key") and tag.get("value")}
+    valid_tag_set = {
+        (tag.key, tag.value)
+        for tag in overpass_tags
+        if tag.key and tag.value
+    }
     for key, value in tags.items():
         if (key, value) in valid_tag_set:
             return value
@@ -82,58 +94,41 @@ def extract_primary_category(tags: dict, overpass_tags: List[dict]) -> str | Non
     return "unknown"
 
 
-# --- Normalization Function ---
-
-def normalize_overpass_tags(overpass_tags: List) -> List[dict]:
-    """
-    Ensure every tag is a dictionary. If an item is a string, convert it to a dict with a default key.
-    """
-    normalized = []
-    for tag in overpass_tags:
-        if isinstance(tag, dict):
-            normalized.append(tag)
-        elif isinstance(tag, str):
-            # You can change the default key if needed; here we assume "amenity" as default.
-            normalized.append({"key": "amenity", "value": tag.strip()})
-        else:
-            continue
-    return normalized
-
 # --- LLM tag resolution ---
-
 def get_overpass_tags_from_interests(interests: str) -> list[dict]:
     osm_tags = load_osm_tag_reference()
+    # logging.debug(f"🔍 Loaded OSM tags: {osm_tags}\n")
 
     prompt = f"""
-You are a travel assistant AI. The user will provide their interests (e.g., "music, yoga, art, fashion").
+    You are a travel assistant AI. The user will provide their interests (e.g., "music, yoga, art, fashion").
 
-Your task is to analyze the interests and return a JSON array of OpenStreetMap tag objects. Each tag object must include:
-- "key": the OSM tag key (e.g., "tourism", "leisure")
-- "value": the corresponding tag value (e.g., "museum", "gallery")
+    Your task is to analyze the interests and return a JSON array of OpenStreetMap tag objects. Each tag object must include:
+    - "key": the OSM tag key (e.g., "tourism", "leisure")
+    - "value": the corresponding tag value (e.g., "museum", "gallery")
 
-Only include tags from this list:
-{json.dumps(osm_tags, indent=2)}
+    Only include tags from this list:
+    {json.dumps(osm_tags, indent=2)}
 
-Only select tag values that represent places people can visit, explore, or hang out in. For example: museums, galleries, cafes, music venues, etc.
+    Only select tag values that represent places people can visit, explore, or hang out in. For example: museums, galleries, cafes, music venues, etc.
 
-Avoid tags that usually refer to schools, kindergartens, government buildings, or closed institutions, unless they are commonly visited by the public.
+    Avoid tags that usually refer to schools, kindergartens, government buildings, or closed institutions, unless they are commonly visited by the public.
 
-Return ONLY a JSON array of objects. Do not include any other text.
+    Return ONLY a JSON array of objects. Do not include any other text.
 
-User interests: {interests}
-""".strip()
+    User interests: {interests}
+    """.strip()
 
-    print("🧠 Sending Overpass tag prompt to Ollama:\n", prompt)
+    logging.debug(f"🧠 Sending Overpass tag prompt to Ollama:{prompt}\n")
 
     try:
         response = requests.post(
             OLLAMA_URL,
             json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False},
-            timeout=60
+            timeout=60,
         )
         response.raise_for_status()
         raw_output = response.json().get("response", "")
-        print("📥 Ollama Overpass tag response:\n", raw_output)
+        logging.debug(f"📥 Ollama Overpass tag response: {raw_output}\n")
 
         match = re.search(r"\[\s*.*?\s*\]", raw_output, re.DOTALL)
         if not match:
@@ -141,47 +136,51 @@ User interests: {interests}
         parsed = json.loads(match.group(0))
 
         return [
-            tag for tag in parsed
+            tag
+            for tag in parsed
             if isinstance(tag, dict) and tag.get("key") and tag.get("value")
         ]
 
     except requests.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Ollama request failed: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to parse Overpass tags: {str(e)}")
-    
+        raise HTTPException(
+            status_code=500, detail=f"Failed to parse Overpass tags: {str(e)}"
+        )
+
+
 # --- Query Builder ---
 
-def build_overpass_query(overpass_tags: List[dict], lat: float, lon: float, radius_m: int) -> str:
-    grouped: Dict[str, List[str]] = defaultdict(list)
-    for tag in overpass_tags:
-        key, value = tag.get("key"), tag.get("value")
-        if key and value:
-            grouped[key].append(value)
 
-    filters = []
-    for key, values in grouped.items():
-        pattern = "|".join(sorted(set(values)))
-        filters += [
-            f'node["{key}"~"{pattern}"](around:{radius_m},{lat},{lon});',
-            f'way["{key}"~"{pattern}"](around:{radius_m},{lat},{lon});',
-            f'relation["{key}"~"{pattern}"](around:{radius_m},{lat},{lon});',
-        ]
+def build_overpass_query(params: OverpassQueryParams) -> str:
+    grouped_tags: Dict[str, set[str]] = defaultdict(set)
+    for tag in params.tags:
+        grouped_tags[tag.key].add(tag.value)
+
+    filters = [
+        f'{element}["{key}"~"{ "|".join(sorted(values)) }"](around:{params.radius_m},{params.lat},{params.lon});'
+        for key, values in grouped_tags.items()
+        for element in ("node", "way", "relation")
+    ]
 
     return f"""
 [out:json][timeout:25];
 (
-  {"\n  ".join(filters)}
+  {'\n  '.join(filters)}
 );
 out center tags;
 """.strip()
 
 
-def deduplicate_pois(pois: List[LLMPOISuggestion], threshold_km: float = 0.4) -> List[LLMPOISuggestion]:
+def deduplicate_pois(
+    pois: List[LLMPOISuggestion], threshold_km: float = 0.4
+) -> List[LLMPOISuggestion]:
     unique = []
     for poi in pois:
         if any(
-            p.name == poi.name and geodesic((p.latitude, p.longitude), (poi.latitude, poi.longitude)).km < threshold_km
+            p.name == poi.name
+            and geodesic((p.latitude, p.longitude), (poi.latitude, poi.longitude)).km
+            < threshold_km
             for p in unique
         ):
             continue
@@ -191,33 +190,41 @@ def deduplicate_pois(pois: List[LLMPOISuggestion], threshold_km: float = 0.4) ->
 
 # --- Main Entry Point ---
 
+
 def get_pois_from_overpass(
-    location: tuple[float, float],
-    overpass_tags: List,
+    location: Tuple[float, float],
+    overpass_tags: List[OverpassTag],
     radius_km: float,
-    debug: bool = False
+    debug: bool = False,
 ) -> List[LLMPOISuggestion]:
+
     lat, lon = location
     radius_m = int(radius_km * 1000)
 
-    overpass_tags = normalize_overpass_tags(overpass_tags)
-    query = build_overpass_query(overpass_tags, lat, lon, radius_m)
-    print("🛰️ Overpass query:\n", query)
+    query_params = OverpassQueryParams(
+        tags=overpass_tags, lat=lat, lon=lon, radius_m=radius_m
+    )
+
+    logging.debug(f"looking for : {overpass_tags}")
+
+    query = build_overpass_query(query_params)
+    logging.debug(f"🛰️ Overpass query:\n{query}\n")
 
     try:
         response = requests.post(OVERPASS_API_URL, data=query)
         response.raise_for_status()
         data = response.json()
-        elements = data.get('elements', [])
-        print(f"📦 Overpass returned {len(elements)} elements")
+        elements = data.get("elements", [])
+        logging.debug(f"📦 Overpass returned {len(elements)} elements")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Overpass query failed: {str(e)}")
 
     filtered = filter_pois_missing_data(overpass_tags, debug, elements)
     deduped = deduplicate_pois(filtered)
-    print("📊 Final POI count after deduplication:", len(deduped))
+    logging.debug(f"📊 Final POI count after deduplication: {len(deduped)}")
 
     return deduped
+
 
 def filter_pois_missing_data(overpass_tags, debug, elements):
     raw_pois = []
@@ -232,7 +239,7 @@ def filter_pois_missing_data(overpass_tags, debug, elements):
 
         category = extract_primary_category(tags, overpass_tags)
         if not category and not debug:
-            continue    
+            continue
 
         if element.get("type") == "node":
             el_lat = element.get("lat")
@@ -260,11 +267,12 @@ def filter_pois_missing_data(overpass_tags, debug, elements):
             latitude=el_lat,
             longitude=el_lon,
             address=address,
-            categories=[category]
+            categories=[category],
         )
 
         raw_pois.append(poi)
     return raw_pois
+
 
 def order_pois_by_proximity(start_poi, poi_list):
     remaining = poi_list[:]
@@ -273,9 +281,12 @@ def order_pois_by_proximity(start_poi, poi_list):
 
     current = start_poi
     while remaining:
-        next_poi = min(remaining, key=lambda p: geodesic(
-            (current.latitude, current.longitude), (p.latitude, p.longitude)
-        ).meters)
+        next_poi = min(
+            remaining,
+            key=lambda p: geodesic(
+                (current.latitude, current.longitude), (p.latitude, p.longitude)
+            ).meters,
+        )
         ordered.append(next_poi)
         remaining.remove(next_poi)
         current = next_poi
