@@ -25,10 +25,6 @@ class OverpassQueryParams(BaseModel):
             for element in ("node", "way", "relation")
         ]
 
-        return f"""
-[out:json][timeout:25];
-(
-  {'\n  '.join(filters)}
-);
-out center tags;
-""".strip()
+        return f"""[out:json][timeout:25];
+        ({'\n  '.join(filters)});
+        out center tags;""".strip()

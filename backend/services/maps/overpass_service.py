@@ -72,9 +72,7 @@ def extract_address(tags: dict) -> str | None:
 def extract_primary_category(tags: dict, overpass_tags: List[dict]) -> str | None:
     # 1. First try matching LLM tags
     valid_tag_set = {
-        (tag.key, tag.value)
-        for tag in overpass_tags
-        if tag.key and tag.value
+        (tag.key, tag.value) for tag in overpass_tags if tag.key and tag.value
     }
     for key, value in tags.items():
         if (key, value) in valid_tag_set:
@@ -118,7 +116,7 @@ def get_overpass_tags_from_interests(interests: str) -> list[dict]:
     User interests: {interests}
     """.strip()
 
-    logging.debug(f"🧠 Sending Overpass tag prompt to Ollama:{prompt}\n")
+    # logging.debug(f"🧠 Sending Overpass tag prompt to Ollama:{prompt}\n")
 
     try:
         response = requests.post(
@@ -147,29 +145,6 @@ def get_overpass_tags_from_interests(interests: str) -> list[dict]:
         raise HTTPException(
             status_code=500, detail=f"Failed to parse Overpass tags: {str(e)}"
         )
-
-
-# --- Query Builder ---
-
-
-def build_overpass_query(params: OverpassQueryParams) -> str:
-    grouped_tags: Dict[str, set[str]] = defaultdict(set)
-    for tag in params.tags:
-        grouped_tags[tag.key].add(tag.value)
-
-    filters = [
-        f'{element}["{key}"~"{ "|".join(sorted(values)) }"](around:{params.radius_m},{params.lat},{params.lon});'
-        for key, values in grouped_tags.items()
-        for element in ("node", "way", "relation")
-    ]
-
-    return f"""
-[out:json][timeout:25];
-(
-  {'\n  '.join(filters)}
-);
-out center tags;
-""".strip()
 
 
 def deduplicate_pois(
@@ -207,7 +182,7 @@ def get_pois_from_overpass(
 
     logging.debug(f"looking for : {overpass_tags}")
 
-    query = build_overpass_query(query_params)
+    query = query_params.to_query()
     logging.debug(f"🛰️ Overpass query:\n{query}\n")
 
     try:

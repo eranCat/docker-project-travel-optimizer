@@ -45,10 +45,12 @@ def perturb_route(route: List, p: float = 0.3) -> List:
 
 @router.post("/generate-paths", response_model=List[List[POISchema]])
 def generate_routes(request: RouteGenerationRequest, db: Session = Depends(get_db)):
+    logging.debug(f"Requesting routes with: {request}")
     try:
         lat, lon = geocode_location(request.location)
         if lat is None or lon is None:
             raise HTTPException(status_code=400, detail="Invalid location")
+        logging.debug(f"📍 Coordinates: lat={lat}, lon={lon}")
 
         raw_tags = get_overpass_tags_from_interests(request.interests)
         if not raw_tags:
@@ -62,20 +64,17 @@ def generate_routes(request: RouteGenerationRequest, db: Session = Depends(get_d
                 for tag in raw_tags
                 if isinstance(tag, (dict, OverpassTag))
             ]
-            logging.debug(f"🧩 Normalized Overpass tags: {tags}")
+            logging.debug(f"🧠 Tags: {tags}")
         except Exception as e:
             raise HTTPException(
                 status_code=422, detail=f"Invalid Overpass parameters: {str(e)}"
             )
 
         pois = get_pois_from_overpass((lat, lon), tags, request.radius_km)
+        logging.debug(f"📦 Found {len(pois)} POIs")
 
         if not pois or len(pois) < 2:
             raise HTTPException(status_code=404, detail="Not enough POIs found.")
-
-        logging.debug(f"🧠 Tags: {tags}")
-        logging.debug(f"📍 Coordinates: lat={lat}, lon={lon}")
-        logging.debug(f"📦 Found {len(pois)} POIs")
 
         return generate_candidate_routes(pois, request.num_routes, request.num_pois)
 
