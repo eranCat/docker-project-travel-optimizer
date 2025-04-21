@@ -7,27 +7,6 @@ class Settings(BaseSettings):
     # Environment
     env: Literal["dev", "prod"] = "dev"
 
-    # Control flags
-    clear_tables: bool = False
-
-    # Database
-    database_url: str
-    postgres_db: str
-    db_schema: str
-
-    # Admin credentials
-    admin_email: str
-    admin_password: str
-
-    postgres_user: str
-    postgres_password: str
-
-
-    # Security
-    secret_key: str = "blablablablublublue"
-    algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
-
     # LLM-related
     ollama_url: str
     ollama_model: str

@@ -5,7 +5,6 @@ import re
 from typing import List, Dict, Tuple
 from fastapi import HTTPException
 from pathlib import Path
-from collections import defaultdict
 from schemas.overpass import OverpassQueryParams, OverpassTag
 from config import settings
 from schemas.llm_suggestion import LLMPOISuggestion

@@ -1,6 +1,5 @@
 fastapi
 uvicorn
-sqlalchemy
 psycopg2-binary
 python-dotenv
 pydantic
@@ -17,3 +16,4 @@ pytest
 python-multipart
 overpy
 geopy
+watchdog

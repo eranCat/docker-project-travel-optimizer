@@ -1,17 +1,15 @@
 import logging, random
-from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException
 from typing import List, Set, Tuple
 from schemas.overpass import OverpassTag
 from schemas.route_request import RouteGenerationRequest
-from services.geocoding import geocode_location
+from services.maps.geocoding import geocode_location
 from services.maps.overpass_service import (
     get_overpass_tags_from_interests,
     get_pois_from_overpass,
     order_pois_by_proximity,
 )
 from schemas.poi import POISchema
-from database import get_db
 
 router = APIRouter()
 
@@ -44,7 +42,7 @@ def perturb_route(route: List, p: float = 0.3) -> List:
 
 
 @router.post("/generate-paths", response_model=List[List[POISchema]])
-def generate_routes(request: RouteGenerationRequest, db: Session = Depends(get_db)):
+def generate_routes(request: RouteGenerationRequest):
     logging.debug(f"Requesting routes with: {request}")
     try:
         lat, lon = geocode_location(request.location)
