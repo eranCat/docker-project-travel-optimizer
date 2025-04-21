@@ -3,16 +3,11 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 
-# Copy requirements first for better caching
-COPY backend/requirements.txt /app/requirements.txt
+# Install Python dependencies first to leverage Docker caching
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install dependencies
-RUN pip install --upgrade pip \
-    && pip install -r requirements.txt
+# Now copy the actual app code
+COPY backend/ .
 
-# Copy the rest of the backend app
-COPY backend/ /app
-
-# Run the app and tests directly in CMD
-CMD ["/bin/bash", "-c", "\
-    uvicorn main:app --host 0.0.0.0 --port 8000 --reload --log-level error"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

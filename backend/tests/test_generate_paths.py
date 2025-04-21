@@ -11,7 +11,7 @@ def test_generate_paths_success():
         "location": "tel aviv",
         "radius_km": 2,
         "num_routes": 3,
-        "num_pois": 5,
+        "num_pois": 5
     }
 
     response = client.post("/routes/generate-paths", json=payload)

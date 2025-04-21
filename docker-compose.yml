@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   backend:
     build:
@@ -8,34 +10,23 @@ services:
       - "8000:8000"
     env_file:
       - .env
-    volumes:                                    
-      - ./backend:/app                          
+    volumes:
+      - ./backend:/app
     depends_on:
-      - ollama
-      - postgres
+      ollama:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "run_tests.py"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
 
-  postgres:
-    image: postgres:15
-    container_name: travel-db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: travel_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
   ollama:
-    image: ollama/ollama:latest
+    build:
+      context: .
+      dockerfile: backend/ollama.Dockerfile
     container_name: ollama
     ports:
       - "11434:11434"
@@ -48,19 +39,29 @@ services:
         echo "🚀 Starting Ollama server..." &&
         ollama serve &
 
-        echo "⏳ Waiting for server to start..." &&
-        sleep 5
+        echo "🧠 Starting background model pull and warmup..." &&
+        (
+          sleep 5 &&
+          echo "📦 Pulling llama3..." &&
+          ollama pull llama3 &&
+          echo "🔥 Warming up llama3..." &&
+          ollama run llama3 "Say hello." || true
+        ) &
 
-        echo "📦 Pulling llama3..." &&
-        ollama pull llama3
-
-        echo "🔥 Warming up llama3..." &&
-        ollama run llama3 "Say hello." || true
-
-        echo "✅ Model is ready." &&
         wait
     restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:11434/api/tags | grep -q 'llama3' || (echo 'llama3 not ready' && exit 1)"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
+
 
 volumes:
-  postgres_data:
   ollama_data:
