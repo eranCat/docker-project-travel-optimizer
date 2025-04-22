@@ -6,9 +6,9 @@ import LinearLoader from "./components/LinearLoader";
 function App() {
   const [form, setForm] = useState({
     interests: "yoga, vegan food, art",
-    location: "tel aviv",
-    radius_km: 2,
-    num_routes: 2,
+    location: "Tel Aviv",
+    radius_km: 10,
+    num_routes: 3,
     num_pois: 5,
   });
 
@@ -97,7 +97,7 @@ function App() {
         </button>
       </form>
 
-      {loading && <LinearLoader />}
+      <LinearLoader loading={loading} />
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
@@ -118,9 +118,7 @@ function App() {
         </div>
       )}
 
-      {!loading && routes.length > 0 && (
-        <MapViewer pois={routes[selectedIndex]} />
-      )}
+      <MapViewer pois={routes[selectedIndex] ?? []} />
     </div>
   );
 }

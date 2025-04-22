@@ -10,6 +10,7 @@ from utils.error_handlers import (
 )
 import logging
 from utils.ollama_wait import wait_for_ollama_ready
+from fastapi.middleware.cors import CORSMiddleware
 
 wait_for_ollama_ready()  # Wait for Ollama to be ready before starting the app
 
@@ -25,6 +26,14 @@ app = FastAPI(
     description="Helps users find routes depending on personal interests",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or ["http://localhost:5173"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Suppress other noisy FastAPI loggers

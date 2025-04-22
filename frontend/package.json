@@ -10,7 +10,7 @@
     "react-leaflet": "^4.2.1"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0 --strictPort",
     "build": "vite build",
     "preview": "vite preview"
   },

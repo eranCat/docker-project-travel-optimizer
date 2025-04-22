@@ -26,13 +26,13 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    container_name: travel-frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # to prevent local overwrite of container deps
     ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
+      - "5173:5173"
+
 
   ollama:
     build:
