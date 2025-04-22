@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./styles/theme.css";
 
 import MapViewer from "./components/MapViewer";
@@ -48,6 +48,8 @@ function App({
   };
 
 
+  const canceledRef = useRef(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -63,8 +65,16 @@ function App({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (canceledRef.current) {
+      console.warn("Cancelled before new request started.");
+      canceledRef.current = false; // reset for next real submit
+      return;
+    }
+
     const controller = new AbortController();
     setAbortController(controller);
+
     setLoading(true);
     setError("");
 
@@ -76,40 +86,33 @@ function App({
           num_routes: Number(form.num_routes),
           num_pois: Number(form.num_pois),
         },
-        controller.signal // pass AbortSignal
+        controller.signal
       );
+
       setRoutes(data);
-      localStorage.setItem("travel-routes", JSON.stringify(data));
       setSelectedIndex(0);
     } catch (err: any) {
-      if (axios.isCancel?.(err) || err?.code === "ERR_CANCELED" || err?.name === "CanceledError") {
+      if (
+        axios.isCancel?.(err) ||
+        err?.code === "ERR_CANCELED" ||
+        err?.name === "CanceledError"
+      ) {
         console.warn("Route generation was canceled by the user.");
-
-        // ✅ Clear loading state and controller
-        setLoading(false);
-        setAbortController(null);
-
-        // ✅ Optionally show a short "Cancelled" message
-        setError("❌ Route generation was cancelled.");
-        setTimeout(() => setError(""), 2000);
-
         return;
       }
 
       console.error("Error fetching routes:", err);
       setError(err?.message || "Failed to fetch routes.");
     } finally {
-      if (!abortController?.signal.aborted) {
-        setAbortController(null);
-        setLoading(false);
-      }
-    };
-  }
+      setAbortController(null);
+      setLoading(false);
+    }
+  };
+
 
   const handleCancel = () => {
+    canceledRef.current = true;
     abortController?.abort();
-    setAbortController(null);
-    setLoading(false);
     setError("❌ Route generation was cancelled.");
     setTimeout(() => setError(""), 2000);
   };
