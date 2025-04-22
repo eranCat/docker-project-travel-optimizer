@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import {
     TextField,
     List,
-    ListItem,
     ListItemButton,
     ListItemText,
     Paper,
     Fade,
     Box,
 } from "@mui/material";
+import axios from "axios";
 
 interface Props {
     value: string;
@@ -28,23 +28,16 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
         const controller = new AbortController();
         const delayDebounce = setTimeout(() => {
             if (value.trim().length > 2) {
-                fetch(
-                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-                        value
-                    )}&format=json&addressdetails=1&limit=5`,
-                    {
-                        headers: {
-                            "User-Agent": "travel-optimizer-app",
-                        },
+                axios
+                    .get(`${import.meta.env.VITE_API_BASE_URL}/autocomplete`, {
+                        params: { q: value },
                         signal: controller.signal,
-                    }
-                )
-                    .then((res) => res.json())
-                    .then((data) => {
-                        setSuggestions(data || []);
+                    })
+                    .then((res) => {
+                        setSuggestions(res.data || []);
                         setShowDropdown(true);
                     })
-                    .catch(() => { }); // Ignore cancel errors
+                    .catch(() => { });
             } else {
                 setSuggestions([]);
                 setShowDropdown(false);
