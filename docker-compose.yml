@@ -23,6 +23,17 @@ services:
       retries: 3
       start_period: 10s
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: travel-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   ollama:
     build:
       context: .
@@ -51,17 +62,11 @@ services:
         wait
     restart: unless-stopped
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -sf http://localhost:11434/api/tags | grep -q 'llama3' || (echo 'llama3 not ready' && exit 1)"
-        ]
+      test: [ "CMD-SHELL", "curl -sf http://localhost:11434/api/tags | grep -q 'llama3' || (echo 'llama3 not ready' && exit 1)" ]
       interval: 5s
       timeout: 3s
       retries: 5
       start_period: 30s
-
-
 
 volumes:
   ollama_data:
