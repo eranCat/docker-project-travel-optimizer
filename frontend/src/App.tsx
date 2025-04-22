@@ -1,17 +1,19 @@
 import { useState } from "react";
 import MapViewer from "./components/MapViewer";
 import { generateRoutes } from "./services/api";
+import LinearLoader from "./components/LinearLoader";
 
 function App() {
   const [form, setForm] = useState({
     interests: "yoga, vegan food, art",
     location: "tel aviv",
     radius_km: 2,
-    num_routes: 1,
+    num_routes: 2,
     num_pois: 5,
   });
 
   const [routes, setRoutes] = useState<any[][]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -32,6 +34,7 @@ function App() {
         num_pois: Number(form.num_pois),
       });
       setRoutes(data);
+      setSelectedIndex(0);
       console.log("Received routes:", data);
     } catch (err) {
       console.error("Error fetching routes:", err);
@@ -43,57 +46,80 @@ function App() {
 
   return (
     <div style={{ padding: "2rem", maxWidth: "800px", margin: "auto" }}>
-      <h1>Travel Optimizer</h1>
+      <h1 style={{ marginBottom: "1rem" }}>Travel Optimizer</h1>
 
       <form onSubmit={handleSubmit} style={{ marginBottom: "1rem" }}>
+        <label>Interests</label>
         <input
           name="interests"
-          placeholder="Interests"
           value={form.interests}
           onChange={handleChange}
-          style={{ width: "100%", padding: "8px", marginBottom: "0.5rem" }}
+          style={{ width: "100%", padding: "8px", marginBottom: "1rem" }}
         />
+
+        <label>Location</label>
         <input
           name="location"
-          placeholder="Location"
           value={form.location}
           onChange={handleChange}
-          style={{ width: "100%", padding: "8px", marginBottom: "0.5rem" }}
+          style={{ width: "100%", padding: "8px", marginBottom: "1rem" }}
         />
+
+        <label>Radius (km)</label>
         <input
           name="radius_km"
           type="number"
-          placeholder="Radius in KM"
           value={form.radius_km}
           onChange={handleChange}
-          style={{ width: "100%", padding: "8px", marginBottom: "0.5rem" }}
+          style={{ width: "100%", padding: "8px", marginBottom: "1rem" }}
         />
+
+        <label>Number of Routes</label>
         <input
           name="num_routes"
           type="number"
-          placeholder="Number of Routes"
           value={form.num_routes}
           onChange={handleChange}
-          style={{ width: "100%", padding: "8px", marginBottom: "0.5rem" }}
+          style={{ width: "100%", padding: "8px", marginBottom: "1rem" }}
         />
+
+        <label>POIs per Route</label>
         <input
           name="num_pois"
           type="number"
-          placeholder="POIs per Route"
           value={form.num_pois}
           onChange={handleChange}
-          style={{ width: "100%", padding: "8px", marginBottom: "0.5rem" }}
+          style={{ width: "100%", padding: "8px", marginBottom: "1rem" }}
         />
 
-        <button type="submit" style={{ padding: "10px 20px" }}>
-          {loading ? "Loading..." : "Generate Route"}
+        <button type="submit" style={{ padding: "10px 20px", width: "100%", backgroundColor: "#2f80ed", color: "white", border: "none", borderRadius: "4px" }}>
+          {loading ? "Generating..." : "Generate Route"}
         </button>
       </form>
 
+      {loading && <LinearLoader />}
+
       {error && <p style={{ color: "red" }}>{error}</p>}
 
+      {!loading && routes.length > 1 && (
+        <div style={{ marginBottom: "1rem" }}>
+          <label>Select a Route:</label>
+          <select
+            value={selectedIndex}
+            onChange={(e) => setSelectedIndex(Number(e.target.value))}
+            style={{ width: "100%", padding: "8px", marginTop: "0.5rem" }}
+          >
+            {routes.map((_, index) => (
+              <option key={index} value={index}>
+                Route {index + 1}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {!loading && routes.length > 0 && (
-        <MapViewer pois={routes[0]} />
+        <MapViewer pois={routes[selectedIndex]} />
       )}
     </div>
   );
