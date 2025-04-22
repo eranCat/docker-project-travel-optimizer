@@ -1,4 +1,14 @@
 import React from "react";
+import {
+    Box,
+    Button,
+    Paper,
+    Stack,
+    TextField,
+    Typography,
+    Divider,
+} from "@mui/material";
+import LocationAutocomplete from "./LocationAutocomplete";
 
 interface FormData {
     interests: string;
@@ -8,94 +18,139 @@ interface FormData {
     num_pois: number;
 }
 
-interface RouteFormProps {
+interface Props {
     form: FormData;
     loading: boolean;
-    isFormValid: boolean;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSubmit: (e: React.FormEvent) => void;
     onReset: () => void;
+    onValidLocationSelected: () => void;
+    onCancel: () => void;
+    isFormValid: boolean;
 }
 
-const RouteForm: React.FC<RouteFormProps> = ({ form, loading, isFormValid, onChange, onSubmit, onReset }) => {
+const RouteForm: React.FC<Props> = ({
+    form,
+    loading,
+    onChange,
+    onSubmit,
+    onReset,
+    onValidLocationSelected,
+    onCancel,
+    isFormValid,
+}) => {
     return (
-        <form className="app-form" onSubmit={onSubmit}>
-            <div>
-                <label htmlFor="interests">Interests</label>
-                <input
-                    id="interests"
-                    name="interests"
-                    value={form.interests}
-                    onChange={onChange}
-                    placeholder="🎯 e.g., museums, vegan food"
-                />
-            </div>
+        <Paper
+            elevation={3}
+            sx={{
+                p: 4,
+                borderRadius: 3,
+                mb: 4,
+                bgcolor: (theme) => theme.palette.background.paper,
+            }}
+        >
+            <Typography variant="h5" fontWeight={600} gutterBottom>
+                Plan Your Route
+            </Typography>
 
-            <div>
-                <label htmlFor="location">Location</label>
-                <input
-                    id="location"
-                    name="location"
-                    value={form.location}
-                    onChange={onChange}
-                    placeholder="📍 e.g., Tel Aviv"
-                />
-            </div>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+                Fill in your preferences and we'll generate the best route.
+            </Typography>
 
-            <div className="app-form-row">
-                <div>
-                    <label htmlFor="radius_km">Radius (km)</label>
-                    <input
-                        id="radius_km"
-                        name="radius_km"
-                        type="number"
-                        value={form.radius_km}
-                        onChange={onChange}
-                        placeholder="📏 Radius"
-                    />
-                </div>
+            <Box component="form" onSubmit={onSubmit}>
+                <Stack spacing={3}>
+                    {/* First row: Interests + Location */}
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                        <Box sx={{ flex: 1 }}>
+                            <TextField
+                                label="Interests"
+                                name="interests"
+                                fullWidth
+                                value={form.interests}
+                                onChange={onChange}
+                                placeholder="🎯 e.g., food, art, yoga"
+                            />
+                        </Box>
 
-                <div>
-                    <label htmlFor="num_routes">Number of Routes</label>
-                    <input
-                        id="num_routes"
-                        name="num_routes"
-                        type="number"
-                        value={form.num_routes}
-                        onChange={onChange}
-                        placeholder="🧭 Routes"
-                    />
-                </div>
+                        <Box sx={{ flex: 1 }}>
+                            <LocationAutocomplete
+                                value={form.location}
+                                onChange={(val) =>
+                                    onChange({ target: { name: "location", value: val } } as any)
+                                }
+                                onSelect={(val) => {
+                                    onChange({ target: { name: "location", value: val } } as any);
+                                    onValidLocationSelected();
+                                }}
+                            />
+                        </Box>
+                    </Stack>
 
-                <div>
-                    <label htmlFor="num_pois">POIs per Route</label>
-                    <input
-                        id="num_pois"
-                        name="num_pois"
-                        type="number"
-                        value={form.num_pois}
-                        onChange={onChange}
-                        placeholder="📌 POIs"
-                    />
-                </div>
-            </div>
+                    <Divider />
 
-            <button
-                type="submit"
-                className="app-submit-button"
-                disabled={!isFormValid || loading}
-                style={{
-                    opacity: !isFormValid || loading ? 0.5 : 1,
-                    cursor: !isFormValid || loading ? "not-allowed" : "pointer",
-                }}
-            >
-                {loading ? "Generating..." : "Generate Route"}
-            </button>
+                    {/* Second row: Numbers */}
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                        <TextField
+                            label="Radius (km)"
+                            name="radius_km"
+                            type="number"
+                            fullWidth
+                            value={form.radius_km}
+                            onChange={onChange}
+                            inputProps={{ min: 1 }}
+                        />
+                        <TextField
+                            label="Number of Routes"
+                            name="num_routes"
+                            type="number"
+                            fullWidth
+                            value={form.num_routes}
+                            onChange={onChange}
+                            inputProps={{ min: 1 }}
+                        />
+                        <TextField
+                            label="POIs per Route"
+                            name="num_pois"
+                            type="number"
+                            fullWidth
+                            value={form.num_pois}
+                            onChange={onChange}
+                            inputProps={{ min: 1 }}
+                        />
+                    </Stack>
 
-            <button type="button" className="app-reset-button" onClick={onReset}>
-                🧹 Reset Form
-            </button>
-        </form>
+                    <Divider />
+
+                    {/* Buttons */}
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                        {loading ? (
+                            <Button variant="outlined" color="error" fullWidth onClick={onCancel}>
+                                ✖ Cancel
+                            </Button>
+                        ) : (
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                fullWidth
+                                disabled={!isFormValid}
+                            >
+                                Generate Route
+                            </Button>
+                        )}
+
+                        <Button
+                            type="button"
+                            variant="outlined"
+                            color="secondary"
+                            fullWidth
+                            onClick={onReset}
+                        >
+                            🧹 Reset
+                        </Button>
+                    </Stack>
+                </Stack>
+            </Box>
+        </Paper>
     );
 };
 

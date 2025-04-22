@@ -43,12 +43,13 @@ select {
 
 .app-form {
     display: grid;
-    gap: 1rem;
+    gap: 1.5rem;
     background: var(--input-bg);
-    padding: 1.5rem;
-    border-radius: 10px;
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
     margin-bottom: 2rem;
+    border: 1px solid var(--input-border);
 }
 
 .app-form input,
@@ -61,27 +62,32 @@ select {
     font-size: 1rem;
 }
 
-.app-form input {
-    margin-bottom: 1rem;
-}
-
 .app-form-row {
     display: flex;
-    gap: 1rem;
     flex-wrap: wrap;
-    margin-bottom: 1rem;
+    gap: 1rem;
+    margin-top: 1rem;
 }
 
 .app-form-row>div {
     flex: 1;
-    min-width: 120px;
-    padding-right: 2rem;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
+.app-form-row>div {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
 .app-form-row label {
-    display: block;
-    margin-bottom: 0.25rem;
     font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
 }
 
 .app-submit-button {
@@ -126,4 +132,55 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input:invalid {
     border-color: #e63946;
+}
+
+@media (max-width: 600px) {
+    .app-form {
+        padding: 1rem;
+    }
+
+    .app-form-row {
+        flex-direction: column;
+    }
+}
+
+.location-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--input-bg);
+    z-index: 1000;
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 0 0 6px 6px;
+
+    opacity: 0;
+    transform: translateY(-5px);
+    pointer-events: none;
+    transition: all 0.25s ease;
+}
+
+.location-dropdown.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.location-dropdown li {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.location-dropdown li:last-child {
+    border-bottom: none;
+}
+
+.location-dropdown li:hover {
+    background: rgba(0, 0, 0, 0.04);
 }
