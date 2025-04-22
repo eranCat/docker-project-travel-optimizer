@@ -3,6 +3,8 @@ import "leaflet/dist/leaflet.css";
 import { getIconForCategory } from "./categoryIcons";
 import { POI, Props } from "../models/POI";
 import { useEffect } from "react";
+import { useTheme } from "@mui/material";
+
 
 function MapFlyToBounds({ pois }: { pois: POI[] }) {
   const map = useMap();
@@ -17,16 +19,57 @@ function MapFlyToBounds({ pois }: { pois: POI[] }) {
   return null;
 }
 
+export function FlyToMarker({ lat, lon }: { lat: number; lon: number }) {
+  const map = useMap();
 
-export default function MapViewer({ pois }: Props) {
+  useEffect(() => {
+    const isValid =
+      typeof lat === "number" &&
+      typeof lon === "number" &&
+      Number.isFinite(lat) &&
+      Number.isFinite(lon);
+
+    if (isValid) {
+      map.flyTo([lat, lon], 16);
+    } else {
+      console.warn("❌ FlyToMarker skipped: Invalid coordinates", { lat, lon });
+    }
+  }, [lat, lon]);
+
+  return null;
+}
+
+
+export default function MapViewer({ pois,focusedPOI }: Props) {
   const center: [number, number] = pois.length
     ? [pois[0].latitude, pois[0].longitude]
     : [32.0853, 34.7818]; // Default to Tel Aviv
 
+  const theme = useTheme();
+
+  const tileUrl =
+    theme.palette.mode === "dark"
+      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+      : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+  const attribution =
+    theme.palette.mode === "dark"
+      ? '&copy; <a href="https://carto.com/">CARTO</a>'
+      : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
   return (
-    <MapContainer center={center} zoom={13} style={{ height: "400px", width: "100%" }}>
+    <MapContainer center={center} zoom={13} style={{ width: "100%", height: "100%" }}>
       <MapFlyToBounds pois={pois} />
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      {focusedPOI &&
+        typeof focusedPOI.latitude === "number" &&
+        typeof focusedPOI.longitude === "number" &&
+        Number.isFinite(focusedPOI.latitude) &&
+        Number.isFinite(focusedPOI.longitude) && (
+          <FlyToMarker lat={focusedPOI.latitude} lon={focusedPOI.longitude} />
+        )}
+        
+
+      <TileLayer url={tileUrl} attribution={attribution}/>
 
       {pois.map((poi, i) => (
         <Marker

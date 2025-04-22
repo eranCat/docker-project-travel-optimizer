@@ -9,5 +9,6 @@ export interface POI {
     categories?: string[];
 }export interface Props {
     pois: POI[];
+    focusedPOI?: any;
 }
 

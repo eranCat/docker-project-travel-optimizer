@@ -1,23 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export function usePersistedState<T>(key: string, defaultValue: T): [T, (val: T) => void] {
-    const saved = localStorage.getItem(key);
-    let parsed = defaultValue;
+type SetStateAction<T> = T | ((prevState: T) => T);
 
-    try {
-        if (saved && saved !== "undefined") {
-            parsed = JSON.parse(saved);
-        }
-    } catch (e) {
-        console.warn(`Failed to parse ${key} from localStorage:`, e);
-    }
+export function usePersistedState<T>(key: string, defaultValue: T): [T, (value: SetStateAction<T>) => void] {
+    const [state, setState] = useState<T>(() => {
+        const storedValue = localStorage.getItem(key);
+        return storedValue ? JSON.parse(storedValue) : defaultValue;
+    });
 
-    const [value, setValue] = useState<T>(parsed);
+    const setPersistedState = (value: SetStateAction<T>) => {
+        setState(prev => {
+            const newValue = typeof value === "function" ? (value as (prevState: T) => T)(prev) : value;
+            localStorage.setItem(key, JSON.stringify(newValue));
 
-    const update = (val: T) => {
-        setValue(val);
-        localStorage.setItem(key, JSON.stringify(val));
+            if (key === "travel-form") {
+                localStorage.setItem("travel-form-time", Date.now().toString());
+            }
+
+            return newValue;
+        });
     };
 
-    return [value, update];
+    return [state, setPersistedState];
 }

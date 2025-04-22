@@ -14,6 +14,7 @@ import { usePersistedState } from "./hooks/usePersistedState";
 import { Button, Box, Typography, Paper, List, ListItem, ListItemText, Divider } from "@mui/material";
 import axios from "axios";
 import React from "react";
+import { POI } from "./models/POI";
 
 function App({
   toggleTheme,
@@ -23,7 +24,7 @@ function App({
   mode: "light" | "dark";
 }) {
 
-  const [form, setForm] = usePersistedState("travel-form", DEFAULT_FORM);
+  const [form, setFormData] = usePersistedState("travel-form", DEFAULT_FORM);
   const [routes, setRoutes] = usePersistedState<any[][]>("travel-routes", []);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -32,6 +33,8 @@ function App({
 
   const [locationSelected, setLocationSelected] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+
+  const [focusedPOI, setFocusedPOI] = useState<POI | null>(null);
 
   const isFormValid = () => {
     return (
@@ -51,12 +54,11 @@ function App({
     // Reset "valid" location when user edits manually
     if (name === "location") setLocationSelected(false);
 
-    setForm((prev) => {
-      const updated = { ...prev, [name]: value };
-      localStorage.setItem("travel-form", JSON.stringify(updated));
-      localStorage.setItem("travel-form-time", Date.now().toString());
-      return updated;
-    });
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,8 +117,7 @@ function App({
 
   const handleReset = () => {
     const fresh = { ...DEFAULT_FORM };
-    setForm(fresh);
-    localStorage.setItem("travel-form", JSON.stringify(fresh));
+    setFormData(fresh);
     localStorage.removeItem("travel-form-time");
   };
 
@@ -124,11 +125,9 @@ function App({
     <MainLayout
       title="Travel Optimizer"
       footer="🚀 Built with React, Vite, and FastAPI"
+      mode={mode}
+      toggleTheme={toggleTheme}
     >
-
-      <Button onClick={toggleTheme} sx={{ mb: 2 }}>
-        {mode === "dark" ? "🌞 Light Mode" : "🌙 Dark Mode"}
-      </Button>
 
       <RouteForm
         form={form}
@@ -150,54 +149,91 @@ function App({
         onSelect={setSelectedIndex}
       />
 
-      <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+      <Box sx={{ display: "flex", gap: 2, mt: 2, height: 500 }}>
         {/* POI List Panel */}
-        <Paper sx={{ flex: 2, maxHeight: "500px", overflowY: "auto", p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Route {selectedIndex + 1} POIs
-          </Typography>
-          <List dense>
-            {(routes[selectedIndex] ?? []).map((poi, index) => (
-              <React.Fragment key={index}>
-                <ListItem alignItems="flex-start">
-                  <ListItemText
-                    primary={poi.name}
-                    secondary={
-                      <>
-                        {poi.description && (
-                          <span style={{ display: "block", color: "gray", fontSize: "0.875rem" }}>
-                            {poi.description}
-                          </span>
-                        )}
+        <Paper
+          sx={{
+            flex: 2,
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            overflow: "hidden",
+          }}
+        >
+          <Box sx={{ flex: 1, overflowY: "auto", px: 2 }}>
+            <List dense>
+              {(routes[selectedIndex] ?? []).map((poi, index) => (
+                <React.Fragment key={index}>
+                  <ListItem alignItems="flex-start" disableGutters>
+                    <Box
+                      sx={{
+                        width: "100%",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        gap: 2,
+                        flexWrap: "wrap",
+                        textAlign: "start",
+                      }}
+                    >
+                      <Box sx={{ flex: 1 }}>
+                        <ListItemText
+                          primary={poi.name}
+                          secondary={
+                            <>
+                              {poi.description && (
+                                <span style={{ display: "block", color: "gray", fontSize: "0.875rem" }}>
+                                  {poi.description}
+                                </span>
+                              )}
+                              {poi.address && (
+                                <a
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                                    `${poi.name} ${poi.address}`
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    display: "block",
+                                    marginTop: "0.25rem",
+                                    color: "#1976d2",
+                                    textDecoration: "none",
+                                  }}
+                                >
+                                  📍 {poi.address}
+                                </a>
+                              )}
+                            </>
+                          }
+                        />
+                      </Box>
 
-                        {poi.address && (
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(poi.address)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              display: "block",
-                              marginTop: "0.25rem",
-                              color: "#1976d2",
-                              textDecoration: "none",
-                            }}
-                          >
-                            📍 {poi.address}
-                          </a>
-                        )}
-                      </>
-                    }
-                  />
-                </ListItem>
-                <Divider component="li" />
-              </React.Fragment>
-            ))}
-          </List>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          if (Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude)) {
+                            setFocusedPOI(poi);
+                          } else {
+                            console.warn("Skipping POI with invalid coordinates:", poi);
+                          }
+                        }}
+                        sx={{ textTransform: "none", whiteSpace: "nowrap", alignSelf: "center" }}
+                      >
+                        Show on Map
+                      </Button>
+                    </Box>
+                  </ListItem>
+                  <Divider component="li" />
+                </React.Fragment>
+              ))}
+            </List>
+          </Box>
         </Paper>
 
         {/* Map */}
-        <Box sx={{ flex: 3}}>
-          <MapViewer pois={routes[selectedIndex] ?? []} />
+        <Box sx={{ flex: 3, height: "100%" }}>
+          <MapViewer pois={routes[selectedIndex] ?? []} focusedPOI={focusedPOI}/>
         </Box>
       </Box>
 

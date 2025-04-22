@@ -1,15 +1,15 @@
-import React from "react";
+import React, { useMemo } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { getTheme } from "./theme";
 
-const savedMode = localStorage.getItem("theme") as "light" | "dark" || "light";
+const savedMode = (localStorage.getItem("theme") as "light" | "dark") || "light";
 
-function Main() {
+const Main = () => {
   const [mode, setMode] = React.useState<"light" | "dark">(savedMode);
-  const theme = getTheme(mode);
+  const theme = useMemo(() => getTheme(mode), [mode]);
 
   const toggleTheme = () => {
     const newMode = mode === "light" ? "dark" : "light";
@@ -23,6 +23,6 @@ function Main() {
       <App toggleTheme={toggleTheme} mode={mode} />
     </ThemeProvider>
   );
-}
+};
 
 ReactDOM.createRoot(document.getElementById("root")!).render(<Main />);
