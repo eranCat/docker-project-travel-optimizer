@@ -11,7 +11,9 @@ import MainLayout from "./components/MainLayout";
 import { generateRoutes } from "./services/api";
 import { DEFAULT_FORM } from "./constants/formDefaults";
 import { usePersistedState } from "./hooks/usePersistedState";
-import { Button } from "@mui/material";
+import { Button, Box, Typography, Paper, List, ListItem, ListItemText, Divider } from "@mui/material";
+import axios from "axios";
+import React from "react";
 
 function App({
   toggleTheme,
@@ -78,23 +80,36 @@ function App({
       localStorage.setItem("travel-routes", JSON.stringify(data));
       setSelectedIndex(0);
     } catch (err: any) {
-      if (err.name === "AbortError") {
-        console.warn("Route generation cancelled");
-      } else {
-        setError(err?.message || "Failed to fetch routes.");
+      if (axios.isCancel?.(err) || err?.code === "ERR_CANCELED" || err?.name === "CanceledError") {
+        console.warn("Route generation was canceled by the user.");
+
+        // ✅ Clear loading state and controller
+        setLoading(false);
+        setAbortController(null);
+
+        // ✅ Optionally show a short "Cancelled" message
+        setError("❌ Route generation was cancelled.");
+        setTimeout(() => setError(""), 2000);
+
+        return;
       }
+
+      console.error("Error fetching routes:", err);
+      setError(err?.message || "Failed to fetch routes.");
     } finally {
-      setAbortController(null);
-      setLoading(false);
-    }
-  };
+      if (!abortController?.signal.aborted) {
+        setAbortController(null);
+        setLoading(false);
+      }
+    };
+  }
 
   const handleCancel = () => {
-    if (abortController) {
-      abortController.abort();
-      setAbortController(null);
-      setLoading(false);
-    }
+    abortController?.abort();
+    setAbortController(null);
+    setLoading(false);
+    setError("❌ Route generation was cancelled.");
+    setTimeout(() => setError(""), 2000);
   };
 
 
@@ -135,7 +150,57 @@ function App({
         onSelect={setSelectedIndex}
       />
 
-      <MapViewer pois={routes[selectedIndex] ?? []} />
+      <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+        {/* POI List Panel */}
+        <Paper sx={{ flex: 2, maxHeight: "500px", overflowY: "auto", p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Route {selectedIndex + 1} POIs
+          </Typography>
+          <List dense>
+            {(routes[selectedIndex] ?? []).map((poi, index) => (
+              <React.Fragment key={index}>
+                <ListItem alignItems="flex-start">
+                  <ListItemText
+                    primary={poi.name}
+                    secondary={
+                      <>
+                        {poi.description && (
+                          <span style={{ display: "block", color: "gray", fontSize: "0.875rem" }}>
+                            {poi.description}
+                          </span>
+                        )}
+
+                        {poi.address && (
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(poi.address)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: "block",
+                              marginTop: "0.25rem",
+                              color: "#1976d2",
+                              textDecoration: "none",
+                            }}
+                          >
+                            📍 {poi.address}
+                          </a>
+                        )}
+                      </>
+                    }
+                  />
+                </ListItem>
+                <Divider component="li" />
+              </React.Fragment>
+            ))}
+          </List>
+        </Paper>
+
+        {/* Map */}
+        <Box sx={{ flex: 3}}>
+          <MapViewer pois={routes[selectedIndex] ?? []} />
+        </Box>
+      </Box>
+
     </MainLayout>
   );
 }
