@@ -1,0 +1,129 @@
+:root {
+    --bg: #ffffff;
+    --fg: #222;
+    --accent: #2f80ed;
+    --input-bg: #fff;
+    --input-border: #ccc;
+}
+
+[data-theme="dark"] {
+    --bg: #181818;
+    --fg: #eee;
+    --accent: #6ea0ff;
+    --input-bg: #222;
+    --input-border: #444;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--fg);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+input,
+select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--fg);
+    transition: all 0.3s ease;
+}
+
+.app-wrapper {
+    padding: 1rem;
+    max-width: 900px;
+    margin: auto;
+    font-family: sans-serif;
+}
+
+.app-title {
+    font-size: 2rem;
+    color: var(--accent);
+    margin-bottom: 1rem;
+}
+
+.app-form {
+    display: grid;
+    gap: 1rem;
+    background: var(--input-bg);
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.app-form input,
+.app-route-selector select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--input-border);
+    color: var(--fg);
+    font-size: 1rem;
+}
+
+.app-form input {
+    margin-bottom: 1rem;
+}
+
+.app-form-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.app-form-row>div {
+    flex: 1;
+    min-width: 120px;
+    padding-right: 2rem;
+}
+
+.app-form-row label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.app-submit-button {
+    padding: 12px 20px;
+    background-color: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.app-error {
+    color: #b00020;
+    margin-top: 1rem;
+}
+
+.app-route-selector {
+    margin-bottom: 1rem;
+}
+
+.app-reset-button {
+    margin-top: 0.5rem;
+    background: transparent;
+    color: var(--accent);
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: underline;
+}
+
+input[type="number"] {
+    appearance: number-input;
+    -moz-appearance: textfield;
+    /* fix for Firefox */
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    appearance: auto;
+}
+
+input:invalid {
+    border-color: #e63946;
+}

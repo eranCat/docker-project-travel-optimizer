@@ -1,25 +1,46 @@
 import { useState } from "react";
+import "./styles/theme.css";
+
 import MapViewer from "./components/MapViewer";
+import DarkModeToggle from "./components/DarkModeToggle";
+import RouteForm from "./components/RouteForm";
+import RouteSelector from "./components/RouteSelector";
+import AlertMessage from "./components/AlertMessage";
+import CoolLoader from "./components/CoolLoader";
+import MainLayout from "./components/MainLayout";
+
 import { generateRoutes } from "./services/api";
-import LinearLoader from "./components/LinearLoader";
+import { DEFAULT_FORM } from "./constants/formDefaults";
+import { usePersistedState } from "./hooks/usePersistedState";
 
 function App() {
-  const [form, setForm] = useState({
-    interests: "yoga, vegan food, art",
-    location: "Tel Aviv",
-    radius_km: 10,
-    num_routes: 3,
-    num_pois: 5,
-  });
 
-  const [routes, setRoutes] = useState<any[][]>([]);
+  const [form, setForm] = usePersistedState("travel-form", DEFAULT_FORM);
+  const [routes, setRoutes] = usePersistedState<any[][]>("travel-routes", []);
+
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const isFormValid = () => {
+    return (
+      form.interests.trim() !== "" &&
+      form.location.trim() !== "" &&
+      form.radius_km > 0 &&
+      form.num_routes > 0 &&
+      form.num_pois > 0
+    );
+  };
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      const updated = { ...prev, [name]: value };
+      localStorage.setItem("travel-form", JSON.stringify(updated));
+      localStorage.setItem("travel-form-time", Date.now().toString());
+      return updated;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,92 +55,60 @@ function App() {
         num_pois: Number(form.num_pois),
       });
       setRoutes(data);
+      localStorage.setItem("travel-routes", JSON.stringify(data));
       setSelectedIndex(0);
       console.log("Received routes:", data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching routes:", err);
-      setError("Failed to fetch routes.");
+
+      let message = "Failed to fetch routes.";
+
+      // Try to extract the real error message from Axios/Fetch response
+      if (err?.response?.data?.error) {
+        message = err.response.data.error;
+      } else if (err?.message) {
+        message = err.message;
+      }
+
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleReset = () => {
+    const fresh = { ...DEFAULT_FORM };
+    setForm(fresh);
+    localStorage.setItem("travel-form", JSON.stringify(fresh));
+    localStorage.removeItem("travel-form-time");
+  };
+
   return (
-    <div style={{ padding: "2rem", maxWidth: "800px", margin: "auto" }}>
-      <h1 style={{ marginBottom: "1rem" }}>Travel Optimizer</h1>
+    <MainLayout
+      title="Travel Optimizer"
+      footer="🚀 Built with React, Vite, and FastAPI"
+      centered
+    >
+      <RouteForm
+        form={form}
+        loading={loading}
+        isFormValid={isFormValid()}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+        onReset={handleReset}
+      />
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: "1rem" }}>
-        <label>Interests</label>
-        <input
-          name="interests"
-          value={form.interests}
-          onChange={handleChange}
-          style={{ width: "100%", padding: "8px", marginBottom: "1rem" }}
-        />
+      {loading && <CoolLoader />}
+      <AlertMessage message={error} />
 
-        <label>Location</label>
-        <input
-          name="location"
-          value={form.location}
-          onChange={handleChange}
-          style={{ width: "100%", padding: "8px", marginBottom: "1rem" }}
-        />
-
-        <label>Radius (km)</label>
-        <input
-          name="radius_km"
-          type="number"
-          value={form.radius_km}
-          onChange={handleChange}
-          style={{ width: "100%", padding: "8px", marginBottom: "1rem" }}
-        />
-
-        <label>Number of Routes</label>
-        <input
-          name="num_routes"
-          type="number"
-          value={form.num_routes}
-          onChange={handleChange}
-          style={{ width: "100%", padding: "8px", marginBottom: "1rem" }}
-        />
-
-        <label>POIs per Route</label>
-        <input
-          name="num_pois"
-          type="number"
-          value={form.num_pois}
-          onChange={handleChange}
-          style={{ width: "100%", padding: "8px", marginBottom: "1rem" }}
-        />
-
-        <button type="submit" style={{ padding: "10px 20px", width: "100%", backgroundColor: "#2f80ed", color: "white", border: "none", borderRadius: "4px" }}>
-          {loading ? "Generating..." : "Generate Route"}
-        </button>
-      </form>
-
-      <LinearLoader loading={loading} />
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {!loading && routes.length > 1 && (
-        <div style={{ marginBottom: "1rem" }}>
-          <label>Select a Route:</label>
-          <select
-            value={selectedIndex}
-            onChange={(e) => setSelectedIndex(Number(e.target.value))}
-            style={{ width: "100%", padding: "8px", marginTop: "0.5rem" }}
-          >
-            {routes.map((_, index) => (
-              <option key={index} value={index}>
-                Route {index + 1}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      <RouteSelector
+        selectedIndex={selectedIndex}
+        routeCount={routes.length}
+        onSelect={setSelectedIndex}
+      />
 
       <MapViewer pois={routes[selectedIndex] ?? []} />
-    </div>
+    </MainLayout>
   );
 }
 
