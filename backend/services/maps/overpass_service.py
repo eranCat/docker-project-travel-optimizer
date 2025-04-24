@@ -1,7 +1,7 @@
+from functools import lru_cache
 import logging
 import requests
 import json
-import re
 from typing import List, Dict, Tuple
 from fastapi import HTTPException
 from pathlib import Path
@@ -9,7 +9,8 @@ from schemas.overpass import OverpassQueryParams, OverpassTag
 from config import settings
 from schemas.llm_suggestion import LLMPOISuggestion
 from geopy.distance import geodesic
-
+import datetime
+import re
 
 # Config
 OLLAMA_URL = settings.ollama_url
@@ -92,9 +93,14 @@ def extract_primary_category(tags: dict, overpass_tags: List[dict]) -> str | Non
 
 
 # --- LLM tag resolution ---
-def get_overpass_tags_from_interests(interests: str) -> list[dict]:
-    osm_tags = load_osm_tag_reference()
-    # logging.debug(f"🔍 Loaded OSM tags: {osm_tags}\n")
+@lru_cache(maxsize=200)
+def get_overpass_tags_from_interests(user_interests: str) -> list[dict]:
+    valid_tags = load_osm_tag_reference()
+    formatted_tags = [
+        f"{key}={val}" for key, values in valid_tags.items() for val in values
+    ]
+    formatted_tags = formatted_tags[:20]
+    readable_tag_list = "\n- ".join(formatted_tags)
 
     prompt = f"""
     You are a travel assistant AI. The user will provide their interests (e.g., "music, yoga, art, fashion").
@@ -104,7 +110,7 @@ def get_overpass_tags_from_interests(interests: str) -> list[dict]:
     - "value": the corresponding tag value (e.g., "museum", "gallery")
 
     Only include tags from this list:
-    {json.dumps(osm_tags, indent=2)}
+    {json.dumps(readable_tag_list, indent=2)}
 
     Only select tag values that represent places people can visit, explore, or hang out in. For example: museums, galleries, cafes, music venues, etc.
 
@@ -112,7 +118,7 @@ def get_overpass_tags_from_interests(interests: str) -> list[dict]:
 
     Return ONLY a JSON array of objects. Do not include any other text.
 
-    User interests: {interests}
+    User interests: {user_interests}
     """.strip()
 
     # logging.debug(f"🧠 Sending Overpass tag prompt to Ollama:{prompt}\n")
@@ -120,17 +126,26 @@ def get_overpass_tags_from_interests(interests: str) -> list[dict]:
     try:
         response = requests.post(
             OLLAMA_URL,
-            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False},
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "temperature": 0,
+            },
             timeout=60,
         )
         response.raise_for_status()
         raw_output = response.json().get("response", "")
-        logging.debug(f"📥 Ollama Overpass tag response: {raw_output}\n")
+        logging.debug(f"📥 Ollama Overpass tag response:\n{raw_output}")
 
-        match = re.search(r"\[\s*.*?\s*\]", raw_output, re.DOTALL)
-        if not match:
-            raise ValueError("No JSON array found in LLM response.")
-        parsed = json.loads(match.group(0))
+        try:
+            parsed = json.loads(raw_output)
+        except json.JSONDecodeError:
+            logging.warning("Direct JSON decoding failed. Trying regex fallback.")
+            match = re.search(r"\[\s*.*?\s*\]", raw_output, re.DOTALL)
+            if not match:
+                raise ValueError("No JSON array found in LLM response.")
+            parsed = json.loads(match.group(0))
 
         return [
             tag
@@ -138,11 +153,12 @@ def get_overpass_tags_from_interests(interests: str) -> list[dict]:
             if isinstance(tag, dict) and tag.get("key") and tag.get("value")
         ]
 
-    except requests.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Ollama request failed: {str(e)}")
     except Exception as e:
+        logging.error("❌ Ollama raw output was:")
+        logging.error(raw_output)
+        logging.error("❌ Tag parsing error:", exc_info=True)
         raise HTTPException(
-            status_code=500, detail=f"Failed to parse Overpass tags: {str(e)}"
+            status_code=500, detail=f"Ollama tag parsing failed: {str(e)}"
         )
 
 

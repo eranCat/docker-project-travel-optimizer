@@ -17,7 +17,11 @@
     "parking",
     "toilets",
     "fountain",
-    "marketplace"
+    "marketplace",
+    "cinema",
+    "clinic",
+    "community_centre",
+    "charging_station"
   ],
   "leisure": [
     "park",
@@ -29,7 +33,9 @@
     "golf_course",
     "playground",
     "garden",
-    "dog_park"
+    "dog_park",
+    "beach_resort",
+    "nature_reserve"
   ],
   "sport": [
     "soccer",
@@ -45,7 +51,11 @@
     "hockey",
     "skating",
     "climbing",
-    "equestrian"
+    "equestrian",
+    "table_tennis",
+    "surfing",
+    "diving",
+    "skateboarding"
   ],
   "tourism": [
     "museum",
@@ -59,7 +69,8 @@
     "camp_site",
     "alpine_hut",
     "information",
-    "theme_park"
+    "theme_park",
+    "chalet"
   ],
   "building": [
     "yes",
@@ -76,6 +87,78 @@
     "house",
     "hut",
     "garage",
-    "warehouse"
+    "warehouse",
+    "dormitory",
+    "hotel"
+  ],
+  "shop": [
+    "supermarket",
+    "convenience",
+    "bakery",
+    "butcher",
+    "clothes",
+    "shoes",
+    "jewelry",
+    "books",
+    "electronics",
+    "florist",
+    "optician",
+    "kiosk",
+    "department_store"
+  ],
+  "natural": [
+    "beach",
+    "wood",
+    "wetland",
+    "water",
+    "peak",
+    "valley",
+    "spring",
+    "cave_entrance",
+    "rock",
+    "cliff",
+    "bay",
+    "sand",
+    "glacier"
+  ],
+  "historic": [
+    "castle",
+    "monument",
+    "memorial",
+    "archaeological_site",
+    "ruins",
+    "fort",
+    "battlefield",
+    "church",
+    "wayside_cross",
+    "milestone"
+  ],
+  "office": [
+    "government",
+    "company",
+    "lawyer",
+    "insurance",
+    "ngo",
+    "travel_agent",
+    "diplomatic"
+  ],
+  "craft": [
+    "carpenter",
+    "jeweller",
+    "locksmith",
+    "shoemaker",
+    "tailor",
+    "pottery",
+    "sculptor"
+  ],
+  "man_made": [
+    "bridge",
+    "pier",
+    "lighthouse",
+    "windmill",
+    "water_tower",
+    "mast",
+    "tower",
+    "works"
   ]
 }

@@ -17,3 +17,4 @@ python-multipart
 overpy
 geopy
 watchdog
+openrouteservice==2.3.0

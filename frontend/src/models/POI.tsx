@@ -1,5 +1,3 @@
-import { POI } from "./POI";
-
 export interface POI {
     name: string;
     description?: string;
@@ -7,7 +5,9 @@ export interface POI {
     latitude: number;
     longitude: number;
     categories?: string[];
-}export interface Props {
+}
+
+export interface Props {
     pois: POI[];
     focusedPOI?: any;
 }

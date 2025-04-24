@@ -1,5 +1,11 @@
 import React from "react";
-import { FormControl, InputLabel, MenuItem, Select, Typography } from "@mui/material";
+import {
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    Typography,
+} from "@mui/material";
 
 interface Props {
     selectedIndex: number;
@@ -7,7 +13,12 @@ interface Props {
     onSelect: (index: number) => void;
 }
 
-const RouteSelector: React.FC<Props> = ({ selectedIndex, routeCount, onSelect }) => {
+const RouteSelector: React.FC<Props> = ({
+    selectedIndex,
+    routeCount,
+    onSelect,
+}) => {
+    // only show when there are 2 or more routes
     if (routeCount <= 1) return null;
 
     return (
@@ -16,8 +27,10 @@ const RouteSelector: React.FC<Props> = ({ selectedIndex, routeCount, onSelect })
                 Select a Route:
             </Typography>
             <FormControl fullWidth>
+                <InputLabel id="route-select-label">Route</InputLabel>
                 <Select
                     labelId="route-select-label"
+                    label="Route"
                     value={selectedIndex}
                     onChange={(e) => onSelect(Number(e.target.value))}
                 >

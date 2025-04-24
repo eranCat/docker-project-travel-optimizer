@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter
 import httpx
 
@@ -5,6 +6,7 @@ router = APIRouter()
 
 @router.get("/autocomplete")
 async def autocomplete(q: str):
+    logging.debug(f"Autocomplete request for: {q}")
     url = "https://nominatim.openstreetmap.org/search"
     params = {
         "q": q,

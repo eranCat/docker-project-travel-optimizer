@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type SetStateAction<T> = T | ((prevState: T) => T);
 
