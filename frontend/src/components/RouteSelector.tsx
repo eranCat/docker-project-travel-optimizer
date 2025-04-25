@@ -18,21 +18,19 @@ const RouteSelector: React.FC<Props> = ({
     routeCount,
     onSelect,
 }) => {
-    // only show when there are 2 or more routes
     if (routeCount <= 1) return null;
 
     return (
-        <div style={{ marginBottom: "2rem" }}>
-            <Typography variant="subtitle1" fontWeight={500} gutterBottom>
-                Select a Route:
-            </Typography>
+        <div style={{ marginBottom: "1rem", marginTop: "1rem" }}>
             <FormControl fullWidth>
-                <InputLabel id="route-select-label">Route</InputLabel>
+                <InputLabel id="route-select-label">Select route</InputLabel>
                 <Select
                     labelId="route-select-label"
                     label="Route"
                     value={selectedIndex}
                     onChange={(e) => onSelect(Number(e.target.value))}
+                    variant="outlined"
+                    size="small"
                 >
                     {Array.from({ length: routeCount }).map((_, i) => (
                         <MenuItem key={i} value={i}>

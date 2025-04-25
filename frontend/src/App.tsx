@@ -101,8 +101,16 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
     localStorage.removeItem("travel-form-time");
   };
 
+  function createSearchQuery(poi: POI): string {
+    const parts: string[] = [poi.name];
+    if (poi.categories?.[0]) parts.push(poi.categories[0]);
+    if (poi.address) parts.push(poi.address);
+    const query = encodeURIComponent(parts.join(' '));
+    return `https://www.google.com/maps/search/?api=1&query=${query}`;
+  }
+
   return (
-    <MainLayout title="Travel Optimizer" footer="🚀 Built with React, Vite, and FastAPI" mode={mode} toggleTheme={toggleTheme}>
+    <MainLayout title="Travel Optimizer" footer="" mode={mode} toggleTheme={toggleTheme}>
       <RouteForm
         form={form}
         loading={loading}
@@ -117,11 +125,14 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
       {loading && <CoolLoader />}
       <AlertMessage message={error} />
 
-      <RouteSelector selectedIndex={selectedIndex} routeCount={routes.length} onSelect={setSelectedIndex} />
-
       <Box sx={{ display: "flex", gap: 2, mt: 2, height: 500 }}>
-        {/* POI List Panel */}
+        {/* Left Column: Route Selector and POI List */}
         <Paper sx={{ flex: 2, display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+          {/* Route Selector */}
+          <Box sx={{ px: 2, py: 1, borderBottom: "1px solid", borderColor: "divider" }}>
+            <RouteSelector selectedIndex={selectedIndex} routeCount={routes.length} onSelect={setSelectedIndex} />
+          </Box>
+          {/* POI List */}
           <Box sx={{ flex: 1, overflowY: "auto", px: 2 }}>
             <List dense>
               {pois.map((poi, idx) => (
@@ -130,21 +141,30 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
                     <Box sx={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, flexWrap: "wrap", textAlign: "start" }}>
                       <Box sx={{ flex: 1 }}>
                         <ListItemText
-                          primary={poi.name}
+                          primary={poi.address && (
+                            <a
+                              href={createSearchQuery(poi)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ display: "block", marginTop: "0.25rem", color: "#1976d2", textDecoration: "none" }}
+                            >
+                              {poi.name}
+                            </a>
+                          )}
+
                           secondary={
                             <>
-                              {poi.description && (
-                                <span style={{ display: "block", color: "gray", fontSize: "0.875rem" }}>{poi.description}</span>
-                              )}
-                              {poi.address && (
-                                <a
-                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${poi.name} ${poi.address}`)}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  style={{ display: "block", marginTop: "0.25rem", color: "#1976d2", textDecoration: "none" }}
-                                >
-                                  📍 {poi.address}
-                                </a>
+                              {
+                                <span style={{ display: "block", fontSize: "0.75rem" }}>
+                                  {poi.description}
+                                </span>
+                              }
+                              {poi.categories && (
+                                <span style={{ display: "block", color: "gray", fontSize: "0.875rem" }}>
+                                  {
+                                    (poi.categories.length == 1 ? "Category" : "Categories") + " : " + poi.categories.join(', ')
+                                  }
+                                </span>
                               )}
                             </>
                           }
