@@ -1,98 +1,62 @@
-# 🗺️ Travel Optimizer Backend
+🗺️ Travel Optimizer – Microservices Architecture
 
-A modular backend system for personalized travel route optimization using AI and real-world POI data. Built with FastAPI, Docker, and Ollama (LLM), this project delivers optimized travel routes based on user interests and geolocation.
+Overview
+--------
 
----
+Travel Optimizer is a modular, containerized web application that uses AI to generate personalized travel itineraries based on user interests. It features a FastAPI backend, an AI microservice powered by Ollama, and a modern frontend built with Next.js. The system fetches Points of Interest (POIs), calculates routes, and displays everything on an interactive map.
 
-## 📦 Tech Stack
+Recent Enhancements
+-------------------
 
-- **Python 3.10+**
-- **FastAPI** - high-performance API framework
-- **Ollama LLM** - smart POI interest matching
-- **OpenStreetMap + Overpass API** - real POI data
-- **Docker Compose** - for orchestration
-- **Pytest** - test suite
+✨ **Frontend**
+- 🚀 `Vite` framework
+- 📌 `App.tsx` with clickable POI links to Google Maps.
+- 🗺️ `MapViewer` to support category-based icons and better route display (font-awesome).
 
----
+🔧 **Backend Logic**
+- 🧠 Optimized AI microservice communication for POI generation using Ollama.
+- 🧭 Route planning with real POI locations and GeoJSON output.
 
-## 🧠 Features
+System Architecture
+-------------------
 
-- 🔍 Match POIs based on user interests (via LLM)
-- 📍 Geocode natural-language locations into coordinates
-- 🧭 Generate shortest routes between POIs
-- 🧰 Testable endpoints and services
-- 📦 Dockerized setup for portability
-- 📄 Structured Pydantic schemas
+The app is structured in microservices, each serving a distinct purpose:
 
----
+- 🧑‍💻 **Frontend (Next.js)** – User interface for travel input and route visualization.
+- 🧠 **AI Microservice (Ollama)** – Processes interests into relevant POI categories.
+- 🛰️ **Backend (FastAPI + Pydantic)** – Orchestrates POI matching, routing.
 
-## 🗺️ Architecture
+-------------------
+📊 System Diagram:
+------------------
+<img src="docs/architecture.png" alt="Architecture" width="80%" style="border:1px solid #ccc;"/>
 
-<div align="center">
-  <img src="docs/architecture.png" alt="Architecture" width="70%" style="border:1px solid #ccc;"/>
-</div>
+Run Locally
+-----------
 
----
+🚀 Prerequisites:
+- Docker & Docker Compose installed
+- Optional: Node.js + pnpm if editing frontend separately
 
-## 🚀 Getting Started
+📦 Clone the project:
 
-### 1. Clone the repo
-
-```bash
+```terminal
 git clone https://github.com/EASS-HIT-PART-A-2025-CLASS-VII/docker-project-travel-optimizer.git
 cd docker-project-travel-optimizer
+
 ```
-
-### 2. Configure Environment Variables
-
-Create a `.env` file with the following:
-
-```env
-OLLAMA_URL=http://ollama:11434
-```
-
-### 3. Run the App
-
-```bash
+🐳 Start with Docker:
+```terminal
 docker-compose up --build
 ```
 
-App will be available at `http://localhost:8000/docs`
+🌍 Access the app at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000/docs
 
----
+💡 To rebuild the containers after changes:
 
-## 🧪 Running Tests
-
-```bash
-docker exec -it travel-backend python run_tests.py
+```terminal
+docker-compose down 
+docker-compose up --build
 ```
-
----
-
-## 📬 API Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `POST /match-pois-llm` | Match POIs using LLM based on interests |
-| `POST /routes/generate-paths` | Generate optimal route with selected POIs |
-| `GET /docs` | Interactive Swagger UI |
-
----
-
-## 🌍 Example Request
-```POST /routes/generate-paths```
-```json
-{
-  "interests": "yoga, shows, italian food",
-  "location": "tel aviv",
-  "radius_km": 2,
-  "num_routes": 3,
-  "num_pois": 5
-}
-```
-
----
-
-## ✨ Credits
-
-Created as part of the Docker Engineering Project at EASS HIT Class VII (2025).
