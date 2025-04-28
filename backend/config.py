@@ -7,9 +7,10 @@ class Settings(BaseSettings):
     # Environment
     env: Literal["dev", "prod"] = "dev"
 
+    ors_api_key: str
+    
     # LLM-related
-    ollama_url: str
-    ollama_model: str
+    groq_api_key: str
 
     @field_validator("env")
     @classmethod

@@ -7,7 +7,7 @@ httpx
 requests
 spacy
 langdetect
-ollama
+openai
 python-jose[cryptography]
 passlib[bcrypt]
 bcrypt==3.2.0

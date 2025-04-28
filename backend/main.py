@@ -2,17 +2,13 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from routers import generate_paths,autocomplete_location,health
-from config import settings
 from fastapi.exceptions import HTTPException
 from utils.error_handlers import (
     http_exception_handler,
     unhandled_exception_handler,
 )
 import logging
-from utils.ollama_wait import wait_for_ollama_ready
 from fastapi.middleware.cors import CORSMiddleware
-
-wait_for_ollama_ready()  # Wait for Ollama to be ready before starting the app
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

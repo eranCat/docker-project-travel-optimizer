@@ -1,8 +1,8 @@
 import openrouteservice
 from typing import List, Tuple
-import os
+from config import settings
 
-ORS_API_KEY = os.getenv("ORS_API_KEY")
+ORS_API_KEY = settings.ors_api_key
 ors_client = openrouteservice.Client(key=ORS_API_KEY)
 
 

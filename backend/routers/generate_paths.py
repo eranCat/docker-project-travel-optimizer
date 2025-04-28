@@ -1,14 +1,12 @@
 import logging
 import math
 from fastapi import APIRouter, HTTPException
-from requests import request
 from schemas.overpass import OverpassTag
 from schemas.route_request import RouteGenerationRequest
 from services.maps.geocoding import geocode_location
 from services.maps.overpass_service import (
     get_overpass_tags_from_interests,
     get_pois_from_overpass,
-    order_pois_by_proximity,
 )
 from services.maps.route_service import get_real_route
 

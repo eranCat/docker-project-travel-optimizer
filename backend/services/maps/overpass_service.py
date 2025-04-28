@@ -1,20 +1,18 @@
 from functools import lru_cache
 import logging
+import openai
 import requests
 import json
 from typing import List, Dict, Tuple
 from fastapi import HTTPException
 from pathlib import Path
+from services.llm.groq_client import call_groq_for_tags
 from schemas.overpass import OverpassQueryParams, OverpassTag
 from config import settings
 from schemas.llm_suggestion import LLMPOISuggestion
 from geopy.distance import geodesic
-import datetime
-import re
 
 # Config
-OLLAMA_URL = settings.ollama_url
-OLLAMA_MODEL = settings.ollama_model
 OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
 OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
 
@@ -96,71 +94,7 @@ def extract_primary_category(tags: dict, overpass_tags: List[dict]) -> str | Non
 @lru_cache(maxsize=200)
 def get_overpass_tags_from_interests(user_interests: str) -> list[dict]:
     valid_tags = load_osm_tag_reference()
-    formatted_tags = [
-        f"{key}={val}" for key, values in valid_tags.items() for val in values
-    ]
-    formatted_tags = formatted_tags[:20]
-    readable_tag_list = "\n- ".join(formatted_tags)
-
-    prompt = f"""
-    You are a travel assistant AI. The user will provide their interests (e.g., "music, yoga, art, fashion").
-
-    Your task is to analyze the interests and return a JSON array of OpenStreetMap tag objects. Each tag object must include:
-    - "key": the OSM tag key (e.g., "tourism", "leisure")
-    - "value": the corresponding tag value (e.g., "museum", "gallery")
-
-    Only include tags from this list:
-    {json.dumps(readable_tag_list, indent=2)}
-
-    Only select tag values that represent places people can visit, explore, or hang out in. For example: museums, galleries, cafes, music venues, etc.
-
-    Avoid tags that usually refer to schools, kindergartens, government buildings, or closed institutions, unless they are commonly visited by the public.
-
-    Return ONLY a JSON array of objects. Do not include any other text.
-
-    User interests: {user_interests}
-    """.strip()
-
-    # logging.debug(f"🧠 Sending Overpass tag prompt to Ollama:{prompt}\n")
-
-    try:
-        response = requests.post(
-            OLLAMA_URL,
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "temperature": 0,
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-        raw_output = response.json().get("response", "")
-        logging.debug(f"📥 Ollama Overpass tag response:\n{raw_output}")
-
-        try:
-            parsed = json.loads(raw_output)
-        except json.JSONDecodeError:
-            logging.warning("Direct JSON decoding failed. Trying regex fallback.")
-            match = re.search(r"\[\s*.*?\s*\]", raw_output, re.DOTALL)
-            if not match:
-                raise ValueError("No JSON array found in LLM response.")
-            parsed = json.loads(match.group(0))
-
-        return [
-            tag
-            for tag in parsed
-            if isinstance(tag, dict) and tag.get("key") and tag.get("value")
-        ]
-
-    except Exception as e:
-        logging.error("❌ Ollama raw output was:")
-        logging.error(raw_output)
-        logging.error("❌ Tag parsing error:", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail=f"Ollama tag parsing failed: {str(e)}"
-        )
-
+    return call_groq_for_tags(user_interests, valid_tags)
 
 def deduplicate_pois(
     pois: List[LLMPOISuggestion], threshold_km: float = 0.4
@@ -262,23 +196,4 @@ def filter_pois_missing_data(overpass_tags, debug, elements):
 
         raw_pois.append(poi)
     return raw_pois
-
-
-def order_pois_by_proximity(start_poi, poi_list):
-    remaining = poi_list[:]
-    ordered = [start_poi]
-    remaining.remove(start_poi)
-
-    current = start_poi
-    while remaining:
-        next_poi = min(
-            remaining,
-            key=lambda p: geodesic(
-                (current.latitude, current.longitude), (p.latitude, p.longitude)
-            ).meters,
-        )
-        ordered.append(next_poi)
-        remaining.remove(next_poi)
-        current = next_poi
-
-    return ordered
+# End of file
