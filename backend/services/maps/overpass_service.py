@@ -147,7 +147,9 @@ def get_pois_from_overpass(
     deduped = deduplicate_pois(filtered)
     logging.debug(f"📊 Final POI count after deduplication: {len(deduped)}")
 
-    return deduped
+    ordered_pois = order_pois_by_proximity(deduped)
+
+    return ordered_pois
 
 
 def filter_pois_missing_data(overpass_tags, debug, elements):
@@ -196,4 +198,31 @@ def filter_pois_missing_data(overpass_tags, debug, elements):
 
         raw_pois.append(poi)
     return raw_pois
+
+
+def order_pois_by_proximity(pois: list) -> list:
+    if not pois:
+        return []
+
+    remaining = pois[:]
+    ordered = []
+
+    # Start from the first POI (can improve later if needed)
+    current = remaining.pop(0)
+    ordered.append(current)
+
+    while remaining:
+        next_poi = min(
+            remaining,
+            key=lambda p: geodesic(
+                (current.latitude, current.longitude), (p.latitude, p.longitude)
+            ).meters,
+        )
+        ordered.append(next_poi)
+        remaining.remove(next_poi)
+        current = next_poi
+
+    return ordered
+
+
 # End of file
