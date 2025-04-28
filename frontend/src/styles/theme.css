@@ -184,3 +184,24 @@ input:invalid {
 .location-dropdown li:hover {
     background: rgba(0, 0, 0, 0.04);
 }
+
+.poi-marker {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 36px;
+    height: 36px;
+    background: var(--poi-color, #3388ff);
+    color: white;
+    font-size: 18px;
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.leaflet-marker-icon:hover .poi-marker {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+}

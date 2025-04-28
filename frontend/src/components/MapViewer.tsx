@@ -156,12 +156,22 @@ const CATEGORY_ICONS: { [key: string]: string } = {
   default: 'fa-map-pin'
 };
 
-function getIconForCategory(categories?: string[]): L.DivIcon {
-  const category = categories?.find(cat => cat && typeof cat === 'string')?.toLowerCase() || 'default';
+const CATEGORY_COLORS: { [key: string]: string } = {
+  restaurant: "#ff6b6b",
+  cafe: "#ffb347",
+  park: "#28a745",
+  museum: "#6f42c1",
+  shop: "#fd7e14",
+  default: "#3388ff"
+};
+
+export function getIconForCategory(categories?: string[]): L.DivIcon {
+  const category = categories?.find(cat => typeof cat === 'string')?.toLowerCase() || 'default';
   const iconClass = CATEGORY_ICONS[category] || CATEGORY_ICONS['default'];
+  const color = CATEGORY_COLORS[category] || CATEGORY_COLORS['default'];
 
   const html = `
-    <div style="font-size: 24px; color: #3388ff; display: flex; justify-content: center; align-items: center; width: 32px; height: 32px;">
+    <div class="poi-marker" style="--poi-color: ${color};">
       <i class="fas ${iconClass}"></i>
     </div>
   `;
@@ -169,9 +179,9 @@ function getIconForCategory(categories?: string[]): L.DivIcon {
   return L.divIcon({
     html,
     className: '',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32]
+    iconSize: [36, 42],
+    iconAnchor: [18, 42],
+    popupAnchor: [0, -36],
   });
 }
 

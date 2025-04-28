@@ -146,7 +146,14 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
                               href={createSearchQuery(poi)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              style={{ display: "block", marginTop: "0.25rem", color: "#1976d2", textDecoration: "none" }}
+                              style={{
+                                display: "block",
+                                marginTop: "0.25rem",
+                                color: "#1976d2",
+                                textDecoration: "none",
+                                direction: detectDirectionFromText(poi.name),
+                                textAlign: "start",
+                              }}
                             >
                               {poi.name}
                             </a>
@@ -154,21 +161,36 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
 
                           secondary={
                             <>
-                              {
-                                <span style={{ display: "block", fontSize: "0.75rem" }}>
+                              {poi.description && (
+                                <span style={{
+                                  display: "block",
+                                  fontSize: "0.75rem",
+                                  direction: detectDirectionFromText(poi.description),
+                                  textAlign: "start",
+                                }}>
                                   {poi.description}
                                 </span>
-                              }
+                              )}
                               {poi.categories && (
-                                <span style={{ display: "block", color: "gray", fontSize: "0.875rem" }}>
-                                  {
-                                    (poi.categories.length == 1 ? "Category" : "Categories") + " : " + poi.categories.join(', ')
-                                  }
+                                <span style={{
+                                  display: "block",
+                                  color: "gray",
+                                  fontSize: "0.875rem",
+                                  direction: "ltr",  // Categories list is always LTR (tags)
+                                  textAlign: "start",
+                                }}>
+                                  {(poi.categories.length === 1 ? "Category" : "Categories") + " : " + poi.categories.join(', ')}
                                 </span>
                               )}
                             </>
                           }
+
+                          slotProps={{
+                            primary: { sx: { textAlign: "start" } },
+                            secondary: { sx: { textAlign: "start" } },
+                          }}
                         />
+
                       </Box>
                       <Button
                         variant="outlined"
@@ -195,5 +217,16 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
     </MainLayout>
   );
 }
+
+function detectDirectionFromText(text: string): "ltr" | "rtl" {
+  const rtlChars = /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/; // Hebrew, Arabic, Persian character ranges
+  for (const char of text) {
+    if (rtlChars.test(char)) {
+      return "rtl";
+    }
+  }
+  return "ltr";
+}
+
 
 export default App;
