@@ -1,8 +1,8 @@
 import logging
 import math
 from fastapi import APIRouter, HTTPException
-from schemas.overpass import OverpassTag
-from schemas.route_request import RouteGenerationRequest
+from models.overpass import OverpassTag
+from models.route_request import RouteGenerationRequest
 from services.maps.geocoding import geocode_location
 from services.maps.overpass_service import (
     get_overpass_tags_from_interests,
@@ -14,10 +14,7 @@ router = APIRouter()
 
 @router.post("/generate-paths")
 def generate_paths(request: RouteGenerationRequest):
-    lat, lon = geocode_location(request.location)
-    raw_tags = get_overpass_tags_from_interests(request.interests)
-    tags = [OverpassTag(**tag) for tag in raw_tags]
-    all_pois = get_pois_from_overpass((lat, lon), tags, request.radius_km)
+    all_pois = get_pois_from_overpass(request)
 
     if len(all_pois) < request.num_pois:
         logging.warning(

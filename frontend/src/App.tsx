@@ -52,8 +52,8 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (canceledRef.current) {
       canceledRef.current = false;
       return;
@@ -78,13 +78,38 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
 
       setRoutes(data.routes);
       setSelectedIndex(0);
-    } catch (err: any) {
-      if (err?.code === "ERR_CANCELED" || err?.name === "CanceledError") return;
-      const detailMessage = err?.response?.data?.detail || err?.message || "Failed to fetch routes.";
-      setError(detailMessage);
-      alert(`⚠️ ${detailMessage}`);
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const message = error.response?.data?.detail as string | undefined;
+
+        if (message) {
+          setError(message);
+
+          // 🌟 Only try to parse if message exists!
+          const foundMatch = message.match(/Found only (\d+) matching locations/);
+          if (foundMatch) {
+            const found = parseInt(foundMatch[1], 10);
+            if (found > 0 && found < 3) {
+              const confirmExpand = confirm("We found only a few locations. Would you like to try expanding your search radius by 2x?");
+              if (confirmExpand) {
+                setFormData(prev => {
+                  const newForm = { ...prev, radius_km: prev.radius_km * 2 };
+                  // Retry after short delay
+                  setTimeout(() => {
+                    handleSubmit();
+                  }, 300);
+                  return newForm;
+                });
+              }
+            }
+          }
+        } else {
+          setError("We couldn't find enough locations. Try adjusting your search.");
+        }
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
-      setAbortController(null);
       setLoading(false);
     }
   };

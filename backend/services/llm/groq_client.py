@@ -39,7 +39,6 @@ def call_groq_for_tags(user_interests: str, valid_tags: dict) -> list[dict]:
     formatted_tags = [
         f"{key}={val}" for key, values in valid_tags.items() for val in values
     ]
-    formatted_tags = formatted_tags[:20]
     readable_tag_list = "\n- ".join(formatted_tags)
 
     prompt = USER_PROMPT_TEMPLATE.format(

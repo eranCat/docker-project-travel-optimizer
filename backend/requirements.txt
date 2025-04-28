@@ -5,16 +5,8 @@ python-dotenv
 pydantic
 httpx
 requests
-spacy
-langdetect
 openai
-python-jose[cryptography]
-passlib[bcrypt]
-bcrypt==3.2.0
-pydantic-settings
 pytest
-python-multipart
-overpy
 geopy
-watchdog
+pydantic_settings
 openrouteservice==2.3.0

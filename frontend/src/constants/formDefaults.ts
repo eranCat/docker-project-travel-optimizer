@@ -4,4 +4,5 @@ export const DEFAULT_FORM = {
     radius_km: 10,
     num_routes: 3,
     num_pois: 5,
+    travel_mode: "walking",
 };

@@ -1,6 +1,15 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 from pydantic import BaseModel, Field
 from collections import defaultdict
+
+
+class OverpassElement(BaseModel):
+    id: int
+    type: str
+    tags: Optional[Dict[str, str]] = {}
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    center: Optional[Dict[str, float]] = None
 
 
 class OverpassTag(BaseModel):

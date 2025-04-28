@@ -7,6 +7,10 @@ import {
     TextField,
     Typography,
     Divider,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
 } from "@mui/material";
 import LocationAutocomplete from "./LocationAutocomplete";
 
@@ -16,6 +20,7 @@ interface FormData {
     radius_km: number;
     num_routes: number;
     num_pois: number;
+    travel_mode: string;
 }
 
 interface Props {
@@ -148,6 +153,31 @@ const RouteForm: React.FC<Props> = ({
                             🧹 Reset
                         </Button>
                     </Stack>
+
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                        <InputLabel id="travel-mode-label">Travel Mode</InputLabel>
+                        <Select
+                            labelId="travel-mode-label"
+                            id="travel-mode-select"
+                            name="travel_mode"
+                            value={form.travel_mode || ""}
+                            label="Travel Mode"
+                            onChange={(e) => {
+                                onChange({
+                                    target: {
+                                        name: "travel_mode",
+                                        value: e.target.value,
+                                    },
+                                } as any);
+                            }}
+                        >
+                            <MenuItem value="walking">🚶 Walking</MenuItem>
+                            <MenuItem value="driving">🚗 Driving</MenuItem>
+                            <MenuItem value="cycling">🚲 Cycling</MenuItem>
+                        </Select>
+
+                    </FormControl>
+
                 </Stack>
             </Box>
         </Paper>

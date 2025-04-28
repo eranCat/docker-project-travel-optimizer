@@ -1,23 +1,32 @@
 from functools import lru_cache
 import logging
-import openai
 import requests
 import json
-from typing import List, Dict, Tuple
+from typing import List, Dict
 from fastapi import HTTPException
 from pathlib import Path
+from services.maps.geocoding import geocode_location
+from models.route_request import RouteGenerationRequest
 from services.llm.groq_client import call_groq_for_tags
-from schemas.overpass import OverpassQueryParams, OverpassTag
-from config import settings
-from schemas.llm_suggestion import LLMPOISuggestion
+from models.overpass import OverpassElement, OverpassQueryParams, OverpassTag
+from models.llm_suggestion import LLMPOISuggestion
 from geopy.distance import geodesic
 
 # Config
 OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
 OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
 
-# --- Utilities ---
-
+GENERAL_FALLBACK_TAGS = [
+    OverpassTag(key="amenity", value="restaurant"),
+    OverpassTag(key="amenity", value="cafe"),
+    OverpassTag(key="amenity", value="marketplace"),
+    OverpassTag(key="tourism", value="attraction"),
+    OverpassTag(key="tourism", value="museum"),
+    OverpassTag(key="leisure", value="park"),
+    OverpassTag(key="leisure", value="garden"),
+    OverpassTag(key="shop", value="supermarket"),
+    OverpassTag(key="shop", value="convenience"),
+]
 
 def load_osm_tag_reference() -> Dict[str, List[str]]:
     try:
@@ -91,45 +100,68 @@ def extract_primary_category(tags: dict, overpass_tags: List[dict]) -> str | Non
 
 
 # --- LLM tag resolution ---
-@lru_cache(maxsize=200)
-def get_overpass_tags_from_interests(user_interests: str) -> list[dict]:
-    valid_tags = load_osm_tag_reference()
-    return call_groq_for_tags(user_interests, valid_tags)
+@lru_cache(maxsize=500)
+def get_overpass_tags_from_interests(interests: str) -> list[OverpassTag]:
+    # Step 1: Call Groq
+    validTags = load_osm_tag_reference()
+    tags_raw = call_groq_for_tags(interests, validTags)
 
-def deduplicate_pois(
-    pois: List[LLMPOISuggestion], threshold_km: float = 0.4
-) -> List[LLMPOISuggestion]:
-    unique = []
-    for poi in pois:
-        if any(
-            p.name == poi.name
-            and geodesic((p.latitude, p.longitude), (poi.latitude, poi.longitude)).km
-            < threshold_km
-            for p in unique
-        ):
-            continue
-        unique.append(poi)
-    return unique
+    if not tags_raw:
+        raise ValueError("LLM returned no tags")
 
+    corrected_tags = []
+
+    if tags_raw:
+            for tag_dict in tags_raw:
+                key = tag_dict.get("key")
+                value = tag_dict.get("value")
+
+                if not key or not value:
+                    continue
+
+                # Fix known hallucination mistakes
+                # if key == "market" and value == "marketplace":
+                #     corrected_tags.append(OverpassTag(key="amenity", value="marketplace"))
+                # else:
+                #     corrected_tags.append(OverpassTag(key=key, value=value))
+
+    # If nothing good found, fallback
+    if not corrected_tags:
+        logging.warning("⚠️ Groq returned invalid or no tags. Using general fallback categories.")
+        return GENERAL_FALLBACK_TAGS
+
+    # Optional: if corrected_tags are too rare (only 1 tag?), fallback
+    if len(corrected_tags) < 2:
+        logging.warning("⚠️ Very few tags found. Using general fallback categories.")
+        return GENERAL_FALLBACK_TAGS
+
+    return corrected_tags
 
 # --- Main Entry Point ---
 
 
 def get_pois_from_overpass(
-    location: Tuple[float, float],
-    overpass_tags: List[OverpassTag],
-    radius_km: float,
+    request:RouteGenerationRequest,
     debug: bool = False,
 ) -> List[LLMPOISuggestion]:
 
-    lat, lon = location
-    radius_m = int(radius_km * 1000)
+    lat, lon = geocode_location(request.location)
+    interests = request.interests
+    radius_m = int(request.radius_km * 1000)
+
+    # 🌟 Step 1: Get Overpass tags automatically from interests
+    overpass_tags = get_overpass_tags_from_interests(interests)
+
+    if not overpass_tags:
+        raise HTTPException(
+            status_code=400, detail="No valid tags generated from interests."
+        )
 
     query_params = OverpassQueryParams(
         tags=overpass_tags, lat=lat, lon=lon, radius_m=radius_m
     )
 
-    logging.debug(f"looking for : {overpass_tags}")
+    logging.debug(f"🔎 Looking for tags: {overpass_tags}")
 
     query = query_params.to_query()
     logging.debug(f"🛰️ Overpass query:\n{query}\n")
@@ -138,24 +170,33 @@ def get_pois_from_overpass(
         response = requests.post(OVERPASS_API_URL, data=query)
         response.raise_for_status()
         data = response.json()
-        elements = data.get("elements", [])
-        logging.debug(f"📦 Overpass returned {len(elements)} elements")
+        raw_elements = data.get("elements", [])
+        logging.debug(f"📦 Overpass returned {len(raw_elements)} elements")
+
+        # 🌟 Step 2: Parse to structured OverpassElements
+        elements = [OverpassElement(**e) for e in raw_elements]
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Overpass query failed: {str(e)}")
 
+    # 🌟 Step 2: Filter invalid elements
     filtered = filter_pois_missing_data(overpass_tags, debug, elements)
-    deduped = deduplicate_pois(filtered)
-    logging.debug(f"📊 Final POI count after deduplication: {len(deduped)}")
 
-    ordered_pois = order_pois_by_proximity(deduped)
+    logging.debug(f"📊 Final POI count : {len(filtered)}")
+
+    # 🌟 Step 3: Order POIs by proximity
+    ordered_pois = order_pois_by_proximity(filtered)
 
     return ordered_pois
 
 
-def filter_pois_missing_data(overpass_tags, debug, elements):
+def filter_pois_missing_data(
+    overpass_tags: List[OverpassTag], debug: bool, elements: List[OverpassElement]
+) -> List[LLMPOISuggestion]:
+
     raw_pois = []
     for element in elements:
-        tags = element.get("tags", {})
+        tags = element.tags
         if not tags:
             continue
 
@@ -167,11 +208,11 @@ def filter_pois_missing_data(overpass_tags, debug, elements):
         if not category and not debug:
             continue
 
-        if element.get("type") == "node":
-            el_lat = element.get("lat")
-            el_lon = element.get("lon")
+        if element.type == "node":
+            el_lat = element.lat
+            el_lon = element.lon
         else:
-            center = element.get("center", {})
+            center = element.center or {}
             el_lat = center.get("lat")
             el_lon = center.get("lon")
 
@@ -187,7 +228,7 @@ def filter_pois_missing_data(overpass_tags, debug, elements):
             description = f"{name} - {address}"
 
         poi = LLMPOISuggestion(
-            id=str(element.get("id", 0)),
+            id=str(element.id or 0),
             name=name or "Unnamed",
             description=description,
             latitude=el_lat,
