@@ -1,269 +1,193 @@
-from functools import lru_cache
 import logging
-import requests
 import json
-from typing import List, Dict
-from fastapi import HTTPException
+import requests
 from pathlib import Path
-from services.maps.geocoding import geocode_location
-from models.route_request import RouteGenerationRequest
-from services.llm.groq_client import call_groq_for_tags
-from models.overpass import OverpassElement, OverpassQueryParams, OverpassTag
-from models.llm_suggestion import LLMPOISuggestion
+from functools import lru_cache
+from itertools import groupby
+from typing import List, Dict, Optional
+
+from fastapi import APIRouter, HTTPException
 from geopy.distance import geodesic
 
-# Config
+from models.route_request import RouteGenerationRequest
+from models.overpass import OverpassElement, OverpassQueryParams, OverpassTag
+from models.llm_suggestion import LLMPOISuggestion
+from services.maps.geocoding import geocode_location
+from services.llm.groq_client import call_groq_for_tags
+
+router = APIRouter()
+
+# Configuration
 OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
 OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
+MIN_TAGS = 3  # minimum tags required from LLM
+MAX_TAGS_PER_KEY = 3  # maximum values per key
 
-GENERAL_FALLBACK_TAGS = [
-    OverpassTag(key="amenity", value="restaurant"),
-    OverpassTag(key="amenity", value="cafe"),
-    OverpassTag(key="amenity", value="marketplace"),
-    OverpassTag(key="tourism", value="attraction"),
-    OverpassTag(key="tourism", value="museum"),
-    OverpassTag(key="leisure", value="park"),
-    OverpassTag(key="leisure", value="garden"),
-    OverpassTag(key="shop", value="supermarket"),
-    OverpassTag(key="shop", value="convenience"),
-]
 
 def load_osm_tag_reference() -> Dict[str, List[str]]:
     try:
         with open(OSM_TAGS_CACHE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        logging.debug(f"⚠️ Failed to load OSM tags cache: {e}")
-        return {}
+        logging.error(f"Failed to load OSM tags cache: {e}")
+        raise HTTPException(
+            status_code=500, detail="OSM tag reference missing or invalid."
+        )
 
 
-def extract_address(tags: dict) -> str | None:
-    # Prefer full address if available
+def extract_address(tags: dict) -> Optional[str]:
     if "addr:full" in tags:
         return tags["addr:full"]
-
-    # Build address from parts
     parts = []
-    street = tags.get("addr:street") or tags.get("street")
-    house = tags.get("addr:housenumber")
-    city = tags.get("addr:city")
-
-    if street:
-        parts.append(street)
-    if house:
-        parts.append(house)
-    if city:
-        parts.append(city)
-
+    for field in ("addr:street", "street", "addr:housenumber", "addr:city"):
+        if tags.get(field):
+            parts.append(tags[field])
     if parts:
         return ", ".join(parts)
-
-    # Try fallback fields
-    for fallback_key in [
-        "location",
-        "place",
-        "road",
-        "addr:place",
-        "addr:neighbourhood",
-    ]:
-        if fallback := tags.get(fallback_key):
-            return fallback
-
-    # Try to infer from brand or name (least reliable)
+    for key in ("location", "place", "road", "addr:place", "addr:neighbourhood"):
+        if tags.get(key):
+            return tags[key]
     if "brand" in tags:
         return f"Near {tags['brand']}"
+    return None
 
-    return None  # nothing worked
 
-
-def extract_primary_category(tags: dict, overpass_tags: List[dict]) -> str | None:
-    # 1. First try matching LLM tags
-    valid_tag_set = {
-        (tag.key, tag.value) for tag in overpass_tags if tag.key and tag.value
-    }
-    for key, value in tags.items():
-        if (key, value) in valid_tag_set:
-            return value
-
-    # 2. Fallback: return the first "interesting" tag as category
-    priority_keys = ["amenity", "shop", "tourism", "cuisine", "leisure"]
-    for key in priority_keys:
+def extract_primary_category(tags: dict, overpass_tags: List[OverpassTag]) -> str:
+    valid_set = {(t.key, t.value) for t in overpass_tags}
+    for k, v in tags.items():
+        if (k, v) in valid_set:
+            return v
+    for key in ("amenity", "shop", "tourism", "cuisine", "leisure"):
         if key in tags:
             return tags[key]
-
-    # 3. Final fallback
-    for key, value in tags.items():
-        if isinstance(value, str) and key != "name":
-            return value
-
+    for k, v in tags.items():
+        if isinstance(v, str) and k != "name":
+            return v
     return "unknown"
 
 
-# --- LLM tag resolution ---
+def thin_pois_by_min_distance(
+    pois: List[LLMPOISuggestion], min_dist_m: float
+) -> List[LLMPOISuggestion]:
+    """
+    Keep only one POI within each min_dist_m radius.
+    Iterates greedily: for each POI in the input order,
+    adds it to the result if it's >= min_dist_m from all kept.
+    """
+    kept: List[LLMPOISuggestion] = []
+    for poi in pois:
+        too_close = False
+        for other in kept:
+            if (
+                geodesic(
+                    (poi.latitude, poi.longitude), (other.latitude, other.longitude)
+                ).meters
+                < min_dist_m
+            ):
+                too_close = True
+                break
+        if not too_close:
+            kept.append(poi)
+    return kept
+
+
 @lru_cache(maxsize=500)
-def get_overpass_tags_from_interests(interests: str) -> list[OverpassTag]:
-    # Step 1: Call Groq
-    validTags = load_osm_tag_reference()
-    tags_raw = call_groq_for_tags(interests, validTags)
+def get_overpass_tags_from_interests(interests: str) -> List[OverpassTag]:
+    valid_ref = load_osm_tag_reference()
+    try:
+        raw = call_groq_for_tags(interests, valid_ref)
+    except Exception as e:
+        logging.error(f"LLM tag generation error: {e}")
+        raise HTTPException(status_code=502, detail="Tag generation service error.")
 
-    if not tags_raw:
-        raise ValueError("LLM returned no tags")
+    if not isinstance(raw, list) or not raw:
+        raise HTTPException(
+            status_code=422, detail="No tags generated; please refine interests."
+        )
 
-    corrected_tags = []
+    corrected: List[OverpassTag] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        k = item.get("key")
+        v = item.get("value")
+        if k and v and k in valid_ref and v in valid_ref[k]:
+            corrected.append(OverpassTag(key=k, value=v))
+    if len(corrected) < MIN_TAGS:
+        raise HTTPException(
+            status_code=422,
+            detail="Insufficient tags generated; please refine interests.",
+        )
 
-    if tags_raw:
-            for tag_dict in tags_raw:
-                key = tag_dict.get("key")
-                value = tag_dict.get("value")
-
-                if not key or not value:
-                    continue
-
-                # Fix known hallucination mistakes
-                # if key == "market" and value == "marketplace":
-                #     corrected_tags.append(OverpassTag(key="amenity", value="marketplace"))
-                # else:
-                #     corrected_tags.append(OverpassTag(key=key, value=value))
-
-    # If nothing good found, fallback
-    if not corrected_tags:
-        logging.warning("⚠️ Groq returned invalid or no tags. Using general fallback categories.")
-        return GENERAL_FALLBACK_TAGS
-
-    # Optional: if corrected_tags are too rare (only 1 tag?), fallback
-    if len(corrected_tags) < 2:
-        logging.warning("⚠️ Very few tags found. Using general fallback categories.")
-        return GENERAL_FALLBACK_TAGS
-
-    return corrected_tags
-
-# --- Main Entry Point ---
+    # Prune to max per key
+    pruned: List[OverpassTag] = []
+    corrected.sort(key=lambda t: t.key)
+    for key, grp in groupby(corrected, key=lambda t: t.key):
+        lst = list(grp)
+        pruned.extend(lst[:MAX_TAGS_PER_KEY])
+    return pruned
 
 
 def get_pois_from_overpass(
-    request:RouteGenerationRequest,
-    debug: bool = False,
+    request: RouteGenerationRequest, debug: bool = False
 ) -> List[LLMPOISuggestion]:
-
+    """
+    Fetch, filter, thin and return POIs based on user request.
+    """
+    # Geocode user location
     lat, lon = geocode_location(request.location)
-    interests = request.interests
+    # Calculate radius in meters
     radius_m = int(request.radius_km * 1000)
-
-    # 🌟 Step 1: Get Overpass tags automatically from interests
-    overpass_tags = get_overpass_tags_from_interests(interests)
-
-    if not overpass_tags:
-        raise HTTPException(
-            status_code=400, detail="No valid tags generated from interests."
-        )
-
-    query_params = OverpassQueryParams(
-        tags=overpass_tags, lat=lat, lon=lon, radius_m=radius_m
-    )
-
-    logging.debug(f"🔎 Looking for tags: {overpass_tags}")
-
-    query = query_params.to_query()
-    logging.debug(f"🛰️ Overpass query:\n{query}\n")
-
+    # Step 1: Determine tags from interests
+    tags = get_overpass_tags_from_interests(request.interests)
+    # Build Overpass query
+    qp = OverpassQueryParams(tags=tags, lat=lat, lon=lon, radius_m=radius_m)
+    query = qp.to_query()
+    logging.debug(f"Overpass query:\n{query}\n")
+    # Execute Overpass
     try:
-        response = requests.post(OVERPASS_API_URL, data=query)
-        response.raise_for_status()
-        data = response.json()
-        raw_elements = data.get("elements", [])
-        logging.debug(f"📦 Overpass returned {len(raw_elements)} elements")
-
-        # 🌟 Step 2: Parse to structured OverpassElements
-        elements = [OverpassElement(**e) for e in raw_elements]
-
+        resp = requests.post(OVERPASS_API_URL, data=query, timeout=15)
+        resp.raise_for_status()
+        elements = [OverpassElement(**e) for e in resp.json().get("elements", [])]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Overpass query failed: {str(e)}")
-
-    # 🌟 Step 2: Filter invalid elements
-    filtered = filter_pois_missing_data(overpass_tags, debug, elements)
-
-    logging.debug(f"📊 Final POI count : {len(filtered)}")
-
-    # 🌟 Step 3: Order POIs by proximity
-    ordered_pois = order_pois_by_proximity(filtered)
-
-    return ordered_pois
-
-
-def filter_pois_missing_data(
-    overpass_tags: List[OverpassTag], debug: bool, elements: List[OverpassElement]
-) -> List[LLMPOISuggestion]:
-
-    raw_pois = []
-    for element in elements:
-        tags = element.tags
-        if not tags:
-            continue
-
-        name = tags.get("name")
+        logging.error(f"Overpass request failed: {e}")
+        raise HTTPException(
+            status_code=503, detail="Failed to fetch POIs from Overpass."
+        )
+    # Parse and filter elements
+    pois: List[LLMPOISuggestion] = []
+    for el in elements:
+        tags_el = el.tags or {}
+        name = tags_el.get("name")
         if not name and not debug:
             continue
-
-        category = extract_primary_category(tags, overpass_tags)
+        category = extract_primary_category(tags_el, tags)
         if not category and not debug:
             continue
-
-        if element.type == "node":
-            el_lat = element.lat
-            el_lon = element.lon
-        else:
-            center = element.center or {}
-            el_lat = center.get("lat")
-            el_lon = center.get("lon")
-
-        if not el_lat or not el_lon:
+        lat_el = el.lat if el.type == "node" else (el.center or {}).get("lat")
+        lon_el = el.lon if el.type == "node" else (el.center or {}).get("lon")
+        if lat_el is None or lon_el is None:
             continue
-
-        address = extract_address(tags)
+        address = extract_address(tags_el)
         if not address or address.startswith("Near "):
             continue
-
-        description = tags.get("description") or tags.get("note")
-        if not description or "unknown" in description.lower():
-            description = f"{name} - {address}"
-
-        poi = LLMPOISuggestion(
-            id=str(element.id or 0),
-            name=name or "Unnamed",
-            description=description,
-            latitude=el_lat,
-            longitude=el_lon,
-            address=address,
-            categories=[category],
+        desc = (
+            tags_el.get("description") or tags_el.get("note") or f"{name} - {address}"
         )
-
-        raw_pois.append(poi)
-    return raw_pois
-
-
-def order_pois_by_proximity(pois: list) -> list:
-    if not pois:
-        return []
-
-    remaining = pois[:]
-    ordered = []
-
-    # Start from the first POI (can improve later if needed)
-    current = remaining.pop(0)
-    ordered.append(current)
-
-    while remaining:
-        next_poi = min(
-            remaining,
-            key=lambda p: geodesic(
-                (current.latitude, current.longitude), (p.latitude, p.longitude)
-            ).meters,
+        pois.append(
+            LLMPOISuggestion(
+                id=str(el.id),
+                name=name,
+                description=desc,
+                latitude=lat_el,
+                longitude=lon_el,
+                address=address,
+                categories=[category],
+            )
         )
-        ordered.append(next_poi)
-        remaining.remove(next_poi)
-        current = next_poi
-
-    return ordered
-
-
-# End of file
+    # Step 2: Greedy thin by minimum spacing
+    if request.num_pois > 0:
+        min_dist = (request.radius_km * 1000) / request.num_pois
+        pois = thin_pois_by_min_distance(pois, min_dist)
+        logging.debug(f"After greedy thinning: {len(pois)} POIs")
+    return pois
