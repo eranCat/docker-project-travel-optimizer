@@ -58,7 +58,7 @@ def call_groq_for_tags(user_interests: str, valid_tags: dict) -> list[dict]:
         )
 
         raw_output = response.choices[0].message.content
-        logging.debug(f"📥 Groq raw output:\n{raw_output}")
+        # logging.debug(f"📥 Groq raw output:\n{raw_output}")
 
         try:
             parsed = json.loads(raw_output)

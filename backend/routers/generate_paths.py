@@ -27,6 +27,11 @@ def generate_paths(request: RouteGenerationRequest):
 
 
 def build_paths_from_pois(num_routes, num_pois,travel_mode, pois):
+    logging.debug(f"Trying to build {num_routes} routes from {len(pois)} POIs")
+
+    if len(pois) < num_pois:
+        raise HTTPException(status_code=400, detail=f"Only {len(pois)} POIs found, but {num_pois} required.")
+
 
     TRAVEL_MODE_MAPPING = {
         "walking": "foot-walking",
@@ -53,6 +58,9 @@ def build_paths_from_pois(num_routes, num_pois,travel_mode, pois):
                 last = selected[-1]
                 # Prefer POIs introducing new categories
                 diverse = [p for p in pool if not used_cats.intersection(p.categories)]
+                if len(diverse) < 3:
+                    diverse = pool
+
                 if diverse:
                     poi = min(
                         diverse,
@@ -70,6 +78,9 @@ def build_paths_from_pois(num_routes, num_pois,travel_mode, pois):
             selected.append(poi)
             used_cats.update(poi.categories)
             pool.remove(poi)
+            logging.debug(f"Route selected POIs: {[p.name for p in selected]}")
+            logging.debug(f"Route had categories: {used_cats}")
+
 
         # Skip too-short routes
         if len(selected) < 2:

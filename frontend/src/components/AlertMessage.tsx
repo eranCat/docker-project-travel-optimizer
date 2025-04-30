@@ -1,14 +1,12 @@
-import React from "react";
-import { Alert, Collapse } from "@mui/material";
+import { Alert, AlertTitle } from "@mui/material";
 
-const AlertMessage = ({ message }: { message: string }) => (
-    <Collapse in={!!message}>
-        {message && (
-            <Alert severity="error" sx={{ my: 2 }}>
-                {message}
-            </Alert>
-        )}
-    </Collapse>
-);
+export default function AlertMessage({ message }: { message: string }) {
+    if (!message) return null;
 
-export default AlertMessage;
+    return (
+        <Alert severity="error">
+            <AlertTitle>Error</AlertTitle>
+            <span style={{ whiteSpace: "pre-line" }}>{message}</span>
+        </Alert>
+    );
+}

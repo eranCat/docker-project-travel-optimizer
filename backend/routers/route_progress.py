@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import traceback
 from fastapi import APIRouter, HTTPException
@@ -25,6 +26,7 @@ async def route_progress(
         try:
             yield {"event": "stage", "data": "Converting interests to tags"}
             tags = get_overpass_tags_from_interests(interests)
+            logging.debug(f"Tags generated from interests: {tags}")
             await asyncio.sleep(0.1)
 
             yield {"event": "stage", "data": "Fetching POIs"}
@@ -37,6 +39,21 @@ async def route_progress(
                 travel_mode=travel_mode,
             )
             pois = get_pois_from_overpass(request_data,tags)
+            if not pois:
+                yield {
+                    "event": "error",
+                    "data": json.dumps(
+                        {
+                            "message": f"Only 0 POIs found for interests '{interests}' at '{location}' within {radius_km} km.",
+                            "suggestions": [
+                                "Try increasing the search radius.",
+                                "Try more general interests like 'parks, food, museums'.",
+                                "Make sure the location is specific and spelled correctly.",
+                            ],
+                        }
+                    ),
+                }
+
             await asyncio.sleep(0.1)
 
             yield {"event": "stage", "data": "Filtering & thinning POIs"}

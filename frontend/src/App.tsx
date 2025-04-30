@@ -4,7 +4,7 @@ import RouteSelector from "./components/RouteSelector";
 import AlertMessage from "./components/AlertMessage";
 import { LinearProgress, Typography, Box, Button, Paper, List, ListItem, ListItemText, Divider } from "@mui/material";
 import MainLayout from "./components/MainLayout";
-import { routeProgress, getLatestRoutes } from "./services/api";
+import { routeProgress, getLatestRoutes } from "./services/API";
 import { DEFAULT_FORM } from "./constants/formDefaults";
 import MapViewer from "./components/MapViewer";
 import { usePersistedState } from "./hooks/usePersistedState";
@@ -120,15 +120,40 @@ export default function App({ toggleTheme, mode }: { toggleTheme: () => void; mo
     source.addEventListener(
       "error",
       (event: MessageEvent) => {
-        // ✅ Ignore the error if the stream is already closed or null
         if (!sseRef.current || source.readyState === EventSource.CLOSED) {
           console.warn("🔥 Ignored SSE Error (already closed):", event);
           return;
         }
 
-        // ❌ If not, treat it as a real error
-        // console.warn("🔥 SSE Error:", event);
-        setError("❌ Unknown error from server");
+        let errorText = event.data || "❌ Unknown error from server";
+
+        try {
+          let parsed = null;
+          try {
+            parsed = JSON.parse(errorText);
+          } catch {
+            const match = errorText.match(/{.*}/s); // find JSON-like content
+            if (match) {
+              try {
+                parsed = JSON.parse(match[0].replace(/'/g, '"')); // fix single quotes
+              } catch {
+                // still failed, leave as raw string
+              }
+            }
+          }
+
+          if (typeof parsed === "object" && parsed.message) {
+            errorText = `❌ ${parsed.message}`;
+            if (Array.isArray(parsed.suggestions)) {
+              errorText += `\n\n💡 Suggestions:\n• ` + parsed.suggestions.join("\n• ");
+            }
+          }
+        } catch (err) {
+          // If it's not JSON, leave as-is
+        }
+
+        setError(errorText);
+
         setLoading(false);
         source.close();
         sseRef.current = null;
