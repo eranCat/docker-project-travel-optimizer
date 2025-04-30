@@ -7,6 +7,15 @@ const API = axios.create({
   },
 });
 
+export const fetchLocationSuggestions = async (query: string, signal?: AbortSignal) => {
+  const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/autocomplete`, {
+    params: { q: query },
+    signal,
+  });
+
+  return res.data || [];
+};
+
 export const generateRoutes = async (
   data: {
     interests: string;

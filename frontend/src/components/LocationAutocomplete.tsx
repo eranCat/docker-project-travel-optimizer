@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
     TextField,
     List,
@@ -9,6 +9,7 @@ import {
     Box,
 } from "@mui/material";
 import axios from "axios";
+import { fetchLocationSuggestions } from "../services/API";
 
 interface Props {
     value: string;
@@ -23,25 +24,36 @@ interface Suggestion {
 const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) => {
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    const [disableFetch, setDisableFetch] = useState(false);
+    const firstRenderRef = useRef(true);
 
     useEffect(() => {
+        if (firstRenderRef.current) {
+            firstRenderRef.current = false;
+            return;
+        }
+
+        if (disableFetch) {
+            setDisableFetch(false);
+            return;
+        }
+
+        if (!value || value.trim().length < 3) {
+            setSuggestions([]);
+            setShowDropdown(false);
+            return;
+        }
+
         const controller = new AbortController();
         const delayDebounce = setTimeout(() => {
-            if (value.trim().length > 2) {
-                axios
-                    .get(`${import.meta.env.VITE_API_BASE_URL}/autocomplete`, {
-                        params: { q: value },
-                        signal: controller.signal,
-                    })
-                    .then((res) => {
-                        setSuggestions(res.data || []);
-                        setShowDropdown(true);
-                    })
-                    .catch(() => { });
-            } else {
-                setSuggestions([]);
-                setShowDropdown(false);
-            }
+            fetchLocationSuggestions(value, controller.signal)
+                .then((res) => {
+                    setSuggestions(res);
+                    setShowDropdown(true);
+                    setHighlightedIndex(-1);
+                })
+                .catch(() => { });
         }, 300);
 
         return () => {
@@ -50,26 +62,12 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
         };
     }, [value]);
 
-    useEffect(() => {
-        const escHandler = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                setShowDropdown(false);
-            }
-        };
-
-        window.addEventListener("keydown", escHandler);
-        return () => window.removeEventListener("keydown", escHandler);
-    }, []);
-
-
     const handleSelect = (name: string) => {
         onSelect(name);
-
-        // Immediately hide the dropdown and clear suggestions
+        setDisableFetch(true);
         setShowDropdown(false);
         setSuggestions([]);
 
-        // Optionally blur the input
         requestAnimationFrame(() => {
             document.getElementById("location")?.blur();
         });
@@ -83,12 +81,32 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
                 label="Location"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                onBlur={() => setShowDropdown(false)}
+                onKeyDown={(e) => {
+                    if (!showDropdown || suggestions.length === 0) return;
+
+                    if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setHighlightedIndex((prev) => (prev + 1) % suggestions.length);
+                    } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setHighlightedIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+                    } else if (e.key === "Enter" && highlightedIndex >= 0) {
+                        e.preventDefault();
+                        handleSelect(suggestions[highlightedIndex].display_name);
+
+                        // Re-focus the field
+                        requestAnimationFrame(() => {
+                            document.querySelector<HTMLInputElement>('#location')?.focus();
+                        });
+                    } else if (e.key === "Escape") {
+                        setShowDropdown(false);
+                    }
+                }}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                 fullWidth
                 placeholder="📍 e.g., Tel Aviv"
                 autoComplete="off"
             />
-
 
             <Fade in={showDropdown && suggestions.length > 0} unmountOnExit>
                 <Paper
@@ -109,7 +127,16 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
                             <ListItemButton
                                 key={i}
                                 onClick={() => handleSelect(s.display_name)}
-                                sx={{ px: 2 }}
+                                selected={i === highlightedIndex}
+                                sx={{
+                                    px: 2,
+                                    '&.Mui-selected': {
+                                        backgroundColor: 'action.selected',
+                                    },
+                                    '&.Mui-selected:hover': {
+                                        backgroundColor: 'action.hover',
+                                    }
+                                }}
                             >
                                 <ListItemText primary={s.display_name} />
                             </ListItemButton>
