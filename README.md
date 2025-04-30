@@ -1,7 +1,10 @@
-# 📄 Travel Optimizer ✈️
+# ✈️ Travel Optimizer
 
-<p align="center">
-  <p align="left">
+An intelligent travel planning platform that suggests personalized Points of Interest (POIs) and generates optimized travel routes based on user interests and location.
+
+---
+
+<p align="left">
   <img src="https://img.shields.io/badge/TypeScript-55.5%25-3178c6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Python-34.7%25-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/CSS-5.3%25-264de4?style=for-the-badge&logo=css3&logoColor=white" alt="CSS" />
@@ -12,74 +15,71 @@
   <img src="https://img.shields.io/badge/Groq-LLM_API-4B0082?style=for-the-badge" alt="Groq API" />
 </p>
 
-</p>
-
-> An intelligent travel planning platform that suggests personalized Points of Interest (POIs) and generates optimized travel routes based on user interests and location.
-
 ---
 
-📊 System Diagram:
-------------------
+## 🖼️ System Diagram
+
 <img src="docs/diagram.png" alt="Architecture" style="border:1px solid #ccc; border-radius:8px;" />
 
 ---
 
-🚀 Tech Stack
--------------
+## 🌗 UI Preview (Light & Dark Modes)
 
-- **Frontend**: TypeScript, React, Vite
+<p align="center">
+  <img src="docs/demoLight.png" alt="Light Mode" width="48%" style="border:1px solid #ccc; border-radius:8px; margin-right: 8px;" />
+  <img src="docs/demoDark.png" alt="Dark Mode" width="48%" style="border:1px solid #ccc; border-radius:8px;" />
+</p>
+
+---
+
+## 🧱 Tech Stack
+
+- **Frontend**: React, TypeScript, Vite
 - **Styling**: CSS
 - **Backend**: Python, FastAPI
-- **Routing and Mapping APIs**: OpenStreetMap (Overpass API), OpenRouteService
-- **LLM Integration**: Groq API (using OpenAI-compatible client)
+- **Routing & Mapping APIs**:
+  - OpenStreetMap (Overpass API)
+  - OpenRouteService
+- **LLM Integration**: Groq API (OpenAI-compatible)
 - **Infrastructure**: Docker, Docker Compose
-- **Other**: HTML for structure and minor frontend parts
 
 ---
 
-## 🛠 Architecture Overview
+## 🧭 Features
 
-- **Frontend**  
-  Built with React and Vite, providing a dynamic and responsive interface.  
-  Allows users to input free-form interests and location, view suggested POIs, and visualize optimized routes on an interactive map.
-
-- **Backend**  
-  Powered by FastAPI.  
-  Handles POI suggestion, routing, and geocoding:
-  - **Interest Matching**: Integrates with Groq's LLM to translate user interests into valid OpenStreetMap tags.
-  - **POI Discovery**: Fetches real-time POIs from Overpass API around the selected location.
-  - **Route Optimization**: Calculates efficient travel paths using OpenRouteService API.
-
-- **LLM Prompting Strategy**  
-  The backend sends a predefined list of OpenStreetMap tags to Groq, ensuring valid and safe matching results without hallucinations.
-
-- **Stateless Design**  
-  No database is used. All data processing happens live per request, ensuring lightweight deployment and fast responses.
+- **Personalized POI Recommendations** — Tailored suggestions based on user preferences and location
+- **Optimized Route Generation** — Calculates efficient travel paths through selected POIs
+- **Interactive Map Visualization** — Renders routes and POIs on an interactive map
+- **Responsive UI** — Seamless user experience across desktop and mobile
+- **Modular Architecture** — Clean separation between logic and presentation for easy maintenance
 
 ---
 
-## 🧩 System Components
+## 🧩 Key Components
 
-| Component | Description |
-|:---|:---|
-| **Frontend** | React app served on port `5173`, communicating with the backend |
-| **Backend** | FastAPI app exposed on port `8000` |
-| **Groq API** | Used for intelligent interest-to-tag matching |
-| **Overpass API** | Used for live POI retrieval from OpenStreetMap |
-| **OpenRouteService API** | Used for generating optimal travel routes between selected POIs |
+- `RouteForm` — User input for travel preferences
+- `RouteSelector` — Switch between multiple generated routes
+- `POIList` — List of POIs with icons and categories
+- `MapViewer` — Map view with markers and routes
+- `RouteSidebar` — Combines selector and POI list into a panel
+- `MainContent` — Contains all user-visible elements
+- `MainLayout` — Overall layout structure, including header and footer
+- `useRouteGenerator` — Centralized logic/state management hook
 
 ---
 
 ## 🐳 Running the Project
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/eranCat/docker-project-travel-optimizer.git
    cd docker-project-travel-optimizer
    ```
 
 2. **Create a `.env` file under the `backend/` directory with:**
-   ```bash
+
+   ```env
    GROQ_API_KEY=your-groq-api-key
    ORS_API_KEY=your-openrouteservice-api-key
    ```
@@ -90,38 +90,56 @@
    ```
 
 4. **Access the application:**
-   - Backend API Docs → http://localhost:8000/docs
-   - Frontend Application → http://localhost:5173/
+
+   - Backend API Docs → http://localhost:8000/docs  
+   - Frontend Application → http://localhost:5173
+
 
 ---
 
-## 🌎 API Responsibilities
+## 🧪 Development
 
-| Endpoint | Description |
-|:---|:---|
-| `POST /routes/generate-paths` | Receives user interests and location; returns optimized travel paths with selected POIs |
-| `GET /autocomplete` | Autocompletes location queries using OpenStreetMap's Nominatim service |
-| `GET /health` | Health check endpoint for Docker and deployment validation |
+### Frontend
 
----
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## ✨ Highlights
+### Backend
 
-- 🔎 **Interest-Based Personalization**  
-  Using a hosted LLM to understand and match human interests to OpenStreetMap categories.
-  
-- 🗺️ **Real-Time POI Discovery**  
-  No outdated databases — POIs are always pulled live from OpenStreetMap based on user location.
-
-- 🚗 **Optimized Travel Routes**  
-  Routes are computed with real walking/driving distances using OpenRouteService, not simple straight lines.
-
-- 🧠 **Efficient and Clean Architecture**  
-  Backend and frontend are completely separated, containerized, and environment-driven.
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
 
 ---
 
-> Designed for speed, modularity, and real-world intelligent trip planning.  
-> Built with ❤️ for travelers who love optimized experiences.
+## 📡 API Responsibilities
+
+The FastAPI backend is responsible for:
+
+- **LLM-driven POI Tag Matching**  
+  Converts free-form interests (e.g. "vegan food, art, historic places") into structured POI tags using the Groq language model API.
+
+- **Geocoding Location**  
+  Translates user-input location (like "Tel Aviv") into geographic coordinates using OpenStreetMap’s Nominatim API.
+
+- **POI Discovery with Overpass API**  
+  Queries real-world POIs around the selected location using the Overpass API, filtered by LLM tags.
+
+- **Route Optimization**  
+  Connects POIs into optimized paths based on user settings (number of routes, travel mode, etc.) using OpenRouteService.
+
+- **Live Progress Feedback (SSE)**  
+  Uses Server-Sent Events (SSE) to stream backend progress stages (`Converting interests`, `Fetching POIs`, etc.) live to the frontend.
+
+- **Caching & Storage**  
+  Persists generated routes temporarily for retrieval and display after processing.
+
+- **Error Reporting and Suggestions**  
+  Returns structured error messages with optional suggestions (e.g. "Try increasing your search radius").
 
 ---

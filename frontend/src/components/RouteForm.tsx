@@ -50,7 +50,7 @@ const RouteForm: React.FC<Props> = ({
             sx={{
                 p: 4,
                 borderRadius: 3,
-                mb: 4,
+                mb: 3,
                 bgcolor: (theme) => theme.palette.background.paper,
             }}
         >
