@@ -11,6 +11,7 @@ import { usePersistedState } from "./hooks/usePersistedState";
 import { Feature } from "geojson";
 import { POI } from "./models/POI";
 import "./styles/theme.css";
+import { CATEGORY_ICONS, CATEGORY_COLORS } from './styles/icons'
 
 // RouteData shape coming from backend
 export type RouteData = {
@@ -247,17 +248,32 @@ export default function App({ toggleTheme, mode }: { toggleTheme: () => void; mo
                                   {poi.description}
                                 </span>
                               )}
-                              {poi.categories && (
-                                <span style={{
-                                  display: "block",
-                                  color: "gray",
-                                  fontSize: "0.875rem",
-                                  direction: "ltr",  // Categories list is always LTR (tags)
-                                  textAlign: "start",
-                                }}>
-                                  {(poi.categories.length === 1 ? "Category" : "Categories") + " : " + poi.categories.join(', ')}
-                                </span>
-                              )}
+                            {poi.categories && (
+                              <span style={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                                color: "gray",
+                                fontSize: "0.875rem",
+                                direction: "ltr",
+                                textAlign: "start",
+                              }}>
+                                {(poi.categories.length === 1 ? "Category" : "Categories") + " : "}
+                                {poi.categories.map((cat, idx) => {
+                                  const category = cat.toLowerCase();
+                                  const iconClass = CATEGORY_ICONS[category] || "fa-map-pin";
+
+                                  return (
+                                    <span key={idx} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                      <i className={`fas ${iconClass}`} style={{ fontSize: "1rem" }} />
+                                      {cat}
+                                    </span>
+                                  );
+                                })}
+                              </span>
+                            )}
+
                             </>
                           }
 
