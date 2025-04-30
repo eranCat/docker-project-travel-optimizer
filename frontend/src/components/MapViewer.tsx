@@ -196,7 +196,7 @@ function MapFlyToBounds({ pois }: { pois: POI[] }) {
   useEffect(() => {
     if (pois.length) {
       const bounds = pois.map((p) => [p.latitude, p.longitude]) as [number, number][];
-      map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+      map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
     }
   }, [pois, map]);
   return null;
@@ -206,7 +206,7 @@ function FlyToMarker({ lat, lon }: { lat: number; lon: number }) {
   const map = useMap();
   useEffect(() => {
     if (Number.isFinite(lat) && Number.isFinite(lon)) {
-      map.flyTo([lat, lon], 16);
+      map.flyTo([lat, lon], 18);
     } else {
       console.warn("FlyToMarker skipped invalid coords", { lat, lon });
     }

@@ -10,3 +10,4 @@ pytest
 geopy
 pydantic_settings
 openrouteservice==2.3.0
+sse-starlette

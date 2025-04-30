@@ -4,6 +4,7 @@ import {
     InputLabel,
     MenuItem,
     Select,
+    SelectChangeEvent,
     Typography,
 } from "@mui/material";
 
@@ -20,6 +21,13 @@ const RouteSelector: React.FC<Props> = ({
 }) => {
     if (routeCount <= 1) return null;
 
+    const handleSelect = (event: SelectChangeEvent<number>) => {
+        const newIndex = Number(event.target.value);
+        if (newIndex >= 0 && newIndex < routeCount) {
+            onSelect(newIndex);
+        }
+    };
+
     return (
         <div style={{ marginBottom: "1rem", marginTop: "1rem" }}>
             <FormControl fullWidth>
@@ -27,8 +35,8 @@ const RouteSelector: React.FC<Props> = ({
                 <Select
                     labelId="route-select-label"
                     label="Route"
-                    value={selectedIndex}
-                    onChange={(e) => onSelect(Number(e.target.value))}
+                    value={selectedIndex < routeCount ? selectedIndex : ""}
+                    onChange={handleSelect}
                     variant="outlined"
                     size="small"
                 >

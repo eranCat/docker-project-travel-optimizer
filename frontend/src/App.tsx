@@ -1,15 +1,13 @@
-import { useRef, useState } from "react";
+import React, { useRef, useState, FormEvent } from "react";
 import RouteForm from "./components/RouteForm";
 import RouteSelector from "./components/RouteSelector";
 import AlertMessage from "./components/AlertMessage";
-import CoolLoader from "./components/CoolLoader";
+import { LinearProgress, Typography, Box, Button, Paper, List, ListItem, ListItemText, Divider } from "@mui/material";
 import MainLayout from "./components/MainLayout";
-import { generateRoutes } from "./services/api";
+import { routeProgress, getLatestRoutes } from "./services/api";
 import { DEFAULT_FORM } from "./constants/formDefaults";
 import MapViewer from "./components/MapViewer";
 import { usePersistedState } from "./hooks/usePersistedState";
-import { Button, Box, Paper, List, ListItem, ListItemText, Divider } from "@mui/material";
-import React from "react";
 import { Feature } from "geojson";
 import { POI } from "./models/POI";
 import "./styles/theme.css";
@@ -20,18 +18,18 @@ export type RouteData = {
   pois: POI[];
 };
 
-function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "dark" }) {
+export default function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "dark" }) {
   const [form, setFormData] = usePersistedState("travel-form", DEFAULT_FORM);
   const [routes, setRoutes] = usePersistedState<RouteData[]>("travel-routes", []);
-
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [stage, setStage] = useState(0);
   const [error, setError] = useState("");
   const [locationSelected, setLocationSelected] = useState(false);
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const canceledRef = useRef(false);
+  // Track the currently focused POI for map centering
   const [focusedPOI, setFocusedPOI] = useState<POI | null>(null);
 
-  // current route and pois
   const currentRoute = routes[selectedIndex] ?? null;
   const pois = currentRoute ? currentRoute.pois : [];
   const currentRouteFeature = currentRoute ? currentRoute.feature : null;
@@ -44,7 +42,20 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
     form.num_routes > 0 &&
     form.num_pois > 0;
 
-  const canceledRef = useRef(false);
+  const stages = [
+    "Converting interests to tags",
+    "Fetching POIs",
+    "Filtering & thinning POIs",
+    "Building routes",
+    "Rendering results",
+  ];
+
+  function createSearchQuery(poi: POI): string {
+    const parts: string[] = [poi.name];
+    if (poi.categories?.[0]) parts.push(poi.categories[0]);
+    if (poi.address) parts.push(poi.address);
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts.join(' '))}`;
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -52,72 +63,86 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  const sseRef = useRef<EventSource | null>(null);
+
+  const handleSubmit = (e?: FormEvent) => {
     e?.preventDefault();
+    if (!isFormValid()) return;
     if (canceledRef.current) {
       canceledRef.current = false;
       return;
     }
 
-    const controller = new AbortController();
-    setAbortController(controller);
+    // Clean up any previous SSE
+    sseRef.current?.close();
     setLoading(true);
     setError("");
+    setStage(0);
 
-    try {
-      // now expecting data.routes: RouteData[]
-      const data = await generateRoutes(
-        {
-          ...form,
-          radius_km: Number(form.radius_km),
-          num_routes: Number(form.num_routes),
-          num_pois: Number(form.num_pois),
-        },
-        controller.signal
-      );
+    const source = routeProgress({
+      interests: form.interests,
+      location: form.location,
+      radius_km: form.radius_km,
+      num_routes: form.num_routes,
+      num_pois: form.num_pois,
+      travel_mode: form.travel_mode,
+    });
 
-      setRoutes(data.routes);
-      setSelectedIndex(0);
-    } catch (error: any) {
-      if (error.response?.status === 422) {
-        const message = error.response?.data?.detail as string | undefined;
+    sseRef.current = source;
 
-        if (message) {
-          setError(message);
+    source.addEventListener("stage", (event: MessageEvent) => {
+      const msg = event.data as string;
+      const idx = stages.indexOf(msg);
+      if (idx >= 0) setStage(idx);
+    });
 
-          // 🌟 Only try to parse if message exists!
-          const foundMatch = message.match(/Found only (\d+) matching locations/);
-          if (foundMatch) {
-            const found = parseInt(foundMatch[1], 10);
-            if (found > 0 && found < 3) {
-              const confirmExpand = confirm("We found only a few locations. Would you like to try expanding your search radius by 2x?");
-              if (confirmExpand) {
-                setFormData(prev => {
-                  const newForm = { ...prev, radius_km: prev.radius_km * 2 };
-                  // Retry after short delay
-                  setTimeout(() => {
-                    handleSubmit();
-                  }, 300);
-                  return newForm;
-                });
-              }
-            }
-          }
-        } else {
-          setError("We couldn't find enough locations. Try adjusting your search.");
-        }
-      } else {
-        setError("An unexpected error occurred. Please try again.");
+    source.addEventListener("complete", async (event: MessageEvent) => {
+      const routeId = event.data;
+
+      try {
+        const { routes: rawRoutes } = await getLatestRoutes(routeId);
+        // console.log("✅ Final route data:", rawRoutes);
+        setRoutes(rawRoutes);
+        setSelectedIndex(0);
+        setStage(stages.length - 1);
+        setError("");
+      } catch (err: any) {
+        console.error("❌ getLatestRoutes failed:", err);
+        setError("❌ Failed to load routes: " + (err?.message || "unknown"));
+      } finally {
+        setLoading(false);
+        source.close();
+        sseRef.current = null;
       }
-    } finally {
-      setLoading(false);
-    }
+    });
+
+
+    source.addEventListener(
+      "error",
+      (event: MessageEvent) => {
+        // ✅ Ignore the error if the stream is already closed or null
+        if (!sseRef.current || source.readyState === EventSource.CLOSED) {
+          console.warn("🔥 Ignored SSE Error (already closed):", event);
+          return;
+        }
+
+        // ❌ If not, treat it as a real error
+        // console.warn("🔥 SSE Error:", event);
+        setError("❌ Unknown error from server");
+        setLoading(false);
+        source.close();
+        sseRef.current = null;
+      },
+      { once: true }
+    );
+
+
   };
 
   const handleCancel = () => {
     canceledRef.current = true;
-    abortController?.abort();
-    setError("❌ Route generation was cancelled.");
+    setError("❌ Generation cancelled.");
+    setLoading(false);
     setTimeout(() => setError(""), 2000);
   };
 
@@ -125,14 +150,6 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
     setFormData({ ...DEFAULT_FORM });
     localStorage.removeItem("travel-form-time");
   };
-
-  function createSearchQuery(poi: POI): string {
-    const parts: string[] = [poi.name];
-    if (poi.categories?.[0]) parts.push(poi.categories[0]);
-    if (poi.address) parts.push(poi.address);
-    const query = encodeURIComponent(parts.join(' '));
-    return `https://www.google.com/maps/search/?api=1&query=${query}`;
-  }
 
   return (
     <MainLayout title="Travel Optimizer" footer="" mode={mode} toggleTheme={toggleTheme}>
@@ -147,17 +164,26 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
         onValidLocationSelected={() => setLocationSelected(true)}
       />
 
-      {loading && <CoolLoader />}
+      {loading && (
+        <Box sx={{ width: '100%', mb: 2 }}>
+          <Typography variant="body2" color="textSecondary" component="span">
+            {stages[stage]}
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={Math.min(((stage + 1) / stages.length) * 100, 100)}
+          />
+        </Box>
+      )}
       <AlertMessage message={error} />
 
       <Box sx={{ display: "flex", gap: 2, mt: 2, height: 500 }}>
-        {/* Left Column: Route Selector and POI List */}
         <Paper sx={{ flex: 2, display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-          {/* Route Selector */}
           <Box sx={{ px: 2, py: 1, borderBottom: "1px solid", borderColor: "divider" }}>
+            {routes.length > 0 &&
             <RouteSelector selectedIndex={selectedIndex} routeCount={routes.length} onSelect={setSelectedIndex} />
+            }
           </Box>
-          {/* POI List */}
           <Box sx={{ flex: 1, overflowY: "auto", px: 2 }}>
             <List dense>
               {pois.map((poi, idx) => (
@@ -165,12 +191,12 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
                   <ListItem alignItems="flex-start" disableGutters>
                     <Box sx={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, flexWrap: "wrap", textAlign: "start" }}>
                       <Box sx={{ flex: 1 }}>
-                        <ListItemText
+                      <ListItemText
                           primary={poi.address && (
-                            <a
-                              href={createSearchQuery(poi)}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                          <a
+                            href={createSearchQuery(poi)}
+                            target="_blank"
+                            rel="noopener noreferrer"
                               style={{
                                 display: "block",
                                 marginTop: "0.25rem",
@@ -179,13 +205,13 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
                                 direction: detectDirectionFromText(poi.name),
                                 textAlign: "start",
                               }}
-                            >
-                              {poi.name}
-                            </a>
+                          >
+                            {poi.name}
+                          </a>
                           )}
 
-                          secondary={
-                            <>
+                        secondary={
+                          <>
                               {poi.description && (
                                 <span style={{
                                   display: "block",
@@ -244,14 +270,6 @@ function App({ toggleTheme, mode }: { toggleTheme: () => void; mode: "light" | "
 }
 
 function detectDirectionFromText(text: string): "ltr" | "rtl" {
-  const rtlChars = /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/; // Hebrew, Arabic, Persian character ranges
-  for (const char of text) {
-    if (rtlChars.test(char)) {
-      return "rtl";
-    }
-  }
-  return "ltr";
+  const rtlChars = /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+  return rtlChars.test(text) ? "rtl" : "ltr";
 }
-
-
-export default App;

@@ -129,7 +129,7 @@ def get_overpass_tags_from_interests(interests: str) -> List[OverpassTag]:
 
 
 def get_pois_from_overpass(
-    request: RouteGenerationRequest, debug: bool = False
+    request: RouteGenerationRequest,tags, debug: bool = False
 ) -> List[LLMPOISuggestion]:
     """
     Fetch, filter, thin and return POIs based on user request.
@@ -138,8 +138,6 @@ def get_pois_from_overpass(
     lat, lon = geocode_location(request.location)
     # Calculate radius in meters
     radius_m = int(request.radius_km * 1000)
-    # Step 1: Determine tags from interests
-    tags = get_overpass_tags_from_interests(request.interests)
     # Build Overpass query
     qp = OverpassQueryParams(tags=tags, lat=lat, lon=lon, radius_m=radius_m)
     query = qp.to_query()

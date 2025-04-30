@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from routers import generate_paths,autocomplete_location,health
+from routers import generate_paths, autocomplete_location, health, route_progress
 from fastapi.exceptions import HTTPException
 from utils.error_handlers import (
     http_exception_handler,
@@ -43,5 +43,6 @@ app.add_exception_handler(Exception, unhandled_exception_handler)
 
 app.include_router(generate_paths.router, prefix="/routes")
 app.include_router(autocomplete_location.router)
+app.include_router(route_progress.router)
 
 app.include_router(health.router)

@@ -5,7 +5,7 @@ from geopy.distance import geodesic
 
 from models.route_request import RouteGenerationRequest
 from services.maps.route_service import get_real_route
-from services.maps.overpass_service import get_pois_from_overpass
+from services.maps.overpass_service import get_overpass_tags_from_interests, get_pois_from_overpass
 
 router = APIRouter()
 
@@ -13,7 +13,8 @@ router = APIRouter()
 def generate_paths(request: RouteGenerationRequest):
     # Fetch POIs
     try:
-        pois = get_pois_from_overpass(request)
+        tags = get_overpass_tags_from_interests(request.interests)
+        pois = get_pois_from_overpass(request,tags)
     except HTTPException:
         raise  # propagate HTTP errors
     except Exception as e:
@@ -21,16 +22,29 @@ def generate_paths(request: RouteGenerationRequest):
         raise HTTPException(status_code=503, detail="Failed to retrieve POIs")
 
     logging.debug(f"Retrieved {len(pois)} POIs")
+    paths = build_paths_from_pois(request.num_routes,request.num_pois,request.travel_mode, pois)
+    return paths
+
+
+def build_paths_from_pois(num_routes, num_pois,travel_mode, pois):
+
+    TRAVEL_MODE_MAPPING = {
+        "walking": "foot-walking",
+        "driving": "driving-car",
+        "cycling": "cycling-regular",
+    }
+    ors_profile = TRAVEL_MODE_MAPPING.get(travel_mode, "foot-walking")
+
     routes = []
 
     # Build each route
-    for _ in range(request.num_routes):
+    for _ in range(num_routes):
         pool = pois.copy()
         selected = []
         used_cats = set()
 
         # Select diverse POIs
-        for _ in range(request.num_pois):
+        for _ in range(num_pois):
             if not pool:
                 break
             if not selected:
@@ -64,7 +78,7 @@ def generate_paths(request: RouteGenerationRequest):
         coords = [(p.longitude, p.latitude) for p in selected]
         # Generate real-world path
         try:
-            path = get_real_route(coords, profile="foot-walking")
+            path = get_real_route(coords, profile=ors_profile)
         except Exception as e:
             logging.error(f"Routing error: {e}")
             continue
