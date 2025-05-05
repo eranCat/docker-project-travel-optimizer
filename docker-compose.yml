@@ -16,6 +16,17 @@ services:
       retries: 3
       start_period: 10s
 
+  backend-tests:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: travel-backend-tests
+    command: ["sh", "-c", "PYTHONPATH=. pytest tests"]
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - backend
+
   frontend:
     build:
       context: ./frontend

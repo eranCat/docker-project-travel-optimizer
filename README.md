@@ -95,6 +95,26 @@ An intelligent travel planning platform that suggests personalized Points of Int
    - Frontend Application → http://localhost:5173
 
 
+## 🔐 How to Get API Keys
+
+### 📘 How to Get a Groq API Key
+
+1. Visit [https://console.groq.com/keys](https://console.groq.com/keys)
+2. Sign in or create an account
+3. Navigate to **API Keys**
+4. Click **Create New Key** and copy it
+
+> ⚠️ Groq provides OpenAI-compatible endpoints for LLM-based processing (used for POI tag suggestions).
+
+### 🗺️ How to Get an OpenRouteService API Key
+
+1. Go to [https://openrouteservice.org/dev/#/signup](https://openrouteservice.org/dev/#/signup)
+2. Register and log in
+3. Under the **API Keys** section, create a new key
+4. Use it as your `ORS_API_KEY`
+
+> 🔑 OpenRouteService is used to calculate real-world routes and travel distances.
+
 ---
 
 ## 🧪 Development
@@ -113,6 +133,31 @@ npm run dev
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload
+```
+
+## 🧪 Running Unit Tests in Docker
+
+To run all backend unit tests using Docker:
+
+```bash
+docker compose run backend-tests
+```
+
+This will:
+
+* Spin up a container from your backend service image
+* Run all test files under `backend/tests/`
+* Clean up the container afterward
+
+You should see output like:
+
+```
+collected 4 items
+
+tests/test_geocoding.py . ✅
+tests/test_groq_client.py . ✅
+tests/test_overpass_service.py . ✅
+tests/test_route_service.py . ✅
 ```
 
 ---
