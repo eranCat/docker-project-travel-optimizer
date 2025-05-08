@@ -3,7 +3,7 @@ import logging
 import re
 from fastapi import HTTPException
 from openai import OpenAI
-from config import settings
+from app.config import settings
 
 # Setup Groq API client
 client = OpenAI(

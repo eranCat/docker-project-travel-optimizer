@@ -1,7 +1,7 @@
 import logging
 import json
-import requests
 from pathlib import Path
+import requests
 from functools import lru_cache
 from itertools import groupby
 from typing import List, Dict, Optional
@@ -12,16 +12,16 @@ from geopy.distance import geodesic
 from models.route_request import RouteGenerationRequest
 from models.overpass import OverpassElement, OverpassQueryParams, OverpassTag
 from models.llm_suggestion import LLMPOISuggestion
-from services.maps.geocoding import geocode_location
-from services.llm.groq_client import call_groq_for_tags
+
+from app.services.maps.geocoding import geocode_location
 
 router = APIRouter()
 
 # Configuration
 OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
-OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
 MIN_TAGS = 3  # minimum tags required from LLM
 MAX_TAGS_PER_KEY = 3  # maximum values per key
+OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
 
 
 def load_osm_tag_reference() -> Dict[str, List[str]]:
@@ -95,7 +95,7 @@ def thin_pois_by_min_distance(
 def get_overpass_tags_from_interests(interests: str) -> List[OverpassTag]:
     valid_ref = load_osm_tag_reference()
     try:
-        raw = call_groq_for_tags(interests, valid_ref)
+        raw = call_llm_service_for_tags(interests, valid_ref)
     except Exception as e:
         logging.error(f"LLM tag generation error: {e}")
         raise HTTPException(status_code=502, detail="Tag generation service error.")
@@ -129,7 +129,7 @@ def get_overpass_tags_from_interests(interests: str) -> List[OverpassTag]:
 
 
 def get_pois_from_overpass(
-    request: RouteGenerationRequest,tags, debug: bool = False
+    request: RouteGenerationRequest, tags: List[OverpassTag], debug: bool = False
 ) -> List[LLMPOISuggestion]:
     """
     Fetch, filter, thin and return POIs based on user request.
@@ -189,3 +189,17 @@ def get_pois_from_overpass(
         pois = thin_pois_by_min_distance(pois, min_dist)
         logging.debug(f"After greedy thinning: {len(pois)} POIs")
     return pois
+
+
+def call_llm_service_for_tags(interests: str, valid_tags: dict) -> List[Dict[str, str]]:
+    try:
+        res = requests.post(
+            "http://llm-service:8002/generate-tags",  # service name in docker-compose
+            json={"interests": interests, "valid_tags": valid_tags},
+            timeout=10,
+        )
+        res.raise_for_status()
+        return res.json()
+    except Exception as e:
+        logging.error(f"Failed to call LLM service: {e}")
+        raise HTTPException(status_code=502, detail="LLM service unreachable.")
