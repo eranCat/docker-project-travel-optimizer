@@ -3,9 +3,8 @@ import json
 import logging
 import traceback
 from fastapi import APIRouter, HTTPException
+from services.maps.maps_client import call_optimized_routes_from_maps_service, call_pois_from_maps_service
 from models.route_request import RouteGenerationRequest
-from routers.generate_paths import build_paths_from_pois
-from services.maps.overpass_service import get_overpass_tags_from_interests, get_pois_from_overpass
 from sse_starlette.sse import EventSourceResponse
 import uuid
 from routers.routes_cache import routes_cache
@@ -24,12 +23,7 @@ async def route_progress(
 ):
     async def event_generator():
         try:
-            yield {"event": "stage", "data": "Converting interests to tags"}
-            tags = get_overpass_tags_from_interests(interests)
-            logging.debug(f"Tags generated from interests: {tags}")
-            await asyncio.sleep(0.1)
-
-            yield {"event": "stage", "data": "Fetching POIs"}
+            # Build request
             request_data = RouteGenerationRequest(
                 location=location,
                 interests=interests,
@@ -38,7 +32,9 @@ async def route_progress(
                 num_pois=num_pois,
                 travel_mode=travel_mode,
             )
-            pois = get_pois_from_overpass(request_data,tags)
+
+            yield {"event": "stage", "data": "Fetching POIs from maps_service"}
+            pois = call_pois_from_maps_service(request_data)
             if not pois:
                 yield {
                     "event": "error",
@@ -53,14 +49,13 @@ async def route_progress(
                         }
                     ),
                 }
+                return
 
             await asyncio.sleep(0.1)
 
-            yield {"event": "stage", "data": "Filtering & thinning POIs"}
-            await asyncio.sleep(0.1)
+            yield {"event": "stage", "data": "Generating optimized routes"}
+            routes = call_optimized_routes_from_maps_service(request_data, pois)
 
-            yield {"event": "stage", "data": "Building routes"}
-            routes = build_paths_from_pois(num_routes, num_pois,travel_mode ,pois)
             await asyncio.sleep(0.1)
 
             route_id = str(uuid.uuid4())
@@ -71,9 +66,7 @@ async def route_progress(
         except Exception as e:
             logging.exception("❌ Exception in route-progress")
 
-            message = str(e)
-            if not message:
-                message = traceback.format_exc(limit=1).splitlines()[-1]
+            message = str(e) or traceback.format_exc(limit=1).splitlines()[-1]
             yield {"event": "error", "data": message}
 
     return EventSourceResponse(event_generator())

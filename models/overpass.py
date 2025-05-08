@@ -23,6 +23,7 @@ class OverpassQueryParams(BaseModel):
     lon: float
     radius_m: int = Field(..., gt=0)
 
+
     def to_query(self) -> str:
         grouped_tags: Dict[str, set[str]] = defaultdict(set)
         for tag in self.tags:
@@ -34,6 +35,10 @@ class OverpassQueryParams(BaseModel):
             for element in ("node", "way", "relation")
         ]
 
+        filter_block = "\n  ".join(filters)  # 🛠️ Fix: move this out of the f-string
+
         return f"""[out:json][timeout:25];
-        ({'\n  '.join(filters)});
-        out center tags;""".strip()
+            (
+            {filter_block}
+            );
+            out center tags;""".strip()
