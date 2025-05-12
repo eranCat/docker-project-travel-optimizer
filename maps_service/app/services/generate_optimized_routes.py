@@ -9,7 +9,9 @@ from models.route_request import RouteGenerationRequest
 from geopy.distance import geodesic
 
 
-def generate_optimized_routes(request: RouteGenerationRequest, pois: List[LLMPOISuggestion]):
+def generate_optimized_routes(
+    request: RouteGenerationRequest, pois: List[LLMPOISuggestion]
+):
     num_routes = request.num_routes
     num_pois = request.num_pois
     logging.debug(f"Trying to build {num_routes} routes from {len(pois)} POIs")

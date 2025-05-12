@@ -152,7 +152,7 @@ def get_pois_from_overpass(
         raise HTTPException(
             status_code=503, detail="Failed to fetch POIs from Overpass."
         )
-    # Parse and filter elements
+    # Filter elements by interests in description and matching tags
     pois: List[LLMPOISuggestion] = []
     for el in elements:
         tags_el = el.tags or {}
@@ -169,9 +169,15 @@ def get_pois_from_overpass(
         address = extract_address(tags_el)
         if not address or address.startswith("Near "):
             continue
-        desc = (
-            tags_el.get("description") or tags_el.get("note") or f"{name} - {address}"
-        )
+        desc = tags_el.get("description") or tags_el.get("note") or f"{name} - {address}"
+
+        # Check if description contains any interest or tags match
+        if not (
+            any(interest.lower() in desc.lower() for interest in request.interests)
+            or any(tag.key in tags_el and tags_el[tag.key] == tag.value for tag in tags)
+        ):
+            continue
+
         pois.append(
             LLMPOISuggestion(
                 id=str(el.id),

@@ -1,8 +1,12 @@
+import logging
 from fastapi import FastAPI
 from typing import List, Tuple, Dict
 
 from app.services.maps.geocoding import geocode_location
-from app.services.maps.overpass_service import get_overpass_tags_from_interests, get_pois_from_overpass
+from app.services.maps.overpass_service import (
+    get_overpass_tags_from_interests,
+    get_pois_from_overpass,
+)
 from app.services.generate_optimized_routes import generate_optimized_routes
 
 from models.route_request import RouteGenerationRequest
@@ -31,6 +35,7 @@ async def pois(request: RouteGenerationRequest):
     Given interests, location, radius, num_routes etc. return a list of POIs.
     """
     tags = get_overpass_tags_from_interests(request.interests)
+    logging.debug(f"Generated tags from interests: {tags}")
     pois = get_pois_from_overpass(request,tags)
     return pois
 

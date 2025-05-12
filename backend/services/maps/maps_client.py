@@ -11,7 +11,7 @@ def call_pois_from_maps_service(
 ) -> List[LLMPOISuggestion]:
     try:
         response = requests.post(
-            f"{BASE_URL}/pois/", json=request.model_dump(), timeout=10
+            f"{BASE_URL}/pois/", json=request.model_dump(), timeout=30
         )
         response.raise_for_status()
         pois_data = response.json()
