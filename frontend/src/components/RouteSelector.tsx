@@ -27,14 +27,14 @@ const RouteSelector: React.FC<Props> = ({
             onSelect(newIndex);
         }
     };
-
+    const label = "Select route";
     return (
         <div style={{ marginBottom: "1rem", marginTop: "1rem" }}>
             <FormControl fullWidth>
-                <InputLabel id="route-select-label">Select route</InputLabel>
+                <InputLabel id="route-select-label">{label}</InputLabel>
                 <Select
                     labelId="route-select-label"
-                    label="Route"
+                    label={label}
                     value={selectedIndex < routeCount ? selectedIndex : ""}
                     onChange={handleSelect}
                     variant="outlined"

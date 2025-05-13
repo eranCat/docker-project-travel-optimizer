@@ -11,8 +11,8 @@ export default function LoadingProgress({ loading, stages, stage }: LoadingProgr
 
     return (
         <Box sx={{ width: "100%", mb: 2 }}>
-            <Typography variant="body2" color="textSecondary" component="span">
-                {stages[stage]}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                {stages[stage] ?? "Loading..."}
             </Typography>
             <LinearProgress
                 variant="determinate"

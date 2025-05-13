@@ -1,4 +1,4 @@
-import { Box, Paper } from "@mui/material";
+import { Box, Paper, useTheme } from "@mui/material";
 import RouteSelector from "./RouteSelector";
 import POIList from "./POIList";
 import { POI } from "../models/POI";
@@ -18,22 +18,30 @@ export default function RouteSidebar({
     pois,
     onFocusPOI,
 }: RouteSidebarProps) {
+    const theme = useTheme();
+
     return (
         <Paper
             sx={{
-                flex: 2,
                 display: "flex",
                 flexDirection: "column",
-                height: "100%",
+                flexGrow: 1,
+                m: 2,
                 overflow: "hidden",
+                minHeight: 0,
+                backgroundColor: theme.palette.background.paper,
+                borderRadius: 2,
+                boxShadow: theme.shadows[2],
             }}
         >
+            {/* Header: Route dropdown */}
             <Box
                 sx={{
                     px: 2,
                     py: 1,
                     borderBottom: "1px solid",
                     borderColor: "divider",
+                    flexShrink: 0,
                 }}
             >
                 {routesCount > 0 && (
@@ -44,7 +52,16 @@ export default function RouteSidebar({
                     />
                 )}
             </Box>
-            <Box sx={{ flex: 1, overflowY: "auto", px: 2 }}>
+
+            {/* Scrollable content (POI list) */}
+            <Box
+                sx={{
+                    flexGrow: 1,
+                    overflowY: "auto",
+                    px: 2,
+                    minHeight: 0,
+                }}
+            >
                 <POIList pois={pois} onFocusPOI={onFocusPOI} />
             </Box>
         </Paper>

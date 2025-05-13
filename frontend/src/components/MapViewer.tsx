@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { Feature } from 'geojson';
 import { useTheme } from '@mui/material';
 import { POI } from '../models/POI';
-import { CATEGORY_ICONS ,CATEGORY_COLORS} from '../styles/icons'
+import { CATEGORY_ICONS, CATEGORY_COLORS } from '../styles/icons'
 
 // Load Font Awesome
 const fontAwesomeLink = document.createElement('link');
@@ -44,11 +44,16 @@ function MapFlyToBounds({ pois }: { pois: POI[] }) {
   useEffect(() => {
     if (pois.length) {
       const bounds = pois.map((p) => [p.latitude, p.longitude]) as [number, number][];
-      map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
+      map.flyToBounds(bounds, {
+        padding: [20, 20],
+        duration: 1,
+        maxZoom: 17,
+      });
     }
   }, [pois, map]);
   return null;
 }
+
 
 function FlyToMarker({ lat, lon }: { lat: number; lon: number }) {
   const map = useMap();
@@ -85,7 +90,10 @@ function RouteLine({ routeFeature }: { routeFeature: Feature | null }) {
   return (
     <Polyline
       positions={coords}
-      pathOptions={{ color: theme.palette.primary.main }}
+      pathOptions={{
+        color: theme.palette.primary.main,
+        weight: 6,
+      }}
     />
   );
 }

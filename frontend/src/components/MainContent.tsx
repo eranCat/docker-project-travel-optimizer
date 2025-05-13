@@ -1,11 +1,8 @@
-import React from "react";
-import { Box } from "@mui/material";
+import { useTheme, Box } from "@mui/material";
 import RouteForm from "./RouteForm";
-import AlertMessage from "./AlertMessage";
-import LoadingProgress from "./LoadingProgress";
-import RouteSidebar from "./RouteSidebar";
 import MapViewer from "./MapViewer";
 import { useRouteGenerator } from "../hooks/useRouteGenerator";
+import RouteSidebar from "./RouteSidebar";
 
 export default function MainContent() {
     const {
@@ -27,31 +24,54 @@ export default function MainContent() {
         handleCancel,
         handleReset,
         setLocationSelected,
-    } = useRouteGenerator();
+    } = useRouteGenerator();      
+
+    const theme = useTheme();
 
     return (
-        <>
-            <RouteForm
-                form={form}
-                loading={loading}
-                isFormValid={isFormValid()}
-                onChange={handleChange}
-                onSubmit={handleSubmit}
-                onCancel={handleCancel}
-                onReset={handleReset}
-                onValidLocationSelected={() => setLocationSelected(true)}
-            />
-
-            <LoadingProgress loading={loading} stages={stages} stage={stage} />
-            <AlertMessage message={error} />
-
+        <Box
+            sx={{
+                display: "flex",
+                height: "100%",
+                width: "100%",
+                overflow: "hidden",
+            }}
+        >
+            {/* Left column: RouteForm */}
             <Box
                 sx={{
+                    width: 400,
+                    minWidth: 400,
+                    flexShrink: 0,
+                    overflowY: "auto",
+                    p: 2,
+                    backgroundColor: theme.palette.background.default,
+                    borderRight: `1px solid ${theme.palette.divider}`,
+                }}
+            >
+                <RouteForm
+                    form={form}
+                    loading={loading}
+                    stage = {stage}
+                    stages = {stages}
+                    error={error}
+                    isFormValid={isFormValid()}
+                    onChange={handleChange}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                    onReset={handleReset}
+                    onValidLocationSelected={() => setLocationSelected(true)}
+                />
+            </Box>
+
+            {/* Middle column: Dropdown + POI list */}
+            <Box
+                sx={{
+                    width: 380,
+                    minWidth: 380,
+                    flexShrink: 0,
+                    height: "100%",
                     display: "flex",
-                    flexDirection: { xs: "column", sm: "row" },
-                    gap: 2,
-                    mt: 2,
-                    height: { xs: "auto", sm: 500 },
                 }}
             >
                 <RouteSidebar
@@ -61,14 +81,24 @@ export default function MainContent() {
                     pois={pois}
                     onFocusPOI={setFocusedPOI}
                 />
-                <Box sx={{ height: { xs: 300, sm: '100%' }, width: { xs: '100%', sm: '50%' } }}>
-                    <MapViewer
-                        pois={pois}
-                        focusedPOI={focusedPOI}
-                        routeFeature={currentRouteFeature}
-                    />
-                </Box>
             </Box>
-        </>
+
+
+            {/* Right column: Map */}
+            <Box
+                sx={{
+                    flexGrow: 1,
+                    minWidth: 0,
+                    height: "100%",
+                }}
+            >
+                <MapViewer
+                    pois={pois}
+                    focusedPOI={focusedPOI}
+                    routeFeature={currentRouteFeature}
+                />
+            </Box>
+        </Box>
+
     );
 }

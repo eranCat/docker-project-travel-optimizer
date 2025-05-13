@@ -31,6 +31,25 @@ export function useRouteGenerator() {
         "Rendering results",
     ];
 
+    const stageMap: Record<string, string> = {
+        "fetching pois from maps_service": "Fetching POIs",
+        "generating optimized routes": "Building routes",
+
+        // Optional future-proof aliases (if backend ever changes)
+        "fetching pois": "Fetching POIs",
+        "building routes": "Building routes",
+        "optimizing route": "Building routes",
+        "fetching data": "Fetching POIs",
+        "loading pois": "Fetching POIs",
+        "computing": "Building routes",
+
+        // Defaults for unimplemented steps
+        "converting interests": "Converting interests to tags",
+        "tagging": "Converting interests to tags",
+        "filtering pois": "Filtering & thinning POIs",
+        "rendering": "Rendering results",
+    };      
+
     const isFormValid = () =>
         locationSelected &&
         form.interests.trim() !== "" &&
@@ -71,10 +90,19 @@ export function useRouteGenerator() {
         sseRef.current = source;
 
         source.addEventListener("stage", (event: MessageEvent) => {
-            const msg = event.data as string;
-            const idx = stages.indexOf(msg);
-            if (idx >= 0) setStage(idx);
-        });
+            const raw = (event.data as string).trim().toLowerCase();
+            console.log("📡 Received stage:", raw);
+
+            const mapped = stageMap[raw] || raw;
+            console.log("🗺️ Mapped to:", mapped);
+            const idx = stages.findIndex(stage => stage.toLowerCase() === mapped.toLocaleLowerCase());
+
+            if (idx >= 0) {
+                setStage(idx);
+            } else {
+                console.warn("⚠️ Unrecognized stage:", raw);
+            }
+        });                             
 
         source.addEventListener("complete", async (event: MessageEvent) => {
             const routeId = event.data;

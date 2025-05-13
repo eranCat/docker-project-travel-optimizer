@@ -4,6 +4,14 @@
     --accent: #2f80ed;
     --input-bg: #fff;
     --input-border: #ccc;
+    --sidebar-bg: #f9f9f9;
+    --map-bg: #eaeaea;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
 [data-theme="dark"] {
@@ -12,6 +20,8 @@
     --accent: #6ea0ff;
     --input-bg: #222;
     --input-border: #444;
+    margin: 0;
+    font-family: "Inter", sans-serif;
 }
 
 body {
@@ -33,6 +43,21 @@ select {
     max-width: 900px;
     margin: auto;
     font-family: sans-serif;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+}
+
+.app-sidebar {
+    background-color: var(--sidebar-bg);
+    padding: 1rem;
+    border-left: 1px solid #ddd;
+}
+
+.app-map {
+    background-color: var(--map-bg);
+    flex: 1;
+    height: 100%;
 }
 
 .app-title {

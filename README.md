@@ -25,10 +25,9 @@ An intelligent travel planning platform that suggests personalized Points of Int
 
 ## 🌗 UI Preview (Light & Dark Modes)
 
-<p align="center">
-  <img src="docs/demoLight.png" alt="Light Mode" width="48%" style="border:1px solid #ccc; border-radius:8px; margin-right: 8px;" />
-  <img src="docs/demoDark.png" alt="Dark Mode" width="48%" style="border:1px solid #ccc; border-radius:8px;" />
-</p>
+<img src="docs/demoLight.png" alt="Light Mode" style="border:1px solid #ccc; border-radius:8px; margin-right: 8px;" />
+
+<img src="docs/demoDark.png" alt="Dark Mode" style="border:1px solid #ccc; border-radius:8px;" />
 
 ---
 
