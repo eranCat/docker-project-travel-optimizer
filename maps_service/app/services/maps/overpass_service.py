@@ -200,7 +200,7 @@ def get_pois_from_overpass(
 def call_llm_service_for_tags(interests: str, valid_tags: dict) -> List[Dict[str, str]]:
     try:
         res = requests.post(
-            "http://llm-service:8002/generate-tags",  # service name in docker-compose
+            "http://llm-service:8000/generate-tags",  # service name in docker-compose
             json={"interests": interests, "valid_tags": valid_tags},
             timeout=10,
         )

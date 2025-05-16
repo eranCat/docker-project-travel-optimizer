@@ -7,7 +7,6 @@ from utils.error_handlers import (
     http_exception_handler,
     unhandled_exception_handler,
 )
-import logging
 from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
@@ -32,14 +31,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Suppress other noisy FastAPI loggers
-logging.getLogger("uvicorn.access").setLevel(logging.ERROR)
-logging.getLogger("uvicorn.error").setLevel(logging.ERROR)
-logging.getLogger("httpx").setLevel(logging.ERROR)
-
 # Register custom handlers
 app.add_exception_handler(HTTPException, http_exception_handler)
-app.add_exception_handler(Exception, unhandled_exception_handler)
+# app.add_exception_handler(Exception, unhandled_exception_handler)
 
 app.include_router(generate_paths.router, prefix="/routes")
 app.include_router(autocomplete_location.router)

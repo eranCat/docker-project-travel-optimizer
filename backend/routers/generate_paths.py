@@ -7,6 +7,7 @@ router = APIRouter()
 
 @router.post("/generate-paths")
 def generate_paths(request: RouteGenerationRequest):
+    print("📦 Received request:", request)
     try:
         res = requests.post(
             "http://maps-service:8001/routes/", json=request.model_dump()

@@ -9,9 +9,15 @@ services:
     env_file:
       - ./llm_service/.env
     volumes:
-      - ./llm_service/app:/app/app
+      - ./llm_service:/app
       - ./models:/app/models 
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   maps_service:
     build:
@@ -26,8 +32,11 @@ services:
     env_file:
       - ./maps_service/.env
     restart: unless-stopped
+    depends_on:
+      llm_service:
+        condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:8000/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -47,24 +56,14 @@ services:
     depends_on:
       maps_service:
         condition: service_healthy
+      llm_service:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
-
-  backend-tests:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    container_name: travel-backend-tests
-    # command: [ "sh", "-c", "PYTHONPATH=. pytest tests" ]
-    volumes:
-      - ./backend:/app
-      - ./models:/app/models 
-    depends_on:
-      - backend
 
   frontend:
     build:
@@ -75,3 +74,19 @@ services:
       - /app/node_modules # to prevent local overwrite of container deps
     ports:
       - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  tests:
+    build:
+      context: .
+      dockerfile: tests/Dockerfile.tests
+    container_name: travel-tests
+    depends_on:
+      backend:
+        condition: service_healthy
+      maps_service:
+        condition: service_healthy
+      llm_service:
+        condition: service_healthy
