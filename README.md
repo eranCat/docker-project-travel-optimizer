@@ -136,27 +136,22 @@ uvicorn main:app --reload
 
 ## 🧪 Running Unit Tests in Docker
 
-To run all backend unit tests using Docker:
+To run all unit tests using Docker:
 
 ```bash
-docker compose run backend-tests
+docker compose run tests
 ```
 
 This will:
 
-* Spin up a container from your backend service image
-* Run all test files under `backend/tests/`
-* Clean up the container afterward
+* Run all test files under `tests`
 
 You should see output like:
 
 ```
-collected 4 items
-
-tests/test_geocoding.py . ✅
-tests/test_groq_client.py . ✅
-tests/test_overpass_service.py . ✅
-tests/test_route_service.py . ✅
+maps-service    | INFO:     172.18.0.4:54358 - "POST /routes/optimized HTTP/1.1" 200 OK
+travel-tests    | .                                                                        [100%]
+travel-tests    | 1 passed in 8.15s
 ```
 
 ---
