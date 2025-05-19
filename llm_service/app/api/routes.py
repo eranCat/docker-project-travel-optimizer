@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.services.groq_client import call_groq_for_tags
-from models.TagRequest import TagRequest
+from models.tag_request import TagRequest
 
 router = APIRouter()
 

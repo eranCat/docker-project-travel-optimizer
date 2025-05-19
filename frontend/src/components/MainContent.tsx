@@ -24,7 +24,7 @@ export default function MainContent() {
         handleCancel,
         handleReset,
         setLocationSelected,
-    } = useRouteGenerator();      
+    } = useRouteGenerator();
 
     const theme = useTheme();
 
@@ -52,8 +52,8 @@ export default function MainContent() {
                 <RouteForm
                     form={form}
                     loading={loading}
-                    stage = {stage}
-                    stages = {stages}
+                    stage={stage}
+                    stages={stages}
                     error={error}
                     isFormValid={isFormValid()}
                     onChange={handleChange}
@@ -65,24 +65,26 @@ export default function MainContent() {
             </Box>
 
             {/* Middle column: Dropdown + POI list */}
-            <Box
-                sx={{
-                    width: 380,
-                    minWidth: 380,
-                    flexShrink: 0,
-                    height: "100%",
-                    display: "flex",
-                }}
-            >
-                <RouteSidebar
-                    routesCount={routes.length}
-                    selectedIndex={selectedIndex}
-                    onSelectRoute={setSelectedIndex}
-                    pois={pois}
-                    onFocusPOI={setFocusedPOI}
-                />
-            </Box>
 
+            {pois.length > 0 &&
+                <Box
+                    sx={{
+                        width: { xs: '100%', sm: 400 },
+                        minWidth: { xs: '100%', sm: 400 },
+                        flexShrink: 0,
+                        height: "100%",
+                        display: "flex",
+                    }}
+                >
+                    <RouteSidebar
+                        routesCount={routes.length}
+                        selectedIndex={selectedIndex}
+                        onSelectRoute={setSelectedIndex}
+                        pois={pois}
+                        onFocusPOI={setFocusedPOI}
+                    />
+                </Box>
+            }
 
             {/* Right column: Map */}
             <Box
