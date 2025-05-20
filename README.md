@@ -29,6 +29,8 @@ An intelligent travel planning platform that suggests personalized Points of Int
 
 <img src="docs/demoDark.png" alt="Dark Mode" style="border:1px solid #ccc; border-radius:8px;" />
 
+## Demo
+[![YouTube Video](https://img.youtube.com/vi/Y9X6yCTTJm4/0.jpg)](https://www.youtube.com/watch?v=Y9X6yCTTJm4)
 ---
 
 ## 🧱 Tech Stack
