@@ -5,7 +5,7 @@ FROM python:3.9
 WORKDIR /app
 
 # Copy the requirements.txt for tests into the image
-COPY tests/requirements.txt .
+COPY requirements.txt .
 
 # Install the dependencies
 RUN pip install -r requirements.txt
@@ -14,4 +14,4 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # Run the tests
-CMD ["pytest", "--maxfail=1", "--disable-warnings", "-q"]
+CMD ["pytest", "--maxfail=1", "--disable-warnings", "-q", "tests"]

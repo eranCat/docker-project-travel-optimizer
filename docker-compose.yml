@@ -10,7 +10,7 @@ services:
       - ./llm_service/.env
     volumes:
       - ./llm_service:/app
-      - ./models:/app/models 
+      - ./models:/app/models
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
@@ -80,13 +80,13 @@ services:
 
   tests:
     build:
-      context: .
-      dockerfile: tests/Dockerfile.tests
-    container_name: travel-tests
+      context: ./tests
+      dockerfile: Dockerfile
     depends_on:
-      backend:
+      llm_service:
         condition: service_healthy
       maps_service:
         condition: service_healthy
-      llm_service:
+      backend:
         condition: service_healthy
+    command: [ "pytest", "-v" ]

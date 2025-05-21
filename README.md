@@ -151,9 +151,20 @@ This will:
 You should see output like:
 
 ```
-maps-service    | INFO:     172.18.0.4:54358 - "POST /routes/optimized HTTP/1.1" 200 OK
-travel-tests    | .                                                                        [100%]
-travel-tests    | 1 passed in 8.15s
+======================= test session starts =======================
+platform linux -- Python 3.9.22, pytest-8.3.5, pluggy-1.6.0 -- /usr/local/bin/python3.9
+cachedir: .pytest_cache
+rootdir: /app
+plugins: anyio-4.9.0
+collected 5 items                                                                                                                                                                                              
+
+test_backend.py::test_autocomplete PASSED [ 20%]
+test_llm_service.py::test_generate_tags_from_llm PASSED [ 40%]
+test_maps_service.py::test_maps_geocode PASSED [ 60%]
+test_maps_service.py::test_maps_pois PASSED [ 80%]
+test_maps_service.py::test_maps_routes PASSED [100%]
+
+======================= 5 passed in 5.23s =======================
 ```
 
 ---
