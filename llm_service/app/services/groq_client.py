@@ -68,7 +68,7 @@ def call_groq_for_tags(user_interests: str, valid_tags: dict) -> list[dict]:
             if not match:
                 raise ValueError("No JSON array found in LLM response.")
             parsed = json.loads(match.group(0))
-
+            logging.debug("Groq parsed tags from LLM response:\n{parsed}")
         return [
             tag
             for tag in parsed

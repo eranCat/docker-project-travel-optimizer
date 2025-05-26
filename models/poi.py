@@ -1,6 +1,6 @@
 # backend/models/poi.py
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 
 
 class POI(BaseModel):

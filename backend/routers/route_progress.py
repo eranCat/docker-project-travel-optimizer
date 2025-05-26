@@ -63,11 +63,16 @@ async def route_progress(
 
             yield {"event": "complete", "data": route_id}
 
+        except HTTPException as http_exc:
+            logging.exception("❌ HTTPException in route-progress")
+            yield {"event": "error", "data": json.dumps({"message": http_exc.detail})}
+            return
+
         except Exception as e:
             logging.exception("❌ Exception in route-progress")
-
             message = str(e) or traceback.format_exc(limit=1).splitlines()[-1]
-            yield {"event": "error", "data": message}
+            yield {"event": "error", "data": json.dumps({"message": message})}
+            return
 
     return EventSourceResponse(event_generator())
 
