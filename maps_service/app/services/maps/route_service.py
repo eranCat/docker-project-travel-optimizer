@@ -2,8 +2,7 @@ import openrouteservice
 from typing import List, Tuple
 from app.config import settings
 
-ORS_API_KEY = settings.ors_api_key
-ors_client = openrouteservice.Client(key=ORS_API_KEY)
+ors_client = openrouteservice.Client(key=settings.ors_api_key)
 
 
 def get_real_route(

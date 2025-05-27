@@ -78,11 +78,17 @@ An intelligent travel planning platform that suggests personalized Points of Int
    cd docker-project-travel-optimizer
    ```
 
-2. **Create a `.env` file under the `backend/` directory with:**
+2. **Create a `.env` file under the root directory with:**
 
    ```env
-   GROQ_API_KEY=your-groq-api-key
-   ORS_API_KEY=your-openrouteservice-api-key
+    #LLM service
+    GROQ_API_KEY=your-groq-api-key
+
+    #Maps service
+    ORS_API_KEY=your-openrouteservice-api-key
+
+    #Frontend
+    VITE_API_BASE_URL=http://localhost:8000
    ```
 
 3. **Start the services:**
