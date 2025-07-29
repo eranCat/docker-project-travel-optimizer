@@ -2,7 +2,7 @@ services:
   - type: web
     name: travel-frontend
     runtime: docker
-    dockerfilePath: ./frontend/Dockerfile.dev
+    dockerfilePath: ./frontend/Dockerfile
     envVars:
       - fromGroup: global-env
     plan: starter
