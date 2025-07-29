@@ -3,8 +3,6 @@ services:
     name: travel-frontend
     runtime: docker
     dockerfilePath: ./frontend/Dockerfile.dev
-    buildCommand: null
-    startCommand: null
     envVars:
       - fromGroup: global-env
     plan: starter
@@ -16,8 +14,6 @@ services:
     name: travel-backend
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
-    buildCommand: null
-    startCommand: null
     envVars:
       - fromGroup: global-env
     plan: starter
@@ -28,8 +24,6 @@ services:
     name: maps-service
     runtime: docker
     dockerfilePath: ./maps_service/Dockerfile
-    buildCommand: null
-    startCommand: null
     envVars:
       - fromGroup: global-env
     plan: starter
@@ -40,20 +34,16 @@ services:
     name: llm-service
     runtime: docker
     dockerfilePath: ./llm_service/Dockerfile
-    buildCommand: null
-    startCommand: null
     envVars:
       - fromGroup: global-env
     plan: starter
     autoDeploy: true
     healthCheckPath: /health
 
-# Optional: Background job to run tests
   - type: worker
     name: test-runner
     runtime: docker
     dockerfilePath: ./tests/Dockerfile
-    startCommand: pytest -v
     envVars:
       - fromGroup: global-env
     autoDeploy: false
