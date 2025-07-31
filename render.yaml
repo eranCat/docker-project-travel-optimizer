@@ -2,7 +2,9 @@ services:
   - type: web
     name: llm-service
     env: docker
-    dockerfilePath: llm_service/Dockerfile
+    dockerfilePath: llm_service/app/Dockerfile
+    buildCommand: ""
+    startCommand: ""
     envVars:
       - key: GROQ_API_KEY
         sync: false
@@ -12,7 +14,9 @@ services:
   - type: web
     name: maps-service
     env: docker
-    dockerfilePath: maps_service/Dockerfile
+    dockerfilePath: maps_service/app/Dockerfile
+    buildCommand: ""
+    startCommand: ""
     envVars:
       - key: ORS_API_KEY
         sync: false
@@ -23,6 +27,8 @@ services:
     name: travel-backend
     env: docker
     dockerfilePath: backend/Dockerfile
+    buildCommand: ""
+    startCommand: ""
     plan: free
     autoDeploy: true
 
