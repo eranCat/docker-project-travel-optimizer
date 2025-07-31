@@ -4,8 +4,9 @@ services:
     env: docker
     buildFilter:
       paths:
-        - llm_service
+        - llm_service/**
     dockerfilePath: llm_service/Dockerfile
+    dockerContext: llm_service
     envVars:
       - key: GROQ_API_KEY
         sync: false
@@ -17,8 +18,9 @@ services:
     env: docker
     buildFilter:
       paths:
-        - maps_service
+        - maps_service/**
     dockerfilePath: maps_service/Dockerfile
+    dockerContext: maps_service
     envVars:
       - key: ORS_API_KEY
         sync: false
@@ -30,8 +32,9 @@ services:
     env: docker
     buildFilter:
       paths:
-        - backend
+        - backend/**
     dockerfilePath: backend/Dockerfile
+    dockerContext: backend
     plan: free
     autoDeploy: true
 
@@ -40,8 +43,9 @@ services:
     env: docker
     buildFilter:
       paths:
-        - frontend
+        - frontend/**
     dockerfilePath: frontend/Dockerfile.dev
+    dockerContext: frontend
     envVars:
       - key: VITE_API_BASE_URL
         sync: false
