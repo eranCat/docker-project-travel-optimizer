@@ -3,10 +3,9 @@ services:
     name: llm-service
     env: docker
     dockerfilePath: llm_service/Dockerfile
-    buildCommand: ""
-    startCommand: ""
     envVars:
-      - fromDotEnv: true
+      - key: ENV_FILE
+        value: ".env"
     plan: free
     autoDeploy: true
 
@@ -14,10 +13,9 @@ services:
     name: maps-service
     env: docker
     dockerfilePath: maps_service/Dockerfile
-    buildCommand: ""
-    startCommand: ""
     envVars:
-      - fromDotEnv: true
+      - key: ENV_FILE
+        value: ".env"
     plan: free
     autoDeploy: true
 
@@ -25,10 +23,9 @@ services:
     name: travel-backend
     env: docker
     dockerfilePath: backend/Dockerfile
-    buildCommand: ""
-    startCommand: ""
     envVars:
-      - fromDotEnv: true
+      - key: ENV_FILE
+        value: ".env"
     plan: free
     autoDeploy: true
 
@@ -36,9 +33,5 @@ services:
     name: travel-frontend
     env: docker
     dockerfilePath: frontend/Dockerfile.dev
-    buildCommand: ""
-    startCommand: "npm run dev" # or your dev command
-    envVars:
-      - fromDotEnv: true
     plan: free
     autoDeploy: true
