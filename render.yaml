@@ -2,8 +2,9 @@ services:
   - type: web
     name: llm-service
     env: docker
-    contextPath: llm_service
-    dockerfilePath: Dockerfile
+    buildFilter:
+      path: llm_service
+      dockerfilePath: Dockerfile
     envVars:
       - key: GROQ_API_KEY
         sync: false
@@ -13,8 +14,9 @@ services:
   - type: web
     name: maps-service
     env: docker
-    contextPath: maps_service
-    dockerfilePath: Dockerfile
+    buildFilter:
+      path: maps_service
+      dockerfilePath: Dockerfile
     envVars:
       - key: ORS_API_KEY
         sync: false
@@ -24,16 +26,18 @@ services:
   - type: web
     name: travel-backend
     env: docker
-    contextPath: backend
-    dockerfilePath: Dockerfile
+    buildFilter:
+      path: backend
+      dockerfilePath: Dockerfile
     plan: free
     autoDeploy: true
 
   - type: web
     name: travel-frontend
     env: docker
-    contextPath: frontend
-    dockerfilePath: Dockerfile.dev
+    buildFilter:
+      path: frontend
+      dockerfilePath: Dockerfile.dev
     envVars:
       - key: VITE_API_BASE_URL
         sync: false
