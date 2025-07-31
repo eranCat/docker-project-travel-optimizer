@@ -11,6 +11,7 @@ def call_pois_from_maps_service(
     payload: RouteGenerationRequest,
 ) -> List[LLMPOISuggestion]:
     print("🔍 Sending payload to maps_service /pois/:", payload)
+    response: Optional[requests.Response] = None
     try:
         response = requests.post(
             f"{BASE_URL}/pois/", json=payload.model_dump(), timeout=30
@@ -18,15 +19,19 @@ def call_pois_from_maps_service(
         response.raise_for_status()
         pois_data = response.json()
         return [LLMPOISuggestion(**poi) for poi in pois_data]
+        
     except requests.HTTPError as http_err:
-        print(f"❌ maps_service /pois/ error response: {http_err.response.text}")
-        print("❗ Response content:", response.text)
-        raise HTTPException(
-            status_code=response.status_code,
-            detail=response.json().get("detail", "Unknown error from maps_service"),
+        status_code = http_err.response.status_code if http_err.response else 500
+        detail = (
+            http_err.response.json().get("detail", "Unknown error from maps_service")
+            if http_err.response else str(http_err)
         )
+        raise HTTPException(status_code=status_code, detail=detail)
+
     except Exception as e:
-        print("❗ Response content:", response.text)
+        # only log response text if response exists
+        if response is not None:
+            print("❗ Response content:", response.text)
         raise Exception(f"Failed to fetch POIs from maps_service: {e}")
 
 
