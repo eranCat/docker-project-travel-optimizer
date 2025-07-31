@@ -5,7 +5,7 @@ services:
     buildFilter:
       paths:
         - llm_service
-    dockerfilePath: Dockerfile
+    dockerfilePath: llm_service/Dockerfile
     envVars:
       - key: GROQ_API_KEY
         sync: false
@@ -18,7 +18,7 @@ services:
     buildFilter:
       paths:
         - maps_service
-    dockerfilePath: Dockerfile
+    dockerfilePath: maps_service/Dockerfile
     envVars:
       - key: ORS_API_KEY
         sync: false
@@ -31,7 +31,7 @@ services:
     buildFilter:
       paths:
         - backend
-    dockerfilePath: Dockerfile
+    dockerfilePath: backend/Dockerfile
     plan: free
     autoDeploy: true
 
@@ -41,7 +41,7 @@ services:
     buildFilter:
       paths:
         - frontend
-    dockerfilePath: Dockerfile.dev
+    dockerfilePath: frontend/Dockerfile.dev
     envVars:
       - key: VITE_API_BASE_URL
         sync: false
