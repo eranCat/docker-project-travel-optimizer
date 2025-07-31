@@ -19,6 +19,8 @@ router = APIRouter()
 
 # Configuration
 OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
+LLM_BASE_URL = "https://llm-service-o13x.onrender.com"
+
 MIN_TAGS = 3  # minimum tags required from LLM
 MAX_TAGS_PER_KEY = 3  # maximum values per key
 OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
@@ -200,7 +202,7 @@ def get_pois_from_overpass(
 def call_llm_service_for_tags(interests: str, valid_tags: dict) -> List[Dict[str, str]]:
     try:
         res = requests.post(
-            "http://llm-service:8000/generate-tags",  # service name in docker-compose
+            LLM_BASE_URL + "/generate-tags",
             json={"interests": interests, "valid_tags": valid_tags},
             timeout=10,
         )
