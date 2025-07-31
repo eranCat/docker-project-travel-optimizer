@@ -1,49 +1,44 @@
 services:
   - type: web
-    name: travel-frontend
-    runtime: docker
-    dockerfilePath: ./frontend/Dockerfile
+    name: llm-service
+    env: docker
+    dockerfilePath: llm_service/Dockerfile
+    buildCommand: ""
+    startCommand: ""
     envVars:
-      - fromGroup: global-env
-    plan: starter
+      - fromDotEnv: true
+    plan: free
     autoDeploy: true
-    healthCheckPath: /
-    env: node
-
-  - type: web
-    name: travel-backend
-    runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    envVars:
-      - fromGroup: global-env
-    plan: starter
-    autoDeploy: true
-    healthCheckPath: /health
 
   - type: web
     name: maps-service
-    runtime: docker
-    dockerfilePath: ./maps_service/Dockerfile
+    env: docker
+    dockerfilePath: maps_service/Dockerfile
+    buildCommand: ""
+    startCommand: ""
     envVars:
-      - fromGroup: global-env
-    plan: starter
+      - fromDotEnv: true
+    plan: free
     autoDeploy: true
-    healthCheckPath: /health
 
   - type: web
-    name: llm-service
-    runtime: docker
-    dockerfilePath: ./llm_service/Dockerfile
+    name: travel-backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    buildCommand: ""
+    startCommand: ""
     envVars:
-      - fromGroup: global-env
-    plan: starter
+      - fromDotEnv: true
+    plan: free
     autoDeploy: true
-    healthCheckPath: /health
 
-  - type: worker
-    name: test-runner
-    runtime: docker
-    dockerfilePath: ./tests/Dockerfile
+  - type: web
+    name: travel-frontend
+    env: docker
+    dockerfilePath: frontend/Dockerfile.dev
+    buildCommand: ""
+    startCommand: "npm run dev" # or your dev command
     envVars:
-      - fromGroup: global-env
-    autoDeploy: false
+      - fromDotEnv: true
+    plan: free
+    autoDeploy: true
