@@ -1,7 +1,7 @@
 import requests
 import time
 
-BASE_URL = "https://travel-backend-8nrc.onrender.com"
+BASE_URL = "http://travel-backend-8nrc.onrender.com"
 
 
 def wait_for_backend():

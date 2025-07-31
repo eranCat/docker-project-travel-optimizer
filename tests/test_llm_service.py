@@ -18,10 +18,11 @@ def wait_for_service(url: str, timeout: int = 30):
 
 
 def test_generate_tags_from_llm():
+    LLM_BASE_URL = "http://llm-service-o13x.onrender.com"
     # Wait for service to be ready (optional but helpful)
-    wait_for_service("http://llm-service:8000/docs")
+    wait_for_service(LLM_BASE_URL+"/docs")
 
-    url = "http://llm-service:8000/generate-tags"
+    url = LLM_BASE_URL+"/generate-tags"
     payload = {
         "interests": "music, art, yoga",
         "valid_tags": {
