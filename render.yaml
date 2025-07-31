@@ -3,7 +3,8 @@ services:
     name: llm-service
     env: docker
     buildFilter:
-      path: llm_service
+      paths:
+        - llm_service
       dockerfilePath: Dockerfile
     envVars:
       - key: GROQ_API_KEY
@@ -15,7 +16,8 @@ services:
     name: maps-service
     env: docker
     buildFilter:
-      path: maps_service
+      paths:
+        - maps_service
       dockerfilePath: Dockerfile
     envVars:
       - key: ORS_API_KEY
@@ -27,7 +29,8 @@ services:
     name: travel-backend
     env: docker
     buildFilter:
-      path: backend
+      paths:
+        - backend
       dockerfilePath: Dockerfile
     plan: free
     autoDeploy: true
@@ -36,11 +39,11 @@ services:
     name: travel-frontend
     env: docker
     buildFilter:
-      path: frontend
+      paths:
+        - frontend
       dockerfilePath: Dockerfile.dev
     envVars:
       - key: VITE_API_BASE_URL
         sync: false
     plan: free
     autoDeploy: true
-
