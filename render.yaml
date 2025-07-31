@@ -4,8 +4,8 @@ services:
     env: docker
     dockerfilePath: llm_service/Dockerfile
     envVars:
-      - key: ENV_FILE
-        value: ".env"
+      - key: GROQ_API_KEY
+        sync: false
     plan: free
     autoDeploy: true
 
@@ -14,8 +14,8 @@ services:
     env: docker
     dockerfilePath: maps_service/Dockerfile
     envVars:
-      - key: ENV_FILE
-        value: ".env"
+      - key: ORS_API_KEY
+        sync: false
     plan: free
     autoDeploy: true
 
@@ -23,9 +23,6 @@ services:
     name: travel-backend
     env: docker
     dockerfilePath: backend/Dockerfile
-    envVars:
-      - key: ENV_FILE
-        value: ".env"
     plan: free
     autoDeploy: true
 
@@ -33,5 +30,8 @@ services:
     name: travel-frontend
     env: docker
     dockerfilePath: frontend/Dockerfile.dev
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false
     plan: free
     autoDeploy: true
