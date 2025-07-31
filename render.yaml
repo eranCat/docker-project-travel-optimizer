@@ -6,7 +6,6 @@ services:
       paths:
         - llm_service/**
     dockerfilePath: llm_service/Dockerfile
-    dockerContext: llm_service
     envVars:
       - key: GROQ_API_KEY
         sync: false
@@ -20,7 +19,6 @@ services:
       paths:
         - maps_service/**
     dockerfilePath: maps_service/Dockerfile
-    dockerContext: maps_service
     envVars:
       - key: ORS_API_KEY
         sync: false
@@ -34,7 +32,6 @@ services:
       paths:
         - backend/**
     dockerfilePath: backend/Dockerfile
-    dockerContext: backend
     plan: free
     autoDeploy: true
 
@@ -45,7 +42,6 @@ services:
       paths:
         - frontend/**
     dockerfilePath: frontend/Dockerfile.dev
-    dockerContext: frontend
     envVars:
       - key: VITE_API_BASE_URL
         sync: false
