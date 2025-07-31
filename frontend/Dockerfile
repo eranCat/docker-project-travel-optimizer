@@ -1,13 +1,7 @@
-# Build stage
-FROM node:18 AS build
+FROM node:18
 WORKDIR /app
-COPY package*.json ./
+COPY frontend/package*.json ./
 RUN npm install
-COPY . .
-RUN npm run build -- --mode production
-
-# Serve stage
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+COPY frontend/ /app
+EXPOSE 5173
+CMD ["npm", "run", "dev"]
