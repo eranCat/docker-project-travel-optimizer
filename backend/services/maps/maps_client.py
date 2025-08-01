@@ -4,7 +4,7 @@ from models.llm_suggestion import LLMPOISuggestion
 from typing import List
 from fastapi import HTTPException
 
-MAPS_BASE_URL = "https://maps-service-t8xc.onrender.com"
+MAPS_BASE_URL = "http://maps-service-t8xc.onrender.com"
 
 def call_pois_from_maps_service(
     payload: RouteGenerationRequest,

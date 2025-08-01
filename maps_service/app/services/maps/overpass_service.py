@@ -19,7 +19,7 @@ router = APIRouter()
 
 # Configuration
 OVERPASS_API_URL = "http://overpass-api.de/api/interpreter"
-LLM_BASE_URL = "https://llm-service-cl3x.onrender.com"
+LLM_BASE_URL = "http://llm-service-cl3x.onrender.com"
 
 MIN_TAGS = 3  # minimum tags required from LLM
 MAX_TAGS_PER_KEY = 3  # maximum values per key
