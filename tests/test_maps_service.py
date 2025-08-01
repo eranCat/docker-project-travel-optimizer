@@ -18,8 +18,8 @@ def wait_for_maps_service(url: str, timeout: int = 30):
 
 
 def test_maps_geocode():
-    wait_for_maps_service("http://maps-service:8000/health")
-    url = "http://maps-service:8000/geocode/?location=Tel+Aviv"
+    wait_for_maps_service(MAPS_BASE_URL + "/health")
+    url = MAPS_BASE_URL + "/geocode/?location=Tel+Aviv"
     response = requests.get(url)
     assert response.status_code == 200
     lat, lon = response.json()
@@ -28,7 +28,7 @@ def test_maps_geocode():
 
 
 def test_maps_pois():
-    url = "http://maps-service:8000/pois/"
+    url = MAPS_BASE_URL + "/pois/"
     payload = {
         "location": "Tel Aviv",
         "interests": "museum, art, culture",
@@ -48,7 +48,7 @@ def test_maps_pois():
 
 
 def test_maps_routes():
-    url = "http://maps-service:8000/routes/optimized"
+    url = MAPS_BASE_URL + "/routes/optimized"
     payload = {
         "request": {
             "location": "Tel Aviv",

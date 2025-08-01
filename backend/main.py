@@ -25,7 +25,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or ["http://localhost:5173"] https://travel-frontend-56nx.onrender.com
+    allow_origins=["*"],  # or https://travel-frontend-56nx.onrender.com
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
