@@ -55,10 +55,11 @@ def call_groq_for_tags(user_interests: str, valid_tags: dict) -> list[dict]:
             ],
             temperature=0.2,
             max_tokens=512,
+            timeout=15,
         )
 
         raw_output = response.choices[0].message.content
-        # logging.debug(f"📥 Groq raw output:\n{raw_output}")
+        logging.debug(f"📥 Groq raw output:\n{raw_output}")
 
         try:
             parsed = json.loads(raw_output)
@@ -74,7 +75,10 @@ def call_groq_for_tags(user_interests: str, valid_tags: dict) -> list[dict]:
             for tag in parsed
             if isinstance(tag, dict) and tag.get("key") and tag.get("value")
         ]
-
+    except json.JSONDecodeError:
+        # fallback to empty
+        logging.warning("⚠️ Returning empty tag list as fallback")
+        parsed = []
     except Exception as e:
         logging.error("❌ Error in Groq call", exc_info=True)
         raise HTTPException(
