@@ -1,8 +1,8 @@
-import { useTheme, Box } from "@mui/material";
-import RouteForm from "./RouteForm";
-import MapViewer from "./MapViewer";
-import { useRouteGenerator } from "../hooks/useRouteGenerator";
-import RouteSidebar from "./RouteSidebar";
+import { useTheme, Box } from '@mui/material';
+import RouteForm from './RouteForm';
+import MapViewer from './MapViewer';
+import { useRouteGenerator } from '../hooks/useRouteGenerator';
+import RouteSidebar from './RouteSidebar';
 
 export default function MainContent() {
     const {
@@ -31,22 +31,25 @@ export default function MainContent() {
     return (
         <Box
             sx={{
-                display: "flex",
-                height: "100%",
-                width: "100%",
-                overflow: "hidden",
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                height: '100%',
+                width: '100%',
+                overflow: 'hidden',
             }}
         >
             {/* Left column: RouteForm */}
             <Box
                 sx={{
-                    width: 400,
-                    minWidth: 400,
+                    width: { xs: '100%', md: 400 },
+                    minWidth: { xs: '100%', md: 400 },
+                    height: { xs: 'auto', md: '100%' },
                     flexShrink: 0,
-                    overflowY: "auto",
+                    overflowY: 'auto',
                     p: 2,
                     backgroundColor: theme.palette.background.default,
-                    borderRight: `1px solid ${theme.palette.divider}`,
+                    borderRight: { md: `1px solid ${theme.palette.divider}` },
+                    borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: 'none' },
                 }}
             >
                 <RouteForm
@@ -65,15 +68,16 @@ export default function MainContent() {
             </Box>
 
             {/* Middle column: Dropdown + POI list */}
-
-            {pois.length > 0 &&
+            {pois.length > 0 && (
                 <Box
                     sx={{
-                        width: { xs: '100%', sm: 400 },
-                        minWidth: { xs: '100%', sm: 400 },
+                        width: { xs: '100%', md: 400 },
+                        minWidth: { xs: '100%', md: 400 },
+                        height: { xs: 'auto', md: '100%' },
                         flexShrink: 0,
-                        height: "100%",
-                        display: "flex",
+                        display: 'flex',
+                        borderRight: { md: `1px solid ${theme.palette.divider}` },
+                        borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: 'none' },
                     }}
                 >
                     <RouteSidebar
@@ -84,14 +88,14 @@ export default function MainContent() {
                         onFocusPOI={setFocusedPOI}
                     />
                 </Box>
-            }
+            )}
 
             {/* Right column: Map */}
             <Box
                 sx={{
                     flexGrow: 1,
                     minWidth: 0,
-                    height: "100%",
+                    height: { xs: '400px', md: '100%' },
                 }}
             >
                 <MapViewer
@@ -101,6 +105,5 @@ export default function MainContent() {
                 />
             </Box>
         </Box>
-
     );
 }
