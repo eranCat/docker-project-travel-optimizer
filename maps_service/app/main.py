@@ -41,7 +41,7 @@ async def pois(request: RouteGenerationRequest):
     pois = get_pois_from_overpass(request,tags)
     return pois
 
-@router.get("/pois/")
+@app.get("/pois/")
 def get_pois_debug(request: Request):
     print("🚨 GOT GET /pois/ from:", request.client)
     raise HTTPException(status_code=405, detail="Use POST instead.")
