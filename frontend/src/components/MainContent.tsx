@@ -33,23 +33,26 @@ export default function MainContent() {
             sx={{
                 display: 'flex',
                 flexDirection: { xs: 'column', md: 'row' },
-                height: '100%',
+                height: '100vh', // Ensure the main container takes up the full viewport height
                 width: '100%',
-                overflow: 'hidden',
+                overflow: 'hidden', // Prevents body scroll
             }}
         >
-            {/* Left column: RouteForm */}
+            {/* Top half on mobile: RouteForm and RouteSidebar */}
+            {/* This box now has a fixed height on mobile and is scrollable */}
             <Box
                 sx={{
                     width: { xs: '100%', md: 400 },
                     minWidth: { xs: '100%', md: 400 },
-                    height: { xs: 'auto', md: '100%' },
+                    height: { xs: '50vh', md: '100%' }, // Fixed 50% height on mobile
                     flexShrink: 0,
-                    overflowY: 'auto',
+                    overflowY: 'auto', // Enable scrolling for the form/sidebar section
                     p: 2,
                     backgroundColor: theme.palette.background.default,
                     borderRight: { md: `1px solid ${theme.palette.divider}` },
                     borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: 'none' },
+                    display: 'flex',
+                    flexDirection: 'column',
                 }}
             >
                 <RouteForm
@@ -65,37 +68,34 @@ export default function MainContent() {
                     onReset={handleReset}
                     onValidLocationSelected={() => setLocationSelected(true)}
                 />
+                {pois.length > 0 && (
+                    <Box
+                        sx={{
+                            borderTop: '1px solid',
+                            borderColor: theme.palette.divider,
+                            mt: 2,
+                            pt: 2,
+                            flexShrink: 0, // Prevents sidebar from shrinking
+                        }}
+                    >
+                        <RouteSidebar
+                            routesCount={routes.length}
+                            selectedIndex={selectedIndex}
+                            onSelectRoute={setSelectedIndex}
+                            pois={pois}
+                            onFocusPOI={setFocusedPOI}
+                        />
+                    </Box>
+                )}
             </Box>
 
-            {/* Middle column: Dropdown + POI list */}
-            {pois.length > 0 && (
-                <Box
-                    sx={{
-                        width: { xs: '100%', md: 400 },
-                        minWidth: { xs: '100%', md: 400 },
-                        height: { xs: 'auto', md: '100%' },
-                        flexShrink: 0,
-                        display: 'flex',
-                        borderRight: { md: `1px solid ${theme.palette.divider}` },
-                        borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: 'none' },
-                    }}
-                >
-                    <RouteSidebar
-                        routesCount={routes.length}
-                        selectedIndex={selectedIndex}
-                        onSelectRoute={setSelectedIndex}
-                        pois={pois}
-                        onFocusPOI={setFocusedPOI}
-                    />
-                </Box>
-            )}
-
-            {/* Right column: Map */}
+            {/* Bottom half on mobile: Map */}
+            {/* This box also has a fixed height on mobile */}
             <Box
                 sx={{
                     flexGrow: 1,
                     minWidth: 0,
-                    height: { xs: '400px', md: '100%' },
+                    height: { xs: '50vh', md: '100%' }, // Fixed 50% height on mobile
                 }}
             >
                 <MapViewer
