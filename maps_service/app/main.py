@@ -35,7 +35,6 @@ async def pois(request: RouteGenerationRequest):
     Given interests, location, radius, num_routes etc. return a list of POIs.
     """
     logging.info("🧭 /pois/ endpoint hit")
-    logging.info("METHOD HITTING /pois/:", request.method)
     tags = get_overpass_tags_from_interests(request.interests)
     logging.debug(f"Generated tags from interests: {tags}")
     pois = get_pois_from_overpass(request,tags)
