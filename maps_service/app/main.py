@@ -40,12 +40,6 @@ async def pois(request: RouteGenerationRequest):
     pois = get_pois_from_overpass(request,tags)
     return pois
 
-@app.get("/pois/")
-def get_pois_debug(request: Request):
-    logging.info(f"METHOD HITTING /pois/: {request.method}")
-    raise HTTPException(status_code=405, detail="Use POST instead.")
-
-
 @app.post("/routes/optimized")
 async def routes(request: Dict):
     """
