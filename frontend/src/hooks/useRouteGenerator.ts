@@ -182,6 +182,9 @@ export function useRouteGenerator() {
     const handleReset = () => {
         setFormData({ ...DEFAULT_FORM });
         localStorage.removeItem("travel-form-time");
+
+        setRoutes([]);
+        localStorage.removeItem("travel-routes")
     };
 
     // Initialize locationSelected if there is an existing location
