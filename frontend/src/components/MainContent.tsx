@@ -59,7 +59,7 @@ export default function MainContent() {
                         onSelectRoute={setSelectedIndex}
                         pois={pois}
                         onFocusPOI={setFocusedPOI}
-                        onReset={handleReset} // Pass handleReset to the sidebar
+                        onReset={handleReset} // Correctly passing the reset function
                     />
                 ) : (
                     <RouteForm
