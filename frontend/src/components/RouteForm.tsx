@@ -14,8 +14,8 @@ import {
     useTheme,
     Alert,
 } from "@mui/material";
-import LocationAutocomplete from "./LocationAutocomplete";
-import LoadingProgress from "./LoadingProgress";
+import LocationAutocomplete from "./LocationAutocomplete.tsx";
+import LoadingProgress from "./LoadingProgress.tsx";
 
 interface FormData {
     interests: string;
@@ -110,8 +110,8 @@ const RouteForm: React.FC<Props> = ({
 
                     <Divider />
 
-                    {/* Numeric Fields */}
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    {/* Numeric Fields: now on a single line with equal spacing */}
+                    <Stack direction="row" spacing={2}>
                         <TextField
                             fullWidth
                             label="Radius (km)"
@@ -125,7 +125,7 @@ const RouteForm: React.FC<Props> = ({
                                     minRows: 1,
                                     style: { padding: "12px" },
                                 },
-                                inputLabel:{
+                                inputLabel: {
                                     shrink: true,
                                     style: { whiteSpace: "normal", lineHeight: "1.2" },
                                 }
@@ -144,7 +144,7 @@ const RouteForm: React.FC<Props> = ({
                                     minRows: 1,
                                     style: { padding: "12px" },
                                 },
-                                inputLabel:{
+                                inputLabel: {
                                     shrink: true,
                                     style: { whiteSpace: "normal", lineHeight: "1.2" },
                                 }
@@ -163,7 +163,7 @@ const RouteForm: React.FC<Props> = ({
                                     minRows: 1,
                                     style: { padding: "12px" },
                                 },
-                                inputLabel:{
+                                inputLabel: {
                                     shrink: true,
                                     style: { whiteSpace: "normal", lineHeight: "1.2" },
                                 }
@@ -202,7 +202,7 @@ const RouteForm: React.FC<Props> = ({
                         sx={{
                             mt: "auto",
                             pt: 2,
-                        }}                      
+                        }}
                     >
                         <Stack spacing={3} sx={{ height: "100%" }}>
                             {loading ? (
@@ -271,7 +271,7 @@ const RouteForm: React.FC<Props> = ({
                             whiteSpace: "pre-line",
                         }}
                     >
-                        
+
                         {error}
                     </Alert>
                 )}
