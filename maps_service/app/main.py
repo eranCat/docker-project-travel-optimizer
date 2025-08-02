@@ -1,5 +1,5 @@
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI,Request
 from typing import List, Tuple, Dict
 
 from app.services.maps.geocoding import geocode_location
@@ -43,7 +43,7 @@ async def pois(request: RouteGenerationRequest):
 
 @app.get("/pois/")
 def get_pois_debug(request: Request):
-    print("🚨 GOT GET /pois/ from:", request.client)
+    logging.info(f"METHOD HITTING /pois/: {request.method}")
     raise HTTPException(status_code=405, detail="Use POST instead.")
 
 
