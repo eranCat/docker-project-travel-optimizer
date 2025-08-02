@@ -202,6 +202,9 @@ def get_pois_from_overpass(
 def call_llm_service_for_tags(interests: str, valid_tags: dict) -> List[Dict[str, str]]:
     url = LLM_BASE_URL + "/generate-tags"
     logging.info(f"📡 Calling LLM service at {url}")
+    logging.info(f"📡 LLM_BASE_URL: {LLM_BASE_URL}")
+    logging.info(f"💡 Interests: {interests}")
+    logging.info(f"📦 Valid tags: {valid_tags}")
 
     try:
         res = requests.post(url,
