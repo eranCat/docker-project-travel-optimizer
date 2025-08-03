@@ -31,21 +31,27 @@ export default function MainContent() {
     return (
         <Box
             sx={{
-                width: { xs: '100%', md: 400 },
-                minWidth: { xs: '100%', md: 400 },
-                height: { xs: '50vh', md: '100vh' },
-                maxHeight: '100vh',
-                flexShrink: 0,
                 display: 'flex',
-                flexDirection: 'column',
+                flexDirection: { xs: 'column', md: 'row' },
+                height: '100vh',
+                width: '100%',
                 overflow: 'hidden',
-                backgroundColor: theme.palette.background.default,
-                borderRight: { md: `1px solid ${theme.palette.divider}` },
-                borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: 'none' },
             }}
         >
             {/* Top half on mobile: Conditionally render Form or Sidebar */}
-            <Box sx={{ overflowY: 'auto', p: 2, flex: 1 }}>
+            <Box
+                sx={{
+                    width: { xs: '100%', md: 400 },
+                    minWidth: { xs: '100%', md: 400 },
+                    height: { xs: '50vh', md: '100%' },
+                    flexShrink: 0,
+                    overflowY: 'auto',
+                    p: 2,
+                    backgroundColor: theme.palette.background.default,
+                    borderRight: { md: `1px solid ${theme.palette.divider}` },
+                    borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: 'none' },
+                }}
+            >
                 {pois.length > 0 ? (
                     <RouteSidebar
                         routesCount={routes.length}
@@ -53,7 +59,7 @@ export default function MainContent() {
                         onSelectRoute={setSelectedIndex}
                         pois={pois}
                         onFocusPOI={setFocusedPOI}
-                        onReset={handleReset}
+                        onReset={handleReset} // The onReset prop is correctly passed here
                     />
                 ) : (
                     <RouteForm
