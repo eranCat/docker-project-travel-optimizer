@@ -8,17 +8,13 @@ import {
     Fade,
     Box,
 } from "@mui/material";
-import axios from "axios";
 import { fetchLocationSuggestions } from "../services/API";
+import { Suggestion } from "../models/Suggestion";
 
 interface Props {
     value: string;
     onChange: (val: string) => void;
     onSelect: (val: string) => void;
-}
-
-interface Suggestion {
-    display_name: string;
 }
 
 const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) => {

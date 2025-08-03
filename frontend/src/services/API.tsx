@@ -1,3 +1,4 @@
+import { Suggestion } from "@/models/Suggestion";
 import axios from "axios";
 
 const API = axios.create({
@@ -7,13 +8,33 @@ const API = axios.create({
   },
 });
 
-export const fetchLocationSuggestions = async (query: string, signal?: AbortSignal) => {
-  const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/autocomplete`, {
-    params: { q: query },
+export const fetchLocationSuggestions = async (
+  query: string,
+  signal?: AbortSignal
+): Promise<Suggestion[]> => {
+  const url = "https://nominatim.openstreetmap.org/search";
+  const params = new URLSearchParams({
+    q: query,
+    format: "json",
+    limit: "5",
+    addressdetails: "1",
+  });
+
+  const response = await fetch(`${url}?${params.toString()}`, {
+    method: "GET",
+    headers: {
+      "User-Agent": "travel-optimizer-frontend",
+      "Accept": "application/json",
+    },
     signal,
   });
 
-  return res.data || [];
+  if (!response.ok) {
+    throw new Error("Failed to fetch location suggestions");
+  }
+
+  const data = await response.json();
+  return data || [];
 };
 
 export function routeProgress(params: {
