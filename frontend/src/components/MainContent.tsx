@@ -1,4 +1,12 @@
-import { useTheme, Box } from '@mui/material';
+import React from 'react';
+import {
+    useTheme,
+    Box,
+    Drawer,
+    useMediaQuery,
+    Fab,
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import RouteForm from './RouteForm';
 import MapViewer from './MapViewer';
 import { useRouteGenerator } from '../hooks/useRouteGenerator';
@@ -27,63 +35,93 @@ export default function MainContent() {
     } = useRouteGenerator();
 
     const theme = useTheme();
+    const [mobileOpen, setMobileOpen] = React.useState(false);
+    const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+
+    const sidebarContent = (
+        <Box sx={{ p: 2, width: 300 }}>
+            {pois.length > 0 ? (
+                <RouteSidebar
+                    routesCount={routes.length}
+                    selectedIndex={selectedIndex}
+                    onSelectRoute={setSelectedIndex}
+                    pois={pois}
+                    onFocusPOI={setFocusedPOI}
+                    onReset={handleReset}
+                />
+            ) : (
+                <RouteForm
+                    form={form}
+                    loading={loading}
+                    stage={stage}
+                    stages={stages}
+                    error={error}
+                    isFormValid={isFormValid()}
+                    onChange={handleChange}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                    onReset={handleReset}
+                    onValidLocationSelected={() => setLocationSelected(true)}
+                />
+            )}
+        </Box>
+    );
 
     return (
         <Box
             sx={{
                 display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
+                flexDirection: 'row',
                 height: '100vh',
                 width: '100%',
                 overflow: 'hidden',
             }}
         >
-            {/* Top half on mobile: Conditionally render Form or Sidebar */}
-            <Box
-                sx={{
-                    width: { xs: '100%', md: 400 },
-                    minWidth: { xs: '100%', md: 400 },
-                    height: { xs: '50vh', md: '100%' },
-                    flexShrink: 0,
-                    overflowY: 'auto',
-                    p: 2,
-                    backgroundColor: theme.palette.background.default,
-                    borderRight: { md: `1px solid ${theme.palette.divider}` },
-                    borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: 'none' },
-                }}
-            >
-                {pois.length > 0 ? (
-                    <RouteSidebar
-                        routesCount={routes.length}
-                        selectedIndex={selectedIndex}
-                        onSelectRoute={setSelectedIndex}
-                        pois={pois}
-                        onFocusPOI={setFocusedPOI}
-                        onReset={handleReset} // The onReset prop is correctly passed here
-                    />
-                ) : (
-                    <RouteForm
-                        form={form}
-                        loading={loading}
-                        stage={stage}
-                        stages={stages}
-                        error={error}
-                        isFormValid={isFormValid()}
-                        onChange={handleChange}
-                        onSubmit={handleSubmit}
-                        onCancel={handleCancel}
-                        onReset={handleReset}
-                        onValidLocationSelected={() => setLocationSelected(true)}
-                    />
-                )}
-            </Box>
+            {/* Sidebar on desktop */}
+            {isDesktop ? (
+                <Box
+                    sx={{
+                        width: 400,
+                        minWidth: 400,
+                        height: '100vh',
+                        flexShrink: 0,
+                        overflow: 'auto',
+                        borderRight: `1px solid ${theme.palette.divider}`,
+                        backgroundColor: theme.palette.background.default,
+                    }}
+                >
+                    {sidebarContent}
+                </Box>
+            ) : (
+                <>
+                    {/* Drawer on mobile */}
+                    <Drawer
+                        variant="temporary"
+                        open={mobileOpen}
+                        onClose={() => setMobileOpen(false)}
+                        ModalProps={{ keepMounted: true }}
+                        PaperProps={{ sx: { width: 300 } }}
+                    >
+                        {sidebarContent}
+                    </Drawer>
 
-            {/* Bottom half on mobile: Map */}
+                    {/* Floating button to open drawer */}
+                    <Fab
+                        color="primary"
+                        onClick={() => setMobileOpen(true)}
+                        sx={{ position: 'fixed', top: 80, left: 16, zIndex: 1300 }}
+                    >
+                        <MenuIcon />
+                    </Fab>
+                </>
+            )}
+
+            {/* Map Viewer */}
             <Box
                 sx={{
                     flexGrow: 1,
                     minWidth: 0,
-                    height: { xs: '50vh', md: '100%' },
+                    height: '100%',
                 }}
             >
                 <MapViewer
