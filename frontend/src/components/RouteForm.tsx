@@ -111,7 +111,7 @@ const RouteForm: React.FC<Props> = ({
                     <Divider />
 
                     {/* Numeric Fields: now on a single line with equal spacing */}
-                    <Stack direction="row" spacing={2}>
+                    <Stack spacing={2}>
                         <TextField
                             fullWidth
                             label="Radius (km)"

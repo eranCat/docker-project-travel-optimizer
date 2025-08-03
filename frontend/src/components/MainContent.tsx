@@ -38,8 +38,17 @@ export default function MainContent() {
     const [mobileOpen, setMobileOpen] = React.useState(false);
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
-    const sidebarContent = (
-        <Box sx={{ p: 2, width: 300 }}>
+    const renderSidebarContent = () => (
+        <Box
+            sx={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                p: 2,
+                boxSizing: 'border-box',
+            }}
+        >
             {pois.length > 0 ? (
                 <RouteSidebar
                     routesCount={routes.length}
@@ -85,12 +94,12 @@ export default function MainContent() {
                         minWidth: 400,
                         height: '100vh',
                         flexShrink: 0,
-                        overflow: 'auto',
+                        overflow: 'hidden',
                         borderRight: `1px solid ${theme.palette.divider}`,
                         backgroundColor: theme.palette.background.default,
                     }}
                 >
-                    {sidebarContent}
+                    {renderSidebarContent()}
                 </Box>
             ) : (
                 <>
@@ -100,16 +109,16 @@ export default function MainContent() {
                         open={mobileOpen}
                         onClose={() => setMobileOpen(false)}
                         ModalProps={{ keepMounted: true }}
-                        PaperProps={{ sx: { width: 300 } }}
+                        PaperProps={{ sx: { width: 320 } }}
                     >
-                        {sidebarContent}
+                        {renderSidebarContent()}
                     </Drawer>
 
-                    {/* Floating button to open drawer */}
+                    {/* FAB to open drawer */}
                     <Fab
                         color="primary"
                         onClick={() => setMobileOpen(true)}
-                        sx={{ position: 'fixed', top: 80, left: 16, zIndex: 1300 }}
+                        sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1300 }}
                     >
                         <MenuIcon />
                     </Fab>
