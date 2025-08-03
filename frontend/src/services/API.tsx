@@ -1,8 +1,10 @@
 import { Suggestion } from "@/models/Suggestion";
 import axios from "axios";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: BASE_URL,
   headers: {
     "Accept": "application/json",
   },
@@ -12,7 +14,8 @@ export const fetchLocationSuggestions = async (
   query: string,
   signal?: AbortSignal
 ): Promise<Suggestion[]> => {
-  const url = "https://nominatim.openstreetmap.org/search";
+  const url = `${BASE_URL}/autocomplete`;
+
   const params = new URLSearchParams({
     q: query,
     format: "json",
@@ -45,7 +48,7 @@ export function routeProgress(params: {
   num_pois: number;
   travel_mode:string;
 }): EventSource {
-  const url = new URL("/route-progress", import.meta.env.VITE_API_BASE_URL);
+  const url = new URL("/route-progress", BASE_URL);
   url.search = new URLSearchParams({
     interests: params.interests,
     location: params.location,
