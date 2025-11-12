@@ -88,7 +88,7 @@ def generate_optimized_routes(
                     "type": "Feature",
                     "geometry": {"type": "LineString", "coordinates": path},
                 },
-                "pois": [p.dict() for p in selected],
+                "pois": [p.model_dump() for p in selected],
             }
         )
 
