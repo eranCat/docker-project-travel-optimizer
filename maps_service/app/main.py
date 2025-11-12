@@ -36,7 +36,7 @@ async def pois(request: RouteGenerationRequest):
     """
     tags = get_overpass_tags_from_interests(request.interests)
     logging.debug(f"Generated tags from interests: {tags}")
-    pois = get_pois_from_overpass(request,tags)
+    pois = get_pois_from_overpass(request, tuple(tags))
     return pois
 
 
