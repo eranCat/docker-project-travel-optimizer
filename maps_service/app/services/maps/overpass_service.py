@@ -1,5 +1,6 @@
 import logging
 import json
+import time
 from pathlib import Path
 import requests
 from functools import lru_cache
@@ -22,6 +23,10 @@ OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
 MIN_TAGS = 3  # minimum tags required from LLM
 MAX_TAGS_PER_KEY = 3  # maximum values per key
 OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
+
+# Rate limiting
+_last_overpass_request_time = 0
+MIN_REQUEST_INTERVAL = 1.0  # Minimum seconds between Overpass requests
 
 
 def load_osm_tag_reference() -> Dict[str, List[str]]:
@@ -128,8 +133,9 @@ def get_overpass_tags_from_interests(interests: str) -> List[OverpassTag]:
     return pruned
 
 
+@lru_cache(maxsize=128)
 def get_pois_from_overpass(
-    request: RouteGenerationRequest, tags: List[OverpassTag], debug: bool = False
+    request: RouteGenerationRequest, tags: tuple[OverpassTag, ...], debug: bool = False
 ) -> List[LLMPOISuggestion]:
     """
     Fetch, filter, thin and return POIs based on user request.
@@ -139,19 +145,53 @@ def get_pois_from_overpass(
     # Calculate radius in meters
     radius_m = int(request.radius_km * 1000)
     # Build Overpass query
-    qp = OverpassQueryParams(tags=tags, lat=lat, lon=lon, radius_m=radius_m)
+    qp = OverpassQueryParams(tags=list(tags), lat=lat, lon=lon, radius_m=radius_m)
     query = qp.to_query()
     logging.debug(f"Overpass query:\n{query}\n")
-    # Execute Overpass
-    try:
-        resp = requests.post(OVERPASS_API_URL, data=query, timeout=15)
-        resp.raise_for_status()
-        elements = [OverpassElement(**e) for e in resp.json().get("elements", [])]
-    except Exception as e:
-        logging.error(f"Overpass request failed: {e}")
-        raise HTTPException(
-            status_code=503, detail="Failed to fetch POIs from Overpass."
-        )
+
+    # Rate limiting: ensure minimum time between requests
+    global _last_overpass_request_time
+    current_time = time.time()
+    time_since_last_request = current_time - _last_overpass_request_time
+    if time_since_last_request < MIN_REQUEST_INTERVAL:
+        sleep_time = MIN_REQUEST_INTERVAL - time_since_last_request
+        logging.debug(f"Rate limiting: sleeping {sleep_time:.2f}s before Overpass request")
+        time.sleep(sleep_time)
+
+    # Execute Overpass with retry logic for rate limiting
+    max_retries = 3
+    retry_delay = 2  # seconds
+
+    for attempt in range(max_retries):
+        try:
+            resp = requests.post(OVERPASS_API_URL, data=query, timeout=15)
+            resp.raise_for_status()
+            elements = [OverpassElement(**e) for e in resp.json().get("elements", [])]
+            _last_overpass_request_time = time.time()  # Update last request time on success
+            break  # Success, exit retry loop
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:  # Too Many Requests
+                if attempt < max_retries - 1:
+                    wait_time = retry_delay * (2 ** attempt)  # Exponential backoff
+                    logging.warning(f"Rate limited by Overpass API. Retrying in {wait_time}s... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logging.error(f"Overpass API rate limit exceeded after {max_retries} attempts")
+                    raise HTTPException(
+                        status_code=429,
+                        detail="Overpass API rate limit exceeded. Please try again later."
+                    )
+            else:
+                logging.error(f"Overpass request failed with HTTP {e.response.status_code}: {e}")
+                raise HTTPException(
+                    status_code=503, detail="Failed to fetch POIs from Overpass."
+                )
+        except Exception as e:
+            logging.error(f"Overpass request failed: {e}")
+            raise HTTPException(
+                status_code=503, detail="Failed to fetch POIs from Overpass."
+            )
     # Filter elements by interests in description and matching tags
     pois: List[LLMPOISuggestion] = []
     for el in elements:
@@ -159,7 +199,7 @@ def get_pois_from_overpass(
         name = tags_el.get("name")
         if not name and not debug:
             continue
-        category = extract_primary_category(tags_el, tags)
+        category = extract_primary_category(tags_el, list(tags))
         if not category and not debug:
             continue
         lat_el = el.lat if el.type == "node" else (el.center or {}).get("lat")
