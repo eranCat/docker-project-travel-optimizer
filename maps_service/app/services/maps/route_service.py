@@ -1,3 +1,4 @@
+import logging
 import openrouteservice
 from typing import List, Tuple
 from app.config import settings
@@ -15,5 +16,5 @@ def get_real_route(
         geometry = response["features"][0]["geometry"]["coordinates"]
         return [(lon, lat) for lon, lat in geometry]
     except Exception as e:
-        print("❌ Failed to get ORS route:", str(e))
-        return waypoints  # fallback
+        logging.error(f"❌ ORS routing failed: {type(e).__name__}: {str(e)}")
+        raise  # Re-raise to signal failure
