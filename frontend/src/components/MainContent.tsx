@@ -81,7 +81,7 @@ export default function MainContent() {
             sx={{
                 display: 'flex',
                 flexDirection: 'row',
-                height: '100vh',
+                height: '100%',
                 width: '100%',
                 overflow: 'hidden',
             }}
@@ -92,7 +92,7 @@ export default function MainContent() {
                     sx={{
                         width: 400,
                         minWidth: 400,
-                        height: '100vh',
+                        height: '100%',
                         flexShrink: 0,
                         overflow: 'hidden',
                         borderRight: `1px solid ${theme.palette.divider}`,
