@@ -16,6 +16,9 @@ class OverpassTag(BaseModel):
     key: str = Field(..., min_length=1)
     value: str = Field(..., min_length=1)
 
+    def __hash__(self):
+        return hash((self.key, self.value))
+
 
 class OverpassQueryParams(BaseModel):
     tags: List[OverpassTag]

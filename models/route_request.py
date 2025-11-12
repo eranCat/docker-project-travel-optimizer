@@ -10,3 +10,6 @@ class RouteGenerationRequest(BaseModel):
     )
     num_pois: int = Field(..., ge=1, description="Number of POIs per route")
     travel_mode: str = Field(..., description="One of: walking, driving, cycling")
+
+    def __hash__(self):
+        return hash((self.interests, self.location, self.radius_km, self.num_routes, self.num_pois, self.travel_mode))

@@ -37,7 +37,7 @@ async def pois(request: RouteGenerationRequest):
     logging.info("🧭 /pois/ endpoint hit")
     tags = get_overpass_tags_from_interests(request.interests)
     logging.debug(f"Generated tags from interests: {tags}")
-    pois = get_pois_from_overpass(request,tags)
+    pois = get_pois_from_overpass(request, tuple(tags))
     return pois
 
 @app.post("/routes/optimized")
