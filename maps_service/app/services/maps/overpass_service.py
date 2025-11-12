@@ -218,11 +218,9 @@ def get_pois_from_overpass(
             continue
         desc = tags_el.get("description") or tags_el.get("note") or f"{name} - {address}"
 
-        # Check if description contains any interest or tags match
-        if not (
-            any(interest.lower() in desc.lower() for interest in request.interests)
-            or any(tag.key in tags_el and tags_el[tag.key] == tag.value for tag in tags)
-        ):
+        # Check if tags match (removed overly strict interest matching in description)
+        # The LLM already mapped interests to relevant tags, so tag matching is sufficient
+        if not any(tag.key in tags_el and tags_el[tag.key] == tag.value for tag in tags):
             continue
 
         pois.append(
