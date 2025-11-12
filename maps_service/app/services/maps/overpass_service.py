@@ -104,8 +104,15 @@ def get_overpass_tags_from_interests(interests: str) -> List[OverpassTag]:
     try:
         raw = call_llm_service_for_tags(interests, valid_ref)
     except Exception as e:
-        logging.error(f"LLM tag generation error: {e}")
-        raise HTTPException(status_code=502, detail="Tag generation service error.")
+        logging.error(f"LLM tag generation error: {e}. Using fallback tags.")
+        # Fallback: use common generic tags when LLM service fails
+        raw = [
+            {"key": "tourism", "value": "attraction"},
+            {"key": "tourism", "value": "museum"},
+            {"key": "amenity", "value": "restaurant"},
+            {"key": "amenity", "value": "cafe"},
+            {"key": "leisure", "value": "park"},
+        ]
 
     if not isinstance(raw, list) or not raw:
         raise HTTPException(
