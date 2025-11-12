@@ -5,6 +5,7 @@ services:
     buildFilter:
       paths:
         - llm_service/**
+        - models/**
     dockerfilePath: llm_service/Dockerfile
     envVars:
       - key: GROQ_API_KEY
@@ -18,6 +19,7 @@ services:
     buildFilter:
       paths:
         - maps_service/**
+        - models/**
     dockerfilePath: maps_service/Dockerfile
     envVars:
       - key: ORS_API_KEY
@@ -31,6 +33,7 @@ services:
     buildFilter:
       paths:
         - backend/**
+        - models/**
     dockerfilePath: backend/Dockerfile
     plan: free
     autoDeploy: true
