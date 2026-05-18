@@ -1,7 +1,7 @@
 import logging
 import openrouteservice
 from typing import List, Tuple
-from app.config import settings
+from config import settings
 
 ors_client = openrouteservice.Client(key=settings.ors_api_key)
 

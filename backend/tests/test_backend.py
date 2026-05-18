@@ -1,7 +1,7 @@
 import requests
 import time
 
-BASE_URL = "http://backend:8000"
+BASE_URL = "http://localhost:8000"
 
 
 def wait_for_backend():

@@ -3,7 +3,7 @@ import random
 from typing import List
 
 from fastapi import HTTPException
-from app.services.maps.route_service import get_real_route
+from services.maps.route_service import get_real_route
 from models.llm_suggestion import LLMPOISuggestion
 from models.route_request import RouteGenerationRequest
 from geopy.distance import geodesic

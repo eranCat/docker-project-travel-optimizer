@@ -7,16 +7,15 @@ from functools import lru_cache
 from itertools import groupby
 from typing import List, Dict, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import HTTPException
 from geopy.distance import geodesic
 
 from models.route_request import RouteGenerationRequest
 from models.overpass import OverpassElement, OverpassQueryParams, OverpassTag
 from models.llm_suggestion import LLMPOISuggestion
 
-from app.services.maps.geocoding import geocode_location
-
-router = APIRouter()
+from services.maps.geocoding import geocode_location
+from services.llm.groq_client import call_groq_for_tags
 
 # Configuration
 OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
@@ -100,7 +99,7 @@ def thin_pois_by_min_distance(
 def get_overpass_tags_from_interests(interests: str) -> List[OverpassTag]:
     valid_ref = load_osm_tag_reference()
     try:
-        raw = call_llm_service_for_tags(interests, valid_ref)
+        raw = call_groq_for_tags(interests, valid_ref)
     except Exception as e:
         logging.error(f"LLM tag generation error: {e}. Using fallback tags.")
         # Fallback: use common generic tags when LLM service fails
@@ -240,17 +239,3 @@ def get_pois_from_overpass(
         pois = thin_pois_by_min_distance(pois, min_dist)
         logging.debug(f"After greedy thinning: {len(pois)} POIs")
     return pois
-
-
-def call_llm_service_for_tags(interests: str, valid_tags: dict) -> List[Dict[str, str]]:
-    try:
-        res = requests.post(
-            "http://llm-service:8000/generate-tags",  # service name in docker-compose
-            json={"interests": interests, "valid_tags": valid_tags},
-            timeout=10,
-        )
-        res.raise_for_status()
-        return res.json()
-    except Exception as e:
-        logging.error(f"Failed to call LLM service: {e}")
-        raise HTTPException(status_code=502, detail="LLM service unreachable.")
