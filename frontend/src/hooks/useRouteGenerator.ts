@@ -2,10 +2,15 @@ import { FormEvent, useRef, useState, useEffect } from "react";
 import { usePersistedState } from "./usePersistedState";
 import { RouteData } from "../models/RouteData";
 import { POI } from "../models/POI";
-import { DEFAULT_FORM } from "../constants/formDefaults";
+import { DEFAULT_FORM, FORM_VERSION } from "../constants/formDefaults";
 import { getLatestRoutes, routeProgress, logToServer } from "../services/API";
 
 export function useRouteGenerator() {
+    // Bust stale persisted form when defaults change
+    if (Number(localStorage.getItem("travel-form-version") ?? 0) < FORM_VERSION) {
+        localStorage.removeItem("travel-form");
+        localStorage.setItem("travel-form-version", String(FORM_VERSION));
+    }
     const [form, setFormData] = usePersistedState("travel-form", DEFAULT_FORM);
     const [routes, setRoutes] = usePersistedState<RouteData[]>("travel-routes", []);
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -194,7 +199,17 @@ export function useRouteGenerator() {
 
     const handleReset = () => {
         setFormData({ ...DEFAULT_FORM });
+        setRoutes([]);
+        setSelectedIndex(0);
+        setError("");
+        setLocationSelected(false);
         localStorage.removeItem("travel-form-time");
+    };
+
+    const handleEdit = () => {
+        setRoutes([]);
+        setSelectedIndex(0);
+        setError("");
     };
 
     // Initialize locationSelected if there is an existing location
@@ -223,6 +238,7 @@ export function useRouteGenerator() {
         handleSubmit,
         handleCancel,
         handleReset,
+        handleEdit,
         locationSelected,
         setLocationSelected,
     };
