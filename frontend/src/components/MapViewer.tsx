@@ -53,18 +53,21 @@ function getNumberedIcon(index: number, categories?: string[], focused = false):
 
 function MapFlyToBounds({ pois }: { pois: POI[] }) {
   const map = useMap();
-  const prevLen = useRef(0);
+  const prevSig = useRef<string>("");
+  // Fingerprint of the POI set — changes when switching routes even if length is identical
+  const sig = pois
+    .map(p => `${p.latitude.toFixed(5)},${p.longitude.toFixed(5)}`)
+    .join("|");
   useEffect(() => {
-    if (pois.length > 0 && pois.length !== prevLen.current) {
-      prevLen.current = pois.length;
-      const bounds = pois
-        .filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
-        .map(p => [p.latitude, p.longitude]) as [number, number][];
-      if (bounds.length > 0) {
-        map.flyToBounds(bounds, { padding: [40, 40], duration: 1.2, maxZoom: 16 });
-      }
+    if (pois.length === 0 || sig === prevSig.current) return;
+    prevSig.current = sig;
+    const bounds = pois
+      .filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
+      .map(p => [p.latitude, p.longitude]) as [number, number][];
+    if (bounds.length > 0) {
+      map.flyToBounds(bounds, { padding: [40, 40], duration: 1.2, maxZoom: 16 });
     }
-  }, [pois, map]);
+  }, [sig, map, pois]);
   return null;
 }
 

@@ -32,8 +32,9 @@ class OverpassQueryParams(BaseModel):
         for tag in self.tags:
             grouped_tags[tag.key].add(tag.value)
 
+        # Anchored alternation: "^(v1|v2|v3)$" — avoid accidental substring matches
         filters = [
-            f'{element}["{key}"~"{ "|".join(sorted(values)) }"](around:{self.radius_m},{self.lat},{self.lon});'
+            f'{element}["{key}"~"^({"|".join(sorted(values))})$"](around:{self.radius_m},{self.lat},{self.lon});'
             for key, values in grouped_tags.items()
             for element in ("node", "way", "relation")
         ]

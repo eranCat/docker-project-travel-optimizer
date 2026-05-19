@@ -11,14 +11,29 @@
     "biergarten",
     "ice_cream",
     "food_court",
-    "marketplace"
+    "marketplace",
+    "library",
+    "public_bookcase",
+    "arts_centre",
+    "community_centre",
+    "fountain",
+    "place_of_worship",
+    "spa"
   ],
   "shop": [
     "chocolate",
     "department_store",
     "mall",
     "jewelry",
-    "bakery"
+    "bakery",
+    "books",
+    "art",
+    "antiques",
+    "music",
+    "musical_instrument",
+    "gift",
+    "craft",
+    "second_hand"
   ],
   "leisure": [
     "park",

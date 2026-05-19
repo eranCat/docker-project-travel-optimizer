@@ -46,6 +46,13 @@ OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
 _last_overpass_request_time = 0
 MIN_REQUEST_INTERVAL = 1.0  # Minimum seconds between Overpass requests
 
+# POI cache (TTL-based) — speeds up repeat searches with the same inputs.
+# Empty results are NOT cached, so a transient Overpass failure doesn't pin
+# zero POIs in memory. Max entries keeps memory bounded.
+POI_CACHE_TTL = 300  # seconds (5 minutes)
+POI_CACHE_MAX = 64
+_poi_cache: dict = {}  # key -> (expires_at, list[LLMPOISuggestion])
+
 
 def load_osm_tag_reference() -> Dict[str, List[str]]:
     try:
@@ -89,6 +96,38 @@ def extract_primary_category(tags: dict, overpass_tags: List[OverpassTag]) -> st
     return "unknown"
 
 
+def quality_score(tags_el: dict) -> int:
+    """
+    Heuristic quality score for an OSM element. Higher = better-documented
+    place, more likely to be worth visiting. Used to prefer well-tagged POIs
+    when two candidates collide during de-duplication.
+    """
+    score = 0
+    # Well-known places almost always have these
+    if tags_el.get("wikidata"):
+        score += 5
+    if tags_el.get("wikipedia"):
+        score += 4
+    if tags_el.get("website") or tags_el.get("contact:website"):
+        score += 2
+    if tags_el.get("phone") or tags_el.get("contact:phone"):
+        score += 1
+    if tags_el.get("opening_hours"):
+        score += 1
+    if tags_el.get("description") or tags_el.get("note"):
+        score += 2
+    # Localized names suggest tourist relevance
+    if any(k.startswith("name:") for k in tags_el):
+        score += 1
+    # Has a street address
+    if tags_el.get("addr:street") or tags_el.get("addr:housenumber"):
+        score += 1
+    # Penalize anonymous chains slightly (still kept, just deprioritized on ties)
+    if tags_el.get("brand") and not tags_el.get("wikidata"):
+        score -= 1
+    return score
+
+
 def thin_pois_by_min_distance(
     pois: List[LLMPOISuggestion], min_dist_m: float
 ) -> List[LLMPOISuggestion]:
@@ -121,10 +160,17 @@ def get_overpass_tags_from_interests(interests: str) -> List[OverpassTag]:
         raw = call_groq_for_tags(interests, valid_ref)
     except Exception as e:
         logging.error(f"LLM tag generation error: {e}. Using fallback tags.")
-        # Fallback: use common generic tags when LLM service fails
+        # Broad fallback covering the main tourist categories. Used only when
+        # the LLM is unreachable — the address filter and quality scoring will
+        # still narrow this down to a useful POI set.
         raw = [
             {"key": "tourism", "value": "attraction"},
             {"key": "tourism", "value": "museum"},
+            {"key": "tourism", "value": "gallery"},
+            {"key": "tourism", "value": "viewpoint"},
+            {"key": "historic", "value": "monument"},
+            {"key": "historic", "value": "castle"},
+            {"key": "historic", "value": "ruins"},
             {"key": "amenity", "value": "restaurant"},
             {"key": "amenity", "value": "cafe"},
             {"key": "leisure", "value": "park"},
@@ -158,13 +204,24 @@ def get_overpass_tags_from_interests(interests: str) -> List[OverpassTag]:
     return pruned
 
 
-@lru_cache(maxsize=128)
 def get_pois_from_overpass(
     request: RouteGenerationRequest, tags: tuple[OverpassTag, ...], debug: bool = False
 ) -> List[LLMPOISuggestion]:
     """
     Fetch, filter, thin and return POIs based on user request.
+    Results are cached for POI_CACHE_TTL seconds. Empty results are not cached.
     """
+    # TTL cache lookup
+    cache_key = (request.location, request.radius_km, request.num_pois, tags)
+    now = time.time()
+    cached = _poi_cache.get(cache_key)
+    if cached and cached[0] > now:
+        logging.debug(f"POI cache HIT for {cache_key[:3]} ({len(cached[1])} POIs)")
+        return cached[1]
+    if cached:
+        # Expired entry — drop it
+        _poi_cache.pop(cache_key, None)
+
     # Geocode user location
     lat, lon = geocode_location(request.location)
     # Calculate radius in meters
@@ -226,34 +283,50 @@ def get_pois_from_overpass(
             status_code=503,
             detail="POI lookup is temporarily unavailable (all Overpass mirrors failed). Please try again in a minute.",
         )
-    # Filter elements by interests in description and matching tags
-    pois: List[LLMPOISuggestion] = []
+    # Filter elements by interests in description and matching tags.
+    # We collect (score, poi) tuples so we can prefer well-tagged POIs during
+    # the de-duplication thinning pass below.
+    scored: List[tuple[int, LLMPOISuggestion]] = []
+    drop_counts = {
+        "no_name": 0, "no_category": 0, "no_coords": 0,
+        "no_tag_match": 0, "non_tourist": 0,
+    }
+    logging.info(f"Overpass returned {len(elements)} raw elements")
     for el in elements:
         tags_el = el.tags or {}
         name = tags_el.get("name")
         if not name:
+            drop_counts["no_name"] += 1
             continue
         category = extract_primary_category(tags_el, list(tags))
         if not category:
+            drop_counts["no_category"] += 1
             continue
         lat_el = el.lat if el.type == "node" else (el.center or {}).get("lat")
         lon_el = el.lon if el.type == "node" else (el.center or {}).get("lon")
         if lat_el is None or lon_el is None:
+            drop_counts["no_coords"] += 1
             continue
+        # Address is optional — many tourist POIs (parks, viewpoints, castles,
+        # natural landmarks) have no street address. Keep them if they have a
+        # name and coordinates; drop only the low-quality "Near {brand}" fallback.
         address = extract_address(tags_el)
-        if not address or address.startswith("Near "):
-            continue
+        if address and address.startswith("Near "):
+            address = None
         desc = tags_el.get("description") or tags_el.get("note") or None
 
         # Check if tags match
         if not any(tag.key in tags_el and tags_el[tag.key] == tag.value for tag in tags):
+            drop_counts["no_tag_match"] += 1
             continue
 
         # Skip non-tourist / errand categories
         if category in NON_TOURIST_CATEGORIES:
+            drop_counts["non_tourist"] += 1
             continue
 
-        pois.append(
+        scored.append((
+            quality_score(tags_el),
             LLMPOISuggestion(
                 id=str(el.id),
                 name=name,
@@ -262,11 +335,38 @@ def get_pois_from_overpass(
                 longitude=lon_el,
                 address=address,
                 categories=[category],
-            )
-        )
-    # Step 2: Greedy thin by minimum spacing
-    if request.num_pois > 0:
-        min_dist = (request.radius_km * 1000) / request.num_pois
+            ),
+        ))
+
+    logging.info(
+        f"POI filter: {len(elements)} elements -> {len(scored)} POIs. "
+        f"Drops: {drop_counts}"
+    )
+
+    # Sort by quality score, descending. Thinning iterates in this order so
+    # the highest-quality POI in any cluster wins de-duplication ties.
+    scored.sort(key=lambda x: x[0], reverse=True)
+    pois = [poi for _score, poi in scored]
+
+    # Step 2: Light de-duplication only — keep a big candidate pool so the
+    # route builder has real choices. Spacing along routes is the route
+    # builder's job, not the candidate filter's.
+    # Use ~75m in dense city searches, scaling up gently with radius.
+    if request.num_pois > 0 and pois:
+        min_dist = max(50.0, min(250.0, request.radius_km * 15.0))
+        before = len(pois)
         pois = thin_pois_by_min_distance(pois, min_dist)
-        logging.debug(f"After greedy thinning: {len(pois)} POIs")
+        logging.debug(
+            f"De-duplication ({min_dist:.0f}m): {before} -> {len(pois)} POIs"
+        )
+
+    # Cache non-empty results
+    if pois:
+        if len(_poi_cache) >= POI_CACHE_MAX:
+            # Evict the oldest entry (smallest expires_at)
+            oldest_key = min(_poi_cache, key=lambda k: _poi_cache[k][0])
+            _poi_cache.pop(oldest_key, None)
+        _poi_cache[cache_key] = (now + POI_CACHE_TTL, pois)
+        logging.debug(f"POI cache STORE for {cache_key[:3]} ({len(pois)} POIs)")
+
     return pois

@@ -142,11 +142,123 @@ export const CATEGORY_ICONS: { [key: string]: string } = {
     default: 'fa-map-pin'
 };
 
+// Distinct, accessible colors across all tourist categories.
+// Grouped by family so related categories share a hue but remain visually unique.
 export const CATEGORY_COLORS: { [key: string]: string } = {
-    restaurant: "#ff6b6b",
-    cafe: "#ffb347",
-    park: "#28a745",
-    museum: "#6f42c1",
-    shop: "#fd7e14",
+    // Food & drink — warm reds/oranges/yellows
+    restaurant: "#ef4444",       // red
+    cafe: "#f59e0b",             // amber
+    bar: "#b45309",              // dark amber
+    pub: "#a16207",              // deeper amber
+    nightclub: "#7c3aed",        // purple — actually night-life
+    fast_food: "#f97316",        // orange
+    biergarten: "#ca8a04",       // yellow-amber
+    ice_cream: "#ec4899",        // pink
+    food_court: "#e11d48",       // rose
+    marketplace: "#dc2626",      // crimson
+    bakery: "#d97706",           // dark amber
+    chocolate: "#92400e",        // chocolate brown
+    department_store: "#fb923c", // light orange
+    mall: "#ea580c",             // burnt orange
+
+    // Culture — purples & teals
+    museum: "#7c3aed",           // violet
+    gallery: "#9333ea",          // purple
+    arts_centre: "#a855f7",      // light purple
+    theatre: "#6b21a8",          // deep purple
+    theater: "#6b21a8",
+    cinema: "#5b21b6",           // indigo-purple
+    library: "#0d9488",          // teal
+    public_bookcase: "#14b8a6",  // light teal
+    community_centre: "#0891b2", // cyan
+    attraction: "#c026d3",       // fuchsia
+    artwork: "#d946ef",          // bright fuchsia
+    viewpoint: "#0ea5e9",        // sky blue
+    zoo: "#65a30d",              // lime-ish (animals/green)
+    aquarium: "#0284c7",         // ocean blue
+    theme_park: "#f43f5e",       // rose
+
+    // Historic — earthy browns and bronzes
+    castle: "#78350f",           // dark brown
+    monument: "#92400e",         // brown
+    memorial: "#a3a3a3",         // gray
+    ruins: "#6b7280",            // slate
+    archaeological_site: "#57534e", // stone
+    fort: "#451a03",             // deep brown
+    palace: "#b45309",
+    church: "#475569",
+    cathedral: "#334155",
+    abbey: "#64748b",
+    city_gate: "#7c2d12",
+    manor: "#a16207",
+    building: "#737373",         // historic building generic
+
+    // Leisure — greens
+    park: "#16a34a",             // green
+    fitness_centre: "#22c55e",   // light green
+    sports_centre: "#15803d",    // dark green
+    stadium: "#166534",
+    water_park: "#06b6d4",       // cyan
+    beach_resort: "#0ea5e9",     // sky
+    dance: "#db2777",            // pink
+    amusement_arcade: "#fbbf24", // yellow
+    miniature_golf: "#84cc16",   // lime
+    escape_game: "#7c3aed",
+    bowling_alley: "#f97316",
+    spa: "#a78bfa",              // light violet
+
+    // Nature — greens/blues
+    beach: "#0ea5e9",
+    wood: "#15803d",
+    water: "#0284c7",
+    cliff: "#525252",
+    hot_spring: "#0d9488",
+    cave_entrance: "#3f3f46",
+    waterfall: "#0891b2",
+
+    // Man-made landmarks — steel grays
+    pier: "#52525b",
+    lighthouse: "#1f2937",
+    windmill: "#854d0e",
+    tower: "#404040",
+
+    // Sport — yellows/limes (different from leisure greens)
+    soccer: "#84cc16",
+    basketball: "#ea580c",
+    tennis: "#facc15",
+    swimming: "#06b6d4",
+    climbing: "#a16207",
+    skating: "#0ea5e9",
+    golf: "#65a30d",
+    surfing: "#0891b2",
+    diving: "#0e7490",
+    cycling: "#22c55e",
+    skiing: "#3b82f6",
+
+    // Craft (food/drink production) — wine/beer tones
+    brewery: "#ca8a04",
+    winery: "#7f1d1d",
+    distillery: "#78350f",
+
+    // Shopping — pinks (distinct from food oranges)
+    books: "#be185d",            // rose
+    art: "#a21caf",              // dark fuchsia
+    antiques: "#9f1239",         // dark rose
+    music: "#be123c",
+    musical_instrument: "#9d174d",
+    gift: "#db2777",
+    craft: "#a855f7",
+    second_hand: "#831843",
+    jewelry: "#eab308",          // gold
+
+    // Place of worship / religious historic
+    place_of_worship: "#475569",
+
+    // Aerialway
+    cable_car: "#0369a1",
+    chair_lift: "#075985",
+    gondola: "#0c4a6e",
+
+    // Fallback
     default: "#3388ff"
 };
