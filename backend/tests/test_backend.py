@@ -1,7 +1,8 @@
+import os
 import requests
 import time
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.environ.get("BACKEND_BASE_URL", "http://localhost:8000")
 
 
 def wait_for_backend():

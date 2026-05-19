@@ -34,7 +34,7 @@ export function getIconForCategory(categories?: string[]): L.DivIcon {
 }
 
 export interface Props {
-  pois: POI[] | null;
+  pois?: POI[] | null;
   focusedPOI: POI | null;
   routeFeature: Feature | null;
 }
@@ -42,7 +42,7 @@ export interface Props {
 function MapFlyToBounds({ pois }: { pois: POI[] }) {
   const map = useMap();
   useEffect(() => {
-    if (pois.length) {
+    if (pois.length > 0) {
       const bounds = pois.map((p) => [p.latitude, p.longitude]) as [number, number][];
       map.flyToBounds(bounds, {
         padding: [20, 20],
@@ -100,8 +100,10 @@ function RouteLine({ routeFeature }: { routeFeature: Feature | null }) {
 
 export default function MapViewer({ pois, focusedPOI, routeFeature }: Props) {
   const theme = useTheme();
-  const center: [number, number] = pois && pois.length
-    ? [pois[0].latitude, pois[0].longitude]
+  const validPois = Array.isArray(pois) ? pois : [];
+  const hasPois = validPois.length > 0;
+  const center: [number, number] = hasPois && Number.isFinite(validPois[0]?.latitude) && Number.isFinite(validPois[0]?.longitude)
+    ? [validPois[0].latitude, validPois[0].longitude]
     : [32.0853, 34.7818];
 
   const tileUrl =
@@ -121,15 +123,15 @@ export default function MapViewer({ pois, focusedPOI, routeFeature }: Props) {
     >
       <TileLayer url={tileUrl} attribution={attribution} />
 
-      {pois && pois.length > 0 && (
+      {hasPois && (
         <>
-          <MapFlyToBounds pois={pois} />
+          <MapFlyToBounds pois={validPois} />
           {focusedPOI &&
             Number.isFinite(focusedPOI.latitude) &&
             Number.isFinite(focusedPOI.longitude) && (
               <FlyToMarker lat={focusedPOI.latitude} lon={focusedPOI.longitude} />
             )}
-          {pois.map((poi, i) => (
+          {validPois.map((poi, i) => (
             <Marker
               key={i}
               position={[poi.latitude, poi.longitude]}
@@ -144,9 +146,9 @@ export default function MapViewer({ pois, focusedPOI, routeFeature }: Props) {
           {routeFeature ? (
             <RouteLine routeFeature={routeFeature} />
           ) : (
-            pois.length > 1 && (
+            validPois.length > 1 && (
               <Polyline
-                positions={pois.map((p) => [p.latitude, p.longitude] as [number, number])}
+                positions={validPois.map((p) => [p.latitude, p.longitude] as [number, number])}
                 pathOptions={{ color: theme.palette.secondary.main }}
               />
             )

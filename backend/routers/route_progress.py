@@ -54,22 +54,22 @@ async def route_progress(
             await asyncio.sleep(0.1)
 
             yield {"event": "stage", "data": "Generating optimized routes"}
-            routes = call_optimized_routes_from_maps_service(request_data, pois)
+            result = call_optimized_routes_from_maps_service(request_data, pois)
 
             await asyncio.sleep(0.1)
 
             route_id = str(uuid.uuid4())
-            routes_cache[route_id] = routes
+            routes_cache[route_id] = result["routes"]
 
             yield {"event": "complete", "data": route_id}
 
         except HTTPException as http_exc:
-            logging.exception("❌ HTTPException in route-progress")
+            logging.exception("HTTPException in route-progress")
             yield {"event": "error", "data": json.dumps({"message": http_exc.detail})}
             return
 
         except Exception as e:
-            logging.exception("❌ Exception in route-progress")
+            logging.exception("Exception in route-progress")
             message = str(e) or traceback.format_exc(limit=1).splitlines()[-1]
             yield {"event": "error", "data": json.dumps({"message": message})}
             return
@@ -79,12 +79,10 @@ async def route_progress(
 
 @router.get("/get-latest-routes/{route_id}")
 async def get_latest_routes(route_id: str):
-    print(f"📦 Requested route_id: {route_id}")
-    print(f"🧠 Available route cache keys: {list(routes_cache.keys())}")
-
+    logging.info(f"Requested route_id: {route_id}")
     routes = routes_cache.get(route_id)
     if not routes:
-        print(f"❌ Route ID not found: {route_id}")
+        logging.warning(f"Route ID not found: {route_id}")
         raise HTTPException(status_code=404, detail="Routes not found")
-    print(f"✅ Returning {len(routes)} routes for {route_id}")
+    logging.info(f"Returning {len(routes)} routes for {route_id}")
     return {"routes": routes}

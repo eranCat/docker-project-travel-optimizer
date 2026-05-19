@@ -18,7 +18,7 @@ from services.maps.geocoding import geocode_location
 from services.llm.groq_client import call_groq_for_tags
 
 # Configuration
-OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
+OVERPASS_API_URL = "http://overpass-api.de/api/interpreter"
 MIN_TAGS = 3  # minimum tags required from LLM
 MAX_TAGS_PER_KEY = 3  # maximum values per key
 OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
@@ -170,7 +170,15 @@ def get_pois_from_overpass(
 
     for attempt in range(max_retries):
         try:
-            resp = requests.post(OVERPASS_API_URL, data=query, timeout=15)
+            resp = requests.post(
+                OVERPASS_API_URL,
+                data=query.encode("utf-8"),
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "User-Agent": "TravelOptimizer/1.0",
+                },
+                timeout=(30, 60),  # (connect, read)
+            )
             resp.raise_for_status()
             elements = [OverpassElement(**e) for e in resp.json().get("elements", [])]
             _last_overpass_request_time = time.time()  # Update last request time on success
@@ -203,10 +211,10 @@ def get_pois_from_overpass(
     for el in elements:
         tags_el = el.tags or {}
         name = tags_el.get("name")
-        if not name and not debug:
+        if not name:
             continue
         category = extract_primary_category(tags_el, list(tags))
-        if not category and not debug:
+        if not category:
             continue
         lat_el = el.lat if el.type == "node" else (el.center or {}).get("lat")
         lon_el = el.lon if el.type == "node" else (el.center or {}).get("lon")

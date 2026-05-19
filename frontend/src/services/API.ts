@@ -7,6 +7,20 @@ const API = axios.create({
   },
 });
 
+export function logToServer(level: "info" | "warning" | "error", message: string, data?: unknown) {
+  try {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/frontend-log`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ level, message, data }),
+      credentials: "omit",
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // ignore — logging must never break the app
+  }
+}
+
 export const fetchLocationSuggestions = async (query: string, signal?: AbortSignal) => {
   const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/autocomplete`, {
     params: { q: query },

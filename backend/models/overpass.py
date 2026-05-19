@@ -40,7 +40,7 @@ class OverpassQueryParams(BaseModel):
 
         filter_block = "\n  ".join(filters)  # 🛠️ Fix: move this out of the f-string
 
-        return f"""[out:json][timeout:25];
+        return f"""[out:json][timeout:40];
             (
             {filter_block}
             );

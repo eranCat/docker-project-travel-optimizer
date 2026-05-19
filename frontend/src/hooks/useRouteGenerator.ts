@@ -3,7 +3,7 @@ import { usePersistedState } from "./usePersistedState";
 import { RouteData } from "../models/RouteData";
 import { POI } from "../models/POI";
 import { DEFAULT_FORM } from "../constants/formDefaults";
-import { getLatestRoutes, routeProgress } from "../services/API";
+import { getLatestRoutes, routeProgress, logToServer } from "../services/API";
 
 export function useRouteGenerator() {
     const [form, setFormData] = usePersistedState("travel-form", DEFAULT_FORM);
@@ -17,9 +17,11 @@ export function useRouteGenerator() {
     // Track the currently focused POI for map centering
     const [focusedPOI, setFocusedPOI] = useState<POI | null>(null);
 
-    const currentRoute = routes[selectedIndex] ?? null;
-    const pois = currentRoute ? currentRoute.pois : [];
-    const currentRouteFeature = currentRoute ? currentRoute.feature : null;
+    const normalizedRoutes = Array.isArray(routes) ? routes : [];
+    const validSelectedIndex = selectedIndex >= 0 && selectedIndex < normalizedRoutes.length ? selectedIndex : 0;
+    const currentRoute = normalizedRoutes[validSelectedIndex] ?? null;
+    const pois = Array.isArray(currentRoute?.pois) ? currentRoute.pois : [];
+    const currentRouteFeature = currentRoute?.feature ?? null;
 
     const sseRef = useRef<EventSource | null>(null);
 
@@ -106,16 +108,27 @@ export function useRouteGenerator() {
 
         source.addEventListener("complete", async (event: MessageEvent) => {
             const routeId = event.data;
+            logToServer("info", "SSE complete received", { routeId });
 
             try {
-                const { routes: rawRoutes } = await getLatestRoutes(routeId);
-                // console.log("✅ Final route data:", rawRoutes);
+                const rawRoutes = await getLatestRoutes(routeId);
+                logToServer("info", "getLatestRoutes returned", {
+                    type: Array.isArray(rawRoutes) ? "array" : typeof rawRoutes,
+                    count: Array.isArray(rawRoutes) ? rawRoutes.length : null,
+                    firstKeys: Array.isArray(rawRoutes) && rawRoutes[0] ? Object.keys(rawRoutes[0]) : null,
+                });
+
+                if (!Array.isArray(rawRoutes)) {
+                    throw new Error(`Expected array, got ${typeof rawRoutes}`);
+                }
+
                 setRoutes(rawRoutes);
                 setSelectedIndex(0);
                 setStage(stages.length - 1);
                 setError("");
             } catch (err: any) {
                 console.error("❌ getLatestRoutes failed:", err);
+                logToServer("error", "getLatestRoutes failed", { message: err?.message, stack: err?.stack });
                 setError("❌ Failed to load routes: " + (err?.message || "unknown"));
             } finally {
                 setLoading(false);
