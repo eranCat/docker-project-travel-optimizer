@@ -117,7 +117,6 @@ export const getTheme = (mode: "light" | "dark") =>
     components: {
       MuiCssBaseline: {
         styleOverrides: `
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
           *, *::before, *::after { box-sizing: border-box; }
           html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
           body { margin: 0; }

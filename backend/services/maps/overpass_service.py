@@ -16,9 +16,14 @@ from models.llm_suggestion import LLMPOISuggestion
 
 from services.maps.geocoding import geocode_location
 from services.llm.groq_client import call_groq_for_tags
+from config import settings
 
 # Configuration
-OVERPASS_API_URL = "http://overpass-api.de/api/interpreter"
+OVERPASS_MIRRORS = [
+    settings.overpass_api_url,
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass-api.de/api/interpreter",
+]
 MIN_TAGS = 3  # minimum tags required from LLM
 MAX_TAGS_PER_KEY = 3  # maximum values per key
 OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
@@ -164,48 +169,49 @@ def get_pois_from_overpass(
         logging.debug(f"Rate limiting: sleeping {sleep_time:.2f}s before Overpass request")
         time.sleep(sleep_time)
 
-    # Execute Overpass with retry logic for rate limiting
-    max_retries = 3
-    retry_delay = 2  # seconds
+    # Try each mirror in order; fall through to next on failure
+    seen_urls: set = set()
+    mirrors = [u for u in OVERPASS_MIRRORS if u not in seen_urls and not seen_urls.add(u)]  # type: ignore[func-returns-value]
+    elements = None
+    last_error: str = "Unknown error"
 
-    for attempt in range(max_retries):
+    for mirror_url in mirrors:
         try:
             resp = requests.post(
-                OVERPASS_API_URL,
+                mirror_url,
                 data=query.encode("utf-8"),
                 headers={
                     "Content-Type": "application/x-www-form-urlencoded",
                     "User-Agent": "TravelOptimizer/1.0",
                 },
-                timeout=(30, 60),  # (connect, read)
+                timeout=(10, 45),
             )
+            if resp.status_code == 429:
+                logging.warning(f"Rate limited by {mirror_url}, trying next mirror")
+                last_error = "rate limited"
+                time.sleep(2)
+                continue
             resp.raise_for_status()
             elements = [OverpassElement(**e) for e in resp.json().get("elements", [])]
-            _last_overpass_request_time = time.time()  # Update last request time on success
-            break  # Success, exit retry loop
+            _last_overpass_request_time = time.time()
+            logging.info(f"Overpass success via {mirror_url}")
+            break
+        except requests.exceptions.Timeout:
+            logging.warning(f"Overpass timeout on {mirror_url}, trying next mirror")
+            last_error = "timeout"
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 429:  # Too Many Requests
-                if attempt < max_retries - 1:
-                    wait_time = retry_delay * (2 ** attempt)  # Exponential backoff
-                    logging.warning(f"Rate limited by Overpass API. Retrying in {wait_time}s... (attempt {attempt + 1}/{max_retries})")
-                    time.sleep(wait_time)
-                    continue
-                else:
-                    logging.error(f"Overpass API rate limit exceeded after {max_retries} attempts")
-                    raise HTTPException(
-                        status_code=429,
-                        detail="Overpass API rate limit exceeded. Please try again later."
-                    )
-            else:
-                logging.error(f"Overpass request failed with HTTP {e.response.status_code}: {e}")
-                raise HTTPException(
-                    status_code=503, detail="Failed to fetch POIs from Overpass."
-                )
+            logging.warning(f"Overpass HTTP {e.response.status_code} on {mirror_url}, trying next mirror")
+            last_error = f"HTTP {e.response.status_code}"
         except Exception as e:
-            logging.error(f"Overpass request failed: {e}")
-            raise HTTPException(
-                status_code=503, detail="Failed to fetch POIs from Overpass."
-            )
+            logging.warning(f"Overpass error on {mirror_url}: {e}, trying next mirror")
+            last_error = str(e)
+
+    if elements is None:
+        logging.error(f"All Overpass mirrors failed. Last error: {last_error}")
+        raise HTTPException(
+            status_code=503,
+            detail="POI lookup is temporarily unavailable (all Overpass mirrors failed). Please try again in a minute.",
+        )
     # Filter elements by interests in description and matching tags
     pois: List[LLMPOISuggestion] = []
     for el in elements:
