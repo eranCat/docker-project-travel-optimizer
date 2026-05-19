@@ -20,6 +20,7 @@ import RouteIcon from "@mui/icons-material/Route";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import CancelIcon from "@mui/icons-material/Cancel";
 import TuneIcon from "@mui/icons-material/Tune";
+import EditIcon from "@mui/icons-material/Edit";
 import LocationAutocomplete from "./LocationAutocomplete";
 import LoadingProgress from "./LoadingProgress";
 
@@ -41,9 +42,11 @@ interface Props {
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSubmit: (e: React.FormEvent) => void;
     onReset: () => void;
+    onEdit: () => void;
     onValidLocationSelected: () => void;
     onCancel: () => void;
     isFormValid: boolean;
+    compact?: boolean;
 }
 
 const TRAVEL_MODES = [
@@ -61,11 +64,58 @@ const RouteForm: React.FC<Props> = ({
     onChange,
     onSubmit,
     onReset,
+    onEdit,
     onValidLocationSelected,
     onCancel,
     isFormValid,
+    compact = false,
 }) => {
     const [showAdvanced, setShowAdvanced] = useState(false);
+
+    // Compact summary bar shown after search is initiated
+    if (compact) {
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    px: 2,
+                    py: 1.25,
+                    bgcolor: "background.paper",
+                    flexShrink: 0,
+                }}
+            >
+                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography
+                        variant="caption"
+                        fontWeight={700}
+                        color="text.primary"
+                        noWrap
+                        sx={{ display: "block", lineHeight: 1.3, fontFamily: '"Space Grotesk", "Inter", sans-serif' }}
+                    >
+                        {form.location || "Unknown location"}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", lineHeight: 1.4 }}>
+                        {form.interests || "No interests"} · {TRAVEL_MODES.find(m => m.value === form.travel_mode)?.label ?? form.travel_mode}
+                    </Typography>
+                </Box>
+                {loading ? (
+                    <Tooltip title="Cancel generation">
+                        <IconButton size="small" onClick={onCancel} color="error" sx={{ flexShrink: 0 }}>
+                            <CancelIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                ) : (
+                    <Tooltip title="Edit search">
+                        <IconButton size="small" onClick={onEdit} sx={{ color: "text.secondary", flexShrink: 0 }}>
+                            <EditIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                )}
+            </Box>
+        );
+    }
 
     return (
         <Box

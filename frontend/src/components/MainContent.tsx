@@ -1,4 +1,4 @@
-import { useTheme, Box, Typography, Slide } from "@mui/material";
+import { Box, Typography, Collapse } from "@mui/material";
 import ExploreIcon from "@mui/icons-material/Explore";
 import RouteForm from "./RouteForm";
 import MapViewer from "./MapViewer";
@@ -24,28 +24,30 @@ export default function MainContent() {
         handleSubmit,
         handleCancel,
         handleReset,
+        handleEdit,
         setLocationSelected,
     } = useRouteGenerator();
 
-    const showSidebar = pois.length > 0 || loading;
+    const hasResults = pois.length > 0 || loading;
 
     return (
         <Box sx={{ display: "flex", height: "100%", width: "100%", overflow: "hidden" }}>
-            {/* Form panel */}
+            {/* Single left panel: form + results stacked vertically */}
             <Box
                 sx={{
                     width: 340,
                     minWidth: 340,
                     flexShrink: 0,
                     height: "100%",
-                    overflowY: "auto",
+                    display: "flex",
+                    flexDirection: "column",
                     bgcolor: "background.paper",
                     borderRight: "1px solid",
                     borderColor: "divider",
-                    display: "flex",
-                    flexDirection: "column",
+                    overflow: "hidden",
                 }}
             >
+                {/* Form — full view when idle, compact summary bar when results are shown */}
                 <RouteForm
                     form={form}
                     loading={loading}
@@ -57,36 +59,37 @@ export default function MainContent() {
                     onSubmit={handleSubmit}
                     onCancel={handleCancel}
                     onReset={handleReset}
+                    onEdit={handleEdit}
                     onValidLocationSelected={() => setLocationSelected(true)}
+                    compact={hasResults}
                 />
-            </Box>
 
-            {/* Results panel — slides in when loading starts or results arrive */}
-            <Slide direction="right" in={showSidebar} mountOnEnter unmountOnExit timeout={300}>
-                <Box
-                    sx={{
-                        width: 320,
-                        minWidth: 320,
-                        flexShrink: 0,
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        bgcolor: "background.default",
-                        borderRight: "1px solid",
-                        borderColor: "divider",
-                    }}
-                >
-                    <RouteSidebar
-                        routesCount={routes.length}
-                        selectedIndex={selectedIndex}
-                        onSelectRoute={setSelectedIndex}
-                        pois={pois}
-                        focusedPOI={focusedPOI}
-                        onFocusPOI={setFocusedPOI}
-                        loading={loading}
-                    />
-                </Box>
-            </Slide>
+                {/* Results — expand below the compact form bar */}
+                {hasResults && (
+                    <Box
+                        sx={{
+                            flexGrow: 1,
+                            minHeight: 0,
+                            display: "flex",
+                            flexDirection: "column",
+                            borderTop: "1px solid",
+                            borderColor: "divider",
+                            bgcolor: "background.default",
+                            overflow: "hidden",
+                        }}
+                    >
+                        <RouteSidebar
+                            routesCount={routes.length}
+                            selectedIndex={selectedIndex}
+                            onSelectRoute={setSelectedIndex}
+                            pois={pois}
+                            focusedPOI={focusedPOI}
+                            onFocusPOI={setFocusedPOI}
+                            loading={loading}
+                        />
+                    </Box>
+                )}
+            </Box>
 
             {/* Map */}
             <Box sx={{ flexGrow: 1, minWidth: 0, height: "100%", position: "relative" }}>
@@ -97,7 +100,7 @@ export default function MainContent() {
                 />
 
                 {/* Empty-state overlay */}
-                {!showSidebar && (
+                {!hasResults && (
                     <Box
                         sx={{
                             position: "absolute",
