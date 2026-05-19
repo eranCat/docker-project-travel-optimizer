@@ -1,5 +1,5 @@
 import { Box, Typography, LinearProgress, Fade } from "@mui/material";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import LoopIcon from "@mui/icons-material/Loop";
 
 interface LoadingProgressProps {
     loading: boolean;
@@ -32,12 +32,12 @@ export default function LoadingProgress({ loading, stages, stage }: LoadingProgr
                 }}
             >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                    <AutoAwesomeIcon
+                    <LoopIcon
                         sx={{
                             fontSize: 16,
                             color: "primary.main",
-                            animation: "spin 1.5s linear infinite",
-                            "@keyframes spin": { from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } },
+                            animation: "spin 1.2s linear infinite",
+                            "@keyframes spin": { from: { transform: "rotate(360deg)" }, to: { transform: "rotate(0deg)" } },
                         }}
                     />
                     <Typography variant="body2" fontWeight={500} color="primary.main" noWrap>

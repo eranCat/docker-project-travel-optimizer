@@ -4,7 +4,7 @@ import POIList from "./POIList";
 import POISkeleton from "./POISkeleton";
 import { POI } from "../models/POI";
 import PlaceIcon from "@mui/icons-material/Place";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import LoopIcon from "@mui/icons-material/Loop";
 
 interface RouteSidebarProps {
     routesCount: number;
@@ -43,14 +43,14 @@ export default function RouteSidebar({
             >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.25 }}>
                     {loading ? (
-                        <AutoAwesomeIcon
+                        <LoopIcon
                             sx={{
                                 color: "primary.main",
                                 fontSize: 18,
-                                animation: "spin 1.5s linear infinite",
+                                animation: "spin 1.2s linear infinite",
                                 "@keyframes spin": {
-                                    from: { transform: "rotate(0deg)" },
-                                    to: { transform: "rotate(360deg)" },
+                                    from: { transform: "rotate(360deg)" },
+                                    to: { transform: "rotate(0deg)" },
                                 },
                             }}
                         />
