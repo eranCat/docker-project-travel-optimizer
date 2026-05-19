@@ -1,6 +1,7 @@
 import logging
 import openrouteservice
 from typing import List, Tuple
+from fastapi import HTTPException
 from config import settings
 
 ors_client = openrouteservice.Client(key=settings.ors_api_key)
@@ -17,4 +18,7 @@ def get_real_route(
         return [(lon, lat) for lon, lat in geometry]
     except Exception as e:
         logging.error(f"❌ ORS routing failed: {type(e).__name__}: {str(e)}")
-        raise  # Re-raise to signal failure
+        raise HTTPException(
+            status_code=503,
+            detail="Route service unavailable. Please try again."
+        )
