@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { Feature } from 'geojson';
 import { useTheme } from '@mui/material';
 import { POI } from '../models/POI';
-import { CATEGORY_COLORS } from '../styles/icons';
+import { CATEGORY_COLORS, DARK_CATEGORY_COLORS } from '../styles/icons';
 
 // Load Font Awesome once
 if (!document.getElementById('fa-stylesheet')) {
@@ -17,9 +17,10 @@ if (!document.getElementById('fa-stylesheet')) {
 }
 
 /** Numbered pin marker — synced with POI list index */
-function getNumberedIcon(index: number, categories?: string[], focused = false): L.DivIcon {
+function getNumberedIcon(index: number, categories?: string[], focused = false, darkMode = false): L.DivIcon {
   const category = categories?.find(c => typeof c === 'string')?.toLowerCase() || 'default';
-  const color = CATEGORY_COLORS[category] || CATEGORY_COLORS['default'];
+  const palette = darkMode ? CATEGORY_COLORS : DARK_CATEGORY_COLORS;
+  const color = palette[category] ?? palette['default'];
   const size = focused ? 40 : 32;
   const border = focused ? 3 : 2;
   const shadow = focused
@@ -123,7 +124,10 @@ export default function MapViewer({ pois, focusedPOI, routeFeature }: Props) {
     ? [validPois[0].latitude, validPois[0].longitude]
     : [32.0853, 34.7818];
 
-  const tileUrl = theme.palette.mode === 'dark'
+  const darkMode = theme.palette.mode === 'dark';
+  const colorMap = darkMode ? CATEGORY_COLORS : DARK_CATEGORY_COLORS;
+
+  const tileUrl = darkMode
     ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
     : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
@@ -160,7 +164,7 @@ export default function MapViewer({ pois, focusedPOI, routeFeature }: Props) {
               <Marker
                 key={i}
                 position={[poi.latitude, poi.longitude]}
-                icon={getNumberedIcon(i, poi.categories, isFocused)}
+                icon={getNumberedIcon(i, poi.categories, isFocused, darkMode)}
                 zIndexOffset={isFocused ? 1000 : 0}
               >
                 <Popup
@@ -177,7 +181,7 @@ export default function MapViewer({ pois, focusedPOI, routeFeature }: Props) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                       <div style={{
                         width: 20, height: 20, borderRadius: '50%',
-                        background: CATEGORY_COLORS[poi.categories?.[0]?.toLowerCase() ?? 'default'] || CATEGORY_COLORS['default'],
+                        background: colorMap[poi.categories?.[0]?.toLowerCase() ?? 'default'] || colorMap['default'],
                         color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 10, fontWeight: 700, flexShrink: 0,
                       }}>{i + 1}</div>

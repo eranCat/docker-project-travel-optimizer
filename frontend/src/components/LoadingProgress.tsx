@@ -20,7 +20,6 @@ export default function LoadingProgress({ loading, stages, stage }: LoadingProgr
                     mb: 2,
                     p: 1.5,
                     borderRadius: 2,
-                    bgcolor: "primary.main",
                     backgroundImage: (theme) =>
                         theme.palette.mode === "dark"
                             ? "linear-gradient(135deg, rgba(45,212,191,0.15) 0%, rgba(15,118,110,0.08) 100%)"

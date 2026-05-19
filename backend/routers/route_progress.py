@@ -34,7 +34,8 @@ async def route_progress(
             )
 
             yield {"event": "stage", "data": "Fetching POIs from maps_service"}
-            pois = call_pois_from_maps_service(request_data)
+            loop = asyncio.get_event_loop()
+            pois = await loop.run_in_executor(None, call_pois_from_maps_service, request_data)
             if not pois:
                 yield {
                     "event": "error",
@@ -54,7 +55,7 @@ async def route_progress(
             await asyncio.sleep(0.1)
 
             yield {"event": "stage", "data": "Generating optimized routes"}
-            result = call_optimized_routes_from_maps_service(request_data, pois)
+            result = await loop.run_in_executor(None, call_optimized_routes_from_maps_service, request_data, pois)
 
             await asyncio.sleep(0.1)
 

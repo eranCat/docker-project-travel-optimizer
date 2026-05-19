@@ -144,6 +144,7 @@ export const CATEGORY_ICONS: { [key: string]: string } = {
 
 // Distinct, accessible colors across all tourist categories.
 // Grouped by family so related categories share a hue but remain visually unique.
+// Light mode: rich, saturated tones that pop on a white/light map.
 export const CATEGORY_COLORS: { [key: string]: string } = {
     // Food & drink — warm reds/oranges/yellows
     restaurant: "#ef4444",       // red
@@ -261,4 +262,125 @@ export const CATEGORY_COLORS: { [key: string]: string } = {
 
     // Fallback
     default: "#3388ff"
+};
+
+// Dark mode: same hue families but lighter/more vivid so pins are readable
+// against the dark Carto basemap. Every color here passes ~3:1 contrast on #1a1a2e.
+export const DARK_CATEGORY_COLORS: { [key: string]: string } = {
+    // Food & drink
+    restaurant: "#f87171",
+    cafe: "#fbbf24",
+    bar: "#f59e0b",
+    pub: "#fcd34d",
+    nightclub: "#c084fc",
+    fast_food: "#fb923c",
+    biergarten: "#fde68a",
+    ice_cream: "#f9a8d4",
+    food_court: "#fb7185",
+    marketplace: "#f87171",
+    bakery: "#fcd34d",
+    chocolate: "#d97706",
+    department_store: "#fdba74",
+    mall: "#fb923c",
+
+    // Culture
+    museum: "#a78bfa",
+    gallery: "#c084fc",
+    arts_centre: "#d8b4fe",
+    theatre: "#a855f7",
+    theater: "#a855f7",
+    cinema: "#818cf8",
+    library: "#2dd4bf",
+    public_bookcase: "#5eead4",
+    community_centre: "#38bdf8",
+    attraction: "#e879f9",
+    artwork: "#f0abfc",
+    viewpoint: "#38bdf8",
+    zoo: "#a3e635",
+    aquarium: "#60a5fa",
+    theme_park: "#fb7185",
+
+    // Historic — lifted from near-black to readable mids
+    castle: "#d97706",
+    monument: "#fbbf24",
+    memorial: "#d1d5db",
+    ruins: "#9ca3af",
+    archaeological_site: "#a8a29e",
+    fort: "#f59e0b",
+    palace: "#fcd34d",
+    church: "#94a3b8",
+    cathedral: "#cbd5e1",
+    abbey: "#94a3b8",
+    city_gate: "#f97316",
+    manor: "#fbbf24",
+    building: "#a3a3a3",
+
+    // Leisure
+    park: "#4ade80",
+    fitness_centre: "#86efac",
+    sports_centre: "#4ade80",
+    stadium: "#22c55e",
+    water_park: "#22d3ee",
+    beach_resort: "#38bdf8",
+    dance: "#f472b6",
+    amusement_arcade: "#fde68a",
+    miniature_golf: "#bef264",
+    escape_game: "#a78bfa",
+    bowling_alley: "#fb923c",
+    spa: "#c4b5fd",
+
+    // Nature
+    beach: "#38bdf8",
+    wood: "#4ade80",
+    water: "#60a5fa",
+    cliff: "#9ca3af",
+    hot_spring: "#2dd4bf",
+    cave_entrance: "#a1a1aa",
+    waterfall: "#38bdf8",
+
+    // Man-made landmarks — were near-black, now light grays/blues
+    pier: "#94a3b8",
+    lighthouse: "#e2e8f0",
+    windmill: "#d97706",
+    tower: "#a3a3a3",
+
+    // Sport
+    soccer: "#bef264",
+    basketball: "#fb923c",
+    tennis: "#fde68a",
+    swimming: "#22d3ee",
+    climbing: "#fbbf24",
+    skating: "#38bdf8",
+    golf: "#a3e635",
+    surfing: "#38bdf8",
+    diving: "#0ea5e9",
+    cycling: "#86efac",
+    skiing: "#93c5fd",
+
+    // Craft
+    brewery: "#fde68a",
+    winery: "#f87171",
+    distillery: "#d97706",
+
+    // Shopping
+    books: "#f472b6",
+    art: "#e879f9",
+    antiques: "#fb7185",
+    music: "#fb7185",
+    musical_instrument: "#f472b6",
+    gift: "#f472b6",
+    craft: "#c084fc",
+    second_hand: "#fb7185",
+    jewelry: "#fde68a",
+
+    // Place of worship
+    place_of_worship: "#94a3b8",
+
+    // Aerialway
+    cable_car: "#38bdf8",
+    chair_lift: "#7dd3fc",
+    gondola: "#bae6fd",
+
+    // Fallback
+    default: "#60a5fa"
 };

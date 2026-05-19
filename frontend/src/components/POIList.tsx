@@ -10,7 +10,8 @@ import {
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import PlaceIcon from "@mui/icons-material/Place";
-import { CATEGORY_ICONS, CATEGORY_COLORS } from "../styles/icons";
+import { CATEGORY_ICONS, CATEGORY_COLORS, DARK_CATEGORY_COLORS } from "../styles/icons";
+import { useTheme } from "@mui/material";
 import { detectDirectionFromText } from "../utils/detectDirectionFromText";
 import { createSearchQuery } from "../utils/createSearchQuery";
 
@@ -26,6 +27,8 @@ function isSamePOI(a: POI | null, b: POI): boolean {
 
 export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) {
     const activeRef = useRef<HTMLDivElement | null>(null);
+    const theme = useTheme();
+    const colorMap = theme.palette.mode === "dark" ? CATEGORY_COLORS : DARK_CATEGORY_COLORS;
 
     // Scroll active card into view when focusedPOI changes
     useEffect(() => {
@@ -38,7 +41,7 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                 const canFocus = Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude);
                 const isActive = isSamePOI(focusedPOI, poi);
                 const catKey = poi.categories?.[0]?.toLowerCase() ?? "default";
-                const accentColor = CATEGORY_COLORS[catKey] || CATEGORY_COLORS["default"];
+                const accentColor = colorMap[catKey] || colorMap["default"];
 
                 return (
                     <Box
