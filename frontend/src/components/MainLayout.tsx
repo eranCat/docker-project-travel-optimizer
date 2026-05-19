@@ -1,6 +1,7 @@
 import React from "react";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
+import ExploreIcon from "@mui/icons-material/Explore";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { Typography, Box } from "@mui/material";
@@ -17,69 +18,88 @@ const MainLayout: React.FC<Props> = ({ title, children, footer, mode, toggleThem
     return (
         <Box
             sx={{
-                height: "100vh",
+                height: "100dvh",
                 width: "100vw",
                 display: "flex",
                 flexDirection: "column",
-                background: mode === "dark"
-                    ? "linear-gradient(135deg, #0f2027, #203a43, #2c5364)"
-                    : "#f5f5f5",
-                color: (theme) => theme.palette.text.primary,
+                bgcolor: "background.default",
+                color: "text.primary",
                 overflow: "hidden",
             }}
         >
-            {/* Header */}
             <Box
+                component="header"
                 sx={{
                     flexShrink: 0,
-                    height: 64,
+                    height: 60,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    px: 3,
-                    backgroundColor: mode === "dark" ? "#1a1a1a" : "#ffffff",
-                    borderBottom: "1px solid #ccc",
+                    px: 2.5,
+                    bgcolor: "background.paper",
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                    boxShadow: 1,
+                    zIndex: 20,
                 }}
             >
-                <Typography
-                    variant="h6"
-                    component="div"
-                    sx={{ fontWeight: 600 }}
-                >
-                    {title}
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <ExploreIcon sx={{ color: "primary.main", fontSize: 26 }} />
+                    <Typography
+                        component="h1"
+                        variant="h6"
+                        sx={{
+                            fontFamily: '"Space Grotesk", "Inter", sans-serif',
+                            fontWeight: 700,
+                            color: "primary.main",
+                            lineHeight: 1,
+                        }}
+                    >
+                        {title}
+                    </Typography>
+                </Box>
 
                 <Tooltip title={mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}>
-                    <IconButton onClick={toggleTheme} sx={{ color: "inherit" }}>
+                    <IconButton
+                        onClick={toggleTheme}
+                        size="small"
+                        aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                        sx={{ color: "text.secondary" }}
+                    >
                         {mode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}
                     </IconButton>
                 </Tooltip>
             </Box>
 
-            {/* Main content (fills the rest of the screen) */}
             <Box
+                component="main"
                 sx={{
                     flexGrow: 1,
                     overflow: "hidden",
                     display: "flex",
+                    minHeight: 0,
                 }}
             >
                 {children}
             </Box>
 
-            {/* Footer (optional) */}
             {footer && (
                 <Box
+                    component="footer"
                     sx={{
+                        flexShrink: 0,
                         height: 40,
-                        textAlign: "center",
-                        backgroundColor: "#eee",
                         display: "flex",
                         justifyContent: "center",
                         alignItems: "center",
+                        bgcolor: "background.paper",
+                        borderTop: "1px solid",
+                        borderColor: "divider",
                     }}
                 >
-                    <Typography variant="body2">{footer}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {footer}
+                    </Typography>
                 </Box>
             )}
         </Box>

@@ -1,6 +1,15 @@
 import React from "react";
 import { POI } from "../models/POI";
-import { List, ListItem, ListItemText, Box, Button, Divider, Typography, useTheme } from "@mui/material";
+import {
+    Box,
+    Button,
+    Chip,
+    Typography,
+    Tooltip,
+} from "@mui/material";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import MyLocationIcon from "@mui/icons-material/MyLocation";
+import PlaceIcon from "@mui/icons-material/Place";
 import { CATEGORY_ICONS } from "../styles/icons";
 import { detectDirectionFromText } from "../utils/detectDirectionFromText";
 import { createSearchQuery } from "../utils/createSearchQuery";
@@ -11,54 +20,84 @@ interface POIListProps {
 }
 
 export default function POIList({ pois, onFocusPOI }: POIListProps) {
-
-    const theme = useTheme();
-
     return (
-        <List dense>
-            {pois.map((poi, idx) => (
-                <React.Fragment key={idx}>
-                    <ListItem
-                        alignItems="flex-start"
-                        disableGutters
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            {pois.map((poi, idx) => {
+                const canFocus = Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude);
+
+                return (
+                    <Box
+                        key={idx}
                         sx={{
-                            mb: 2,
-                            p: 2.5,
+                            bgcolor: "background.paper",
+                            border: "1px solid",
+                            borderColor: "divider",
                             borderRadius: 3,
-                            backgroundColor: theme.palette.background.paper,
-                            color: theme.palette.text.primary,
-                            boxShadow: 1,
-                            border: `1px solid ${theme.palette.divider}`,
+                            p: 2,
                             display: "flex",
                             flexDirection: "column",
-                            gap: 1.5,
+                            gap: 1,
+                            transition: "box-shadow 150ms ease, border-color 150ms ease",
+                            "&:hover": {
+                                boxShadow: 3,
+                                borderColor: "primary.main",
+                            },
                         }}
                     >
-                        {/* POI Title (Link to external search) */}
-                        <Typography
-                            variant="subtitle1"
-                            fontWeight={600}
-                            sx={{
-                                color: theme.palette.text.primary,
-                                textDecoration: "none",
-                                direction: detectDirectionFromText(poi.name),
-                            }}
-                            component="a"
-                            href={createSearchQuery(poi)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            {poi.name}
-                        </Typography>
+                        {/* Step number + name */}
+                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                            <Box
+                                sx={{
+                                    flexShrink: 0,
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: "50%",
+                                    bgcolor: "primary.main",
+                                    color: "primary.contrastText",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: "0.75rem",
+                                    fontWeight: 700,
+                                    mt: 0.25,
+                                }}
+                            >
+                                {idx + 1}
+                            </Box>
+                            <Typography
+                                component="a"
+                                href={createSearchQuery(poi)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="subtitle2"
+                                fontWeight={600}
+                                sx={{
+                                    color: "text.primary",
+                                    textDecoration: "none",
+                                    lineHeight: 1.35,
+                                    direction: detectDirectionFromText(poi.name),
+                                    "&:hover": { color: "primary.main" },
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                    flexWrap: "wrap",
+                                }}
+                            >
+                                {poi.name}
+                                <OpenInNewIcon sx={{ fontSize: 13, opacity: 0.55, flexShrink: 0 }} />
+                            </Typography>
+                        </Box>
 
-                        {/* Optional description */}
+                        {/* Description */}
                         {poi.description && (
                             <Typography
                                 variant="body2"
+                                color="text.secondary"
                                 sx={{
-                                    color: "text.secondary",
-                                    fontSize: "0.875rem",
+                                    fontSize: "0.8125rem",
+                                    lineHeight: 1.5,
                                     direction: detectDirectionFromText(poi.description),
+                                    pl: "32px",
                                 }}
                             >
                                 {poi.description}
@@ -67,67 +106,86 @@ export default function POIList({ pois, onFocusPOI }: POIListProps) {
 
                         {/* Address */}
                         {poi.address && (
-                            <Typography
-                                variant="body2"
+                            <Box
                                 sx={{
-                                    color: theme.palette.text.secondary,
-                                    fontSize: "0.875rem",
-                                    direction: detectDirectionFromText(poi.address),
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    gap: 0.5,
+                                    pl: "32px",
                                 }}
                             >
-                                📍 {poi.address}
-                            </Typography>
+                                <PlaceIcon sx={{ fontSize: 14, color: "text.disabled", mt: "2px", flexShrink: 0 }} />
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ direction: detectDirectionFromText(poi.address), lineHeight: 1.45 }}
+                                >
+                                    {poi.address}
+                                </Typography>
+                            </Box>
                         )}
 
-                        {/* Categories with icons */}
+                        {/* Category chips */}
                         {Array.isArray(poi.categories) && poi.categories.length > 0 && (
                             <Box
                                 sx={{
                                     display: "flex",
                                     flexWrap: "wrap",
-                                    alignItems: "center",
-                                    gap: 1,
-                                    fontSize: "0.875rem",
-                                    color: "text.secondary",
-                                    mt: 0.5,
+                                    gap: 0.75,
+                                    pl: "32px",
                                 }}
                             >
-                                <strong>Category:</strong>
-                                {poi.categories.map((cat, idx) => {
-                                    const iconClass = CATEGORY_ICONS[cat.toLowerCase()] || "fa-map-pin";
+                                {poi.categories.map((cat, i) => {
+                                    const iconClass = CATEGORY_ICONS[cat.toLowerCase()] || CATEGORY_ICONS.default;
                                     return (
-                                        <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                            <i className={`fas ${iconClass}`} style={{ fontSize: "1rem" }} />
-                                            <span>{cat}</span>
-                                        </Box>
+                                        <Chip
+                                            key={i}
+                                            size="small"
+                                            label={
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                                    <i className={`fas ${iconClass}`} style={{ fontSize: "0.7rem" }} />
+                                                    {cat}
+                                                </Box>
+                                            }
+                                            sx={{
+                                                height: 22,
+                                                fontSize: "0.75rem",
+                                                bgcolor: "primary.main",
+                                                color: "primary.contrastText",
+                                                opacity: 0.85,
+                                            }}
+                                        />
                                     );
                                 })}
                             </Box>
                         )}
 
-                        {/* CTA Button */}
-                        <Box sx={{ textAlign: "right", mt: 1 }}>
-                            <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={() => {
-                                    if (Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude)) {
-                                        onFocusPOI(poi);
-                                    }
-                                }}
-                                sx={{
-                                    textTransform: "none",
-                                    fontWeight: 500,
-                                    borderRadius: 2,
-                                    px: 2,
-                                }}
-                            >
-                                Show on Map
-                            </Button>
+                        {/* Show on map */}
+                        <Box sx={{ pl: "32px", mt: 0.5 }}>
+                            <Tooltip title={canFocus ? "Pan map to this location" : "Coordinates not available"}>
+                                <span>
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        disabled={!canFocus}
+                                        onClick={() => onFocusPOI(poi)}
+                                        startIcon={<MyLocationIcon fontSize="small" />}
+                                        sx={{
+                                            borderRadius: 20,
+                                            fontSize: "0.75rem",
+                                            py: 0.5,
+                                            px: 1.5,
+                                            minHeight: 32,
+                                        }}
+                                    >
+                                        Show on map
+                                    </Button>
+                                </span>
+                            </Tooltip>
                         </Box>
-                    </ListItem>
-                </React.Fragment>
-            ))}
-        </List>
+                    </Box>
+                );
+            })}
+        </Box>
     );
 }
