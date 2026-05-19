@@ -272,6 +272,22 @@ input[type="number"]::-webkit-inner-spin-button {
   color: var(--accent);
 }
 
+/* ── Leaflet popup overrides ── */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 1px 6px rgba(0, 0, 0, 0.1) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+}
+
+.leaflet-popup-tip-container {
+  margin-top: -1px;
+}
+
 /* ── POI marker ── */
 .poi-marker {
   position: relative;

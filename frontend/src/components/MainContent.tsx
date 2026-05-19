@@ -1,4 +1,4 @@
-import { useTheme, Box, Typography } from "@mui/material";
+import { useTheme, Box, Typography, Slide } from "@mui/material";
 import ExploreIcon from "@mui/icons-material/Explore";
 import RouteForm from "./RouteForm";
 import MapViewer from "./MapViewer";
@@ -27,16 +27,15 @@ export default function MainContent() {
         setLocationSelected,
     } = useRouteGenerator();
 
-    const theme = useTheme();
-    const hasResults = pois.length > 0;
+    const showSidebar = pois.length > 0 || loading;
 
     return (
         <Box sx={{ display: "flex", height: "100%", width: "100%", overflow: "hidden" }}>
             {/* Form panel */}
             <Box
                 sx={{
-                    width: 380,
-                    minWidth: 380,
+                    width: 340,
+                    minWidth: 340,
                     flexShrink: 0,
                     height: "100%",
                     overflowY: "auto",
@@ -62,12 +61,12 @@ export default function MainContent() {
                 />
             </Box>
 
-            {/* Results panel */}
-            {hasResults && (
+            {/* Results panel — slides in when loading starts or results arrive */}
+            <Slide direction="right" in={showSidebar} mountOnEnter unmountOnExit timeout={300}>
                 <Box
                     sx={{
-                        width: 360,
-                        minWidth: 360,
+                        width: 320,
+                        minWidth: 320,
                         flexShrink: 0,
                         height: "100%",
                         display: "flex",
@@ -82,38 +81,31 @@ export default function MainContent() {
                         selectedIndex={selectedIndex}
                         onSelectRoute={setSelectedIndex}
                         pois={pois}
+                        focusedPOI={focusedPOI}
                         onFocusPOI={setFocusedPOI}
+                        loading={loading}
                     />
                 </Box>
-            )}
+            </Slide>
 
             {/* Map */}
-            <Box
-                sx={{
-                    flexGrow: 1,
-                    minWidth: 0,
-                    height: "100%",
-                    position: "relative",
-                }}
-            >
+            <Box sx={{ flexGrow: 1, minWidth: 0, height: "100%", position: "relative" }}>
                 <MapViewer
                     pois={pois}
                     focusedPOI={focusedPOI}
                     routeFeature={currentRouteFeature}
                 />
 
-                {/* Empty-state overlay when no results yet */}
-                {!hasResults && !loading && (
+                {/* Empty-state overlay */}
+                {!showSidebar && (
                     <Box
                         sx={{
                             position: "absolute",
                             inset: 0,
                             display: "flex",
-                            flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
                             pointerEvents: "none",
-                            gap: 1.5,
                             pb: "10%",
                         }}
                     >
@@ -123,25 +115,23 @@ export default function MainContent() {
                                 border: "1px solid",
                                 borderColor: "divider",
                                 borderRadius: 3,
-                                px: 4,
-                                py: 3,
+                                px: 3.5,
+                                py: 2.5,
                                 textAlign: "center",
                                 boxShadow: 3,
-                                maxWidth: 280,
+                                maxWidth: 260,
                             }}
                         >
-                            <ExploreIcon
-                                sx={{ fontSize: 40, color: "primary.main", mb: 1.5, opacity: 0.85 }}
-                            />
+                            <ExploreIcon sx={{ fontSize: 36, color: "primary.main", mb: 1.25, opacity: 0.85 }} />
                             <Typography
-                                variant="subtitle1"
-                                fontWeight={600}
+                                variant="subtitle2"
+                                fontWeight={700}
                                 sx={{ fontFamily: '"Space Grotesk", "Inter", sans-serif' }}
                             >
                                 Plan your trip
                             </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                                Fill in your destination and interests, then hit Generate.
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block", lineHeight: 1.5 }}>
+                                Add your destination and interests, then hit Generate.
                             </Typography>
                         </Box>
                     </Box>

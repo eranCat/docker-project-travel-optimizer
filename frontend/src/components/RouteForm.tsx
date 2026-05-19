@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     Box,
     Button,
@@ -6,13 +6,11 @@ import {
     TextField,
     Typography,
     Divider,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
     Alert,
     ToggleButtonGroup,
     ToggleButton,
+    Collapse,
+    IconButton,
     Tooltip,
 } from "@mui/material";
 import DirectionsWalkIcon from "@mui/icons-material/DirectionsWalk";
@@ -21,6 +19,7 @@ import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
 import RouteIcon from "@mui/icons-material/Route";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import CancelIcon from "@mui/icons-material/Cancel";
+import TuneIcon from "@mui/icons-material/Tune";
 import LocationAutocomplete from "./LocationAutocomplete";
 import LoadingProgress from "./LoadingProgress";
 
@@ -48,9 +47,9 @@ interface Props {
 }
 
 const TRAVEL_MODES = [
-    { value: "walking", label: "Walk", icon: <DirectionsWalkIcon fontSize="small" /> },
-    { value: "driving", label: "Drive", icon: <DirectionsCarIcon fontSize="small" /> },
-    { value: "cycling", label: "Cycle", icon: <DirectionsBikeIcon fontSize="small" /> },
+    { value: "walking", label: "Walk", icon: <DirectionsWalkIcon sx={{ fontSize: 18 }} /> },
+    { value: "driving", label: "Drive", icon: <DirectionsCarIcon sx={{ fontSize: 18 }} /> },
+    { value: "cycling", label: "Cycle", icon: <DirectionsBikeIcon sx={{ fontSize: 18 }} /> },
 ];
 
 const RouteForm: React.FC<Props> = ({
@@ -66,35 +65,34 @@ const RouteForm: React.FC<Props> = ({
     onCancel,
     isFormValid,
 }) => {
+    const [showAdvanced, setShowAdvanced] = useState(false);
+
     return (
         <Box
             component="form"
             onSubmit={onSubmit}
-            sx={{
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-                p: 2.5,
-                gap: 0,
-            }}
+            sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2, gap: 0 }}
         >
-            {/* Title */}
-            <Typography
-                variant="h6"
-                sx={{
-                    fontFamily: '"Space Grotesk", "Inter", sans-serif',
-                    fontWeight: 700,
-                    mb: 0.5,
-                    color: "text.primary",
-                }}
-            >
-                Plan Your Route
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-                Fill in your preferences and generate a route.
-            </Typography>
+            {/* Header */}
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                <Typography
+                    variant="subtitle1"
+                    sx={{
+                        fontFamily: '"Space Grotesk", "Inter", sans-serif',
+                        fontWeight: 700,
+                        color: "text.primary",
+                    }}
+                >
+                    Plan Your Route
+                </Typography>
+                <Tooltip title="Reset form">
+                    <IconButton size="small" onClick={onReset} sx={{ color: "text.disabled" }}>
+                        <RestartAltIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+            </Box>
 
-            <Stack spacing={2.5} sx={{ flexGrow: 1 }}>
+            <Stack spacing={1.75} sx={{ flexGrow: 1 }}>
                 {/* Location */}
                 <LocationAutocomplete
                     value={form.location}
@@ -112,57 +110,16 @@ const RouteForm: React.FC<Props> = ({
                     label="Interests"
                     name="interests"
                     fullWidth
+                    size="small"
                     value={form.interests}
                     onChange={onChange}
-                    placeholder="e.g. food, art, hiking"
+                    placeholder="food, art, hiking…"
                     helperText="Separate with commas"
                 />
 
-                <Divider />
-
-                {/* Numeric row */}
-                <Stack direction="row" spacing={1.5}>
-                    <TextField
-                        fullWidth
-                        label="Radius (km)"
-                        name="radius_km"
-                        type="number"
-                        value={form.radius_km}
-                        onChange={onChange}
-                        slotProps={{
-                            input: { inputMode: "numeric" },
-                            inputLabel: { shrink: true },
-                        }}
-                    />
-                    <TextField
-                        fullWidth
-                        label="Routes"
-                        name="num_routes"
-                        type="number"
-                        value={form.num_routes}
-                        onChange={onChange}
-                        slotProps={{
-                            input: { inputMode: "numeric" },
-                            inputLabel: { shrink: true },
-                        }}
-                    />
-                    <TextField
-                        fullWidth
-                        label="POIs"
-                        name="num_pois"
-                        type="number"
-                        value={form.num_pois}
-                        onChange={onChange}
-                        slotProps={{
-                            input: { inputMode: "numeric" },
-                            inputLabel: { shrink: true },
-                        }}
-                    />
-                </Stack>
-
-                {/* Travel mode toggle */}
+                {/* Travel mode */}
                 <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block", fontWeight: 500 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.75, display: "block", fontWeight: 500 }}>
                         Travel Mode
                     </Typography>
                     <ToggleButtonGroup
@@ -177,15 +134,16 @@ const RouteForm: React.FC<Props> = ({
                         size="small"
                         aria-label="Travel mode"
                         sx={{
+                            gap: 0.75,
                             "& .MuiToggleButton-root": {
                                 flex: 1,
-                                gap: 0.75,
+                                gap: 0.5,
                                 fontWeight: 500,
-                                fontSize: "0.8125rem",
+                                fontSize: "0.8rem",
                                 borderRadius: "8px !important",
                                 border: "1px solid",
                                 borderColor: "divider",
-                                minHeight: 44,
+                                minHeight: 40,
                                 color: "text.secondary",
                                 "&.Mui-selected": {
                                     bgcolor: "primary.main",
@@ -194,7 +152,6 @@ const RouteForm: React.FC<Props> = ({
                                     "&:hover": { bgcolor: "primary.dark" },
                                 },
                             },
-                            gap: 1,
                         }}
                     >
                         {TRAVEL_MODES.map(({ value, label, icon }) => (
@@ -205,31 +162,99 @@ const RouteForm: React.FC<Props> = ({
                         ))}
                     </ToggleButtonGroup>
                 </Box>
+
+                <Divider />
+
+                {/* Advanced settings toggle */}
+                <Box>
+                    <Button
+                        size="small"
+                        variant="text"
+                        color="inherit"
+                        onClick={() => setShowAdvanced(v => !v)}
+                        startIcon={<TuneIcon fontSize="small" />}
+                        sx={{
+                            color: "text.secondary",
+                            fontSize: "0.8rem",
+                            p: 0,
+                            minWidth: 0,
+                            "&:hover": { color: "primary.main", bgcolor: "transparent" },
+                        }}
+                        disableRipple
+                    >
+                        {showAdvanced ? "Hide advanced" : "Advanced settings"}
+                    </Button>
+
+                    <Collapse in={showAdvanced} unmountOnExit>
+                        <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
+                            <TextField
+                                fullWidth
+                                label="Radius (km)"
+                                name="radius_km"
+                                type="number"
+                                size="small"
+                                value={form.radius_km}
+                                onChange={onChange}
+                                slotProps={{
+                                    input: { inputMode: "numeric" },
+                                    inputLabel: { shrink: true },
+                                }}
+                            />
+                            <TextField
+                                fullWidth
+                                label="Routes"
+                                name="num_routes"
+                                type="number"
+                                size="small"
+                                value={form.num_routes}
+                                onChange={onChange}
+                                slotProps={{
+                                    input: { inputMode: "numeric" },
+                                    inputLabel: { shrink: true },
+                                }}
+                            />
+                            <TextField
+                                fullWidth
+                                label="POIs"
+                                name="num_pois"
+                                type="number"
+                                size="small"
+                                value={form.num_pois}
+                                onChange={onChange}
+                                slotProps={{
+                                    input: { inputMode: "numeric" },
+                                    inputLabel: { shrink: true },
+                                }}
+                            />
+                        </Stack>
+                    </Collapse>
+                </Box>
             </Stack>
 
-            {/* Loading + error feedback */}
-            <Box sx={{ mt: 2.5 }}>
+            {/* Loading + error */}
+            <Box sx={{ mt: 2 }}>
                 <LoadingProgress loading={loading} stages={stages} stage={stage} />
                 {error && (
                     <Alert
                         severity="error"
                         variant="outlined"
-                        sx={{ borderRadius: 2, fontSize: "0.875rem", whiteSpace: "pre-line" }}
+                        sx={{ borderRadius: 2, fontSize: "0.8125rem", whiteSpace: "pre-line" }}
                     >
                         {error}
                     </Alert>
                 )}
             </Box>
 
-            {/* Action buttons */}
-            <Stack spacing={1.5} sx={{ mt: 2 }}>
+            {/* CTA */}
+            <Box sx={{ mt: 1.5 }}>
                 {loading ? (
                     <Button
                         variant="outlined"
                         color="error"
                         fullWidth
+                        size="small"
                         onClick={onCancel}
-                        startIcon={<CancelIcon />}
+                        startIcon={<CancelIcon fontSize="small" />}
                     >
                         Cancel
                     </Button>
@@ -240,24 +265,13 @@ const RouteForm: React.FC<Props> = ({
                         color="primary"
                         fullWidth
                         disabled={!isFormValid}
-                        startIcon={<RouteIcon />}
-                        sx={{ py: 1.25 }}
+                        startIcon={<RouteIcon fontSize="small" />}
+                        sx={{ py: 1.1, fontWeight: 700 }}
                     >
                         Generate Route
                     </Button>
                 )}
-                <Button
-                    type="button"
-                    variant="text"
-                    color="inherit"
-                    fullWidth
-                    onClick={onReset}
-                    startIcon={<RestartAltIcon />}
-                    sx={{ color: "text.secondary", py: 1 }}
-                >
-                    Reset
-                </Button>
-            </Stack>
+            </Box>
         </Box>
     );
 };
