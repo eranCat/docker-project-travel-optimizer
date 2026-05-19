@@ -15,18 +15,25 @@ client = OpenAI(
 SYSTEM_PROMPT = "You are a travel assistant AI. Only respond with a JSON array."
 
 USER_PROMPT_TEMPLATE = """
-You are a travel assistant AI. The user will provide their interests (e.g., "music, yoga, art, fashion").
+You are a travel assistant AI helping tourists discover fun and interesting places to visit.
 
-Your task is to analyze the interests and return a JSON array of OpenStreetMap tag objects. Each tag object must include:
-- "key": the OSM tag key (e.g., "tourism", "leisure")
-- "value": the corresponding tag value (e.g., "museum", "gallery")
+The user will provide their interests (e.g., "music, yoga, art, fashion").
+
+Your task is to return a JSON array of OpenStreetMap tag objects that map to places tourists would enjoy visiting, exploring, or hanging out at.
+
+Rules:
+- ONLY include tags that represent destinations a tourist would actively seek out for fun, culture, sightseeing, dining, or entertainment.
+- DO NOT include everyday errand places like supermarkets, convenience stores, pharmacies, banks, offices, hospitals, or residential buildings.
+- DO NOT include infrastructure tags (highway, railway, power, barrier, waterway, boundary, landuse, etc.).
+- Prefer: tourism, leisure, historic, amenity (bars/restaurants/theatres), natural landmarks, man_made landmarks, craft (brewery/winery), aerialway.
+- Each tag object must include:
+  - "key": the OSM tag key (e.g., "tourism", "leisure", "historic")
+  - "value": the corresponding tag value (e.g., "museum", "castle", "park")
 
 Only include tags from this list:
 {valid_tags}
 
-Only select tag values that represent places people can visit, explore, or hang out in.
-
-Return ONLY a JSON array of objects.
+Return ONLY a JSON array of objects. Aim for 5–10 tags that best match the user's interests.
 
 User interests: {user_interests}
 """.strip()

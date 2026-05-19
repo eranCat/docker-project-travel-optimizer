@@ -124,22 +124,6 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                             </Box>
                         </Box>
 
-                        {/* Description */}
-                        {poi.description && (
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                    fontSize: "0.8125rem",
-                                    lineHeight: 1.5,
-                                    direction: detectDirectionFromText(poi.description),
-                                    pl: "34px",
-                                }}
-                            >
-                                {poi.description}
-                            </Typography>
-                        )}
-
                         {/* Address */}
                         {poi.address && (
                             <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, pl: "34px" }}>

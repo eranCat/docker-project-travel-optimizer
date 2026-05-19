@@ -18,14 +18,28 @@ from services.maps.geocoding import geocode_location
 from services.llm.groq_client import call_groq_for_tags
 from config import settings
 
+# Category values that are not tourist destinations (errands, infrastructure, etc.)
+NON_TOURIST_CATEGORIES = {
+    "supermarket", "convenience", "fast_food", "pharmacy", "hospital", "clinic",
+    "doctor", "dentist", "bank", "atm", "post_office", "police", "fire_station",
+    "fuel", "parking", "car_wash", "laundry", "dry_cleaning", "storage",
+    "office", "government", "residential", "commercial", "industrial", "retail",
+    "motorway", "trunk", "primary", "secondary", "tertiary", "residential",
+    "service", "footway", "cycleway", "path", "steps", "platform", "station",
+    "halt", "tram_stop", "subway_entrance", "fence", "wall", "gate", "bollard",
+    "generator", "power", "telecom", "mast", "drain", "ditch", "farmland",
+    "cemetery", "kiosk", "butcher", "shoes", "clothes", "alcohol", "cannabis",
+    "beverages", "electrician", "carpenter", "shoemaker", "tailor",
+}
+
 # Configuration
 OVERPASS_MIRRORS = [
     settings.overpass_api_url,
     "https://overpass.kumi.systems/api/interpreter",
     "https://overpass-api.de/api/interpreter",
 ]
-MIN_TAGS = 3  # minimum tags required from LLM
-MAX_TAGS_PER_KEY = 3  # maximum values per key
+MIN_TAGS = 2  # minimum tags required from LLM
+MAX_TAGS_PER_KEY = 4  # maximum values per key
 OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
 
 # Rate limiting
@@ -229,11 +243,14 @@ def get_pois_from_overpass(
         address = extract_address(tags_el)
         if not address or address.startswith("Near "):
             continue
-        desc = tags_el.get("description") or tags_el.get("note") or f"{name} - {address}"
+        desc = tags_el.get("description") or tags_el.get("note") or None
 
-        # Check if tags match (removed overly strict interest matching in description)
-        # The LLM already mapped interests to relevant tags, so tag matching is sufficient
+        # Check if tags match
         if not any(tag.key in tags_el and tags_el[tag.key] == tag.value for tag in tags):
+            continue
+
+        # Skip non-tourist / errand categories
+        if category in NON_TOURIST_CATEGORIES:
             continue
 
         pois.append(

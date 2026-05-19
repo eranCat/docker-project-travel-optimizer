@@ -5,45 +5,33 @@
     "restaurant",
     "pub",
     "nightclub",
-    "fast_food",
-    "stripclub",
-    "casino",
     "theatre",
     "theater",
     "cinema",
-    "brothel",
     "biergarten",
     "ice_cream",
     "food_court",
     "marketplace"
   ],
   "shop": [
-    "alcohol",
-    "cannabis",
-    "supermarket",
-    "clothes",
-    "convenience",
-    "bakery",
-    "butcher",
-    "beverages",
     "chocolate",
     "department_store",
     "mall",
-    "shoes",
     "jewelry",
-    "kiosk"
+    "bakery"
   ],
   "leisure": [
     "park",
-    "adult_gaming_centre",
     "fitness_centre",
     "sports_centre",
-    "sauna",
     "stadium",
     "water_park",
     "beach_resort",
     "dance",
-    "amusement_arcade"
+    "amusement_arcade",
+    "miniature_golf",
+    "escape_game",
+    "bowling_alley"
   ],
   "tourism": [
     "museum",
@@ -53,225 +41,60 @@
     "aquarium",
     "gallery",
     "viewpoint",
-    "hotel",
-    "hostel",
-    "motel",
-    "guest_house"
+    "artwork"
   ],
-  "highway": [
-    "motorway",
-    "trunk",
-    "primary",
-    "secondary",
-    "tertiary",
-    "residential",
-    "service",
-    "pedestrian",
-    "footway",
-    "cycleway",
-    "path",
-    "steps"
-  ],
-  "building": [
-    "yes",
-    "residential",
-    "commercial",
-    "industrial",
-    "retail",
-    "apartments",
-    "house",
-    "detached",
-    "terrace",
-    "hotel",
-    "dormitory",
-    "school",
-    "hospital",
-    "church"
+  "historic": [
+    "castle",
+    "monument",
+    "memorial",
+    "ruins",
+    "archaeological_site",
+    "building",
+    "fort",
+    "palace",
+    "church",
+    "cathedral",
+    "abbey",
+    "city_gate",
+    "lighthouse",
+    "manor"
   ],
   "natural": [
-    "water",
-    "wood",
     "beach",
-    "scrub",
-    "heath",
-    "wetland",
-    "glacier",
-    "rock",
-    "sand",
-    "cliff"
+    "wood",
+    "water",
+    "cliff",
+    "hot_spring",
+    "cave_entrance",
+    "waterfall"
   ],
   "man_made": [
-    "bridge",
     "pier",
     "lighthouse",
     "windmill",
-    "chimney",
-    "tower",
-    "water_tower",
-    "storage_tank",
-    "crane"
+    "tower"
   ],
   "sport": [
     "soccer",
     "basketball",
     "tennis",
     "swimming",
-    "gymnastics",
     "climbing",
     "skating",
     "golf",
-    "rugby",
-    "baseball"
-  ],
-  "healthcare": [
-    "hospital",
-    "clinic",
-    "pharmacy",
-    "doctor",
-    "dentist",
-    "laboratory",
-    "rehabilitation",
-    "nursing_home"
+    "surfing",
+    "diving",
+    "cycling",
+    "skiing"
   ],
   "craft": [
     "brewery",
     "winery",
-    "distillery",
-    "bakery",
-    "carpenter",
-    "electrician",
-    "jeweller",
-    "shoemaker",
-    "tailor"
-  ],
-  "office": [
-    "company",
-    "government",
-    "insurance",
-    "lawyer",
-    "newspaper",
-    "ngo",
-    "political_party",
-    "telecommunication",
-    "travel_agent"
-  ],
-  "emergency": [
-    "ambulance_station",
-    "fire_station",
-    "lifeguard",
-    "police",
-    "rescue_station",
-    "siren"
-  ],
-  "place": [
-    "city",
-    "town",
-    "village",
-    "hamlet",
-    "suburb",
-    "neighbourhood",
-    "locality",
-    "isolated_dwelling"
-  ],
-  "railway": [
-    "station",
-    "halt",
-    "tram_stop",
-    "subway_entrance",
-    "level_crossing",
-    "rail",
-    "light_rail",
-    "subway",
-    "tram"
-  ],
-  "public_transport": [
-    "platform",
-    "stop_position",
-    "station",
-    "stop_area",
-    "route"
-  ],
-  "barrier": [
-    "fence",
-    "wall",
-    "gate",
-    "bollard",
-    "lift_gate",
-    "kissing_gate",
-    "stile",
-    "turnstile"
-  ],
-  "boundary": [
-    "administrative",
-    "national_park",
-    "protected_area",
-    "postal_code",
-    "political"
-  ],
-  "landuse": [
-    "residential",
-    "commercial",
-    "industrial",
-    "retail",
-    "forest",
-    "farmland",
-    "meadow",
-    "grass",
-    "cemetery"
-  ],
-  "military": [
-    "airfield",
-    "barracks",
-    "checkpoint",
-    "danger_area",
-    "naval_base",
-    "training_area"
-  ],
-  "power": [
-    "generator",
-    "line",
-    "minor_line",
-    "plant",
-    "pole",
-    "substation",
-    "tower",
-    "transformer"
-  ],
-  "telecom": [
-    "exchange",
-    "data_center",
-    "line",
-    "mast",
-    "pole",
-    "tower"
-  ],
-  "waterway": [
-    "river",
-    "stream",
-    "canal",
-    "drain",
-    "ditch",
-    "dam",
-    "weir",
-    "lock_gate"
-  ],
-  "aeroway": [
-    "aerodrome",
-    "apron",
-    "gate",
-    "helipad",
-    "runway",
-    "taxiway",
-    "terminal"
+    "distillery"
   ],
   "aerialway": [
     "cable_car",
     "chair_lift",
-    "drag_lift",
-    "gondola",
-    "magic_carpet",
-    "mixed_lift",
-    "platter",
-    "rope_tow"
+    "gondola"
   ]
 }
