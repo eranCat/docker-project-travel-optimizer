@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import json
 import re
@@ -277,39 +278,14 @@ def get_overpass_tags_from_interests(interests: str, time_of_day: Optional[str] 
     return pruned
 
 
-async def get_pois_from_overpass(
-    request: RouteGenerationRequest, tags: tuple[OverpassTag, ...], debug: bool = False
-) -> List[LLMPOISuggestion]:
-    """
-    Fetch, filter, thin and return POIs based on user request.
-    Results are cached for POI_CACHE_TTL seconds. Empty results are not cached.
-    """
-    # TTL cache lookup
-    cache_key = (request.location, request.radius_km, request.num_pois, tags, request.wheelchair)
-    now = time.time()
-    cached = _poi_cache.get(cache_key)
-    if cached and cached[0] > now:
-        logging.debug(f"POI cache HIT for {cache_key[:3]} ({len(cached[1])} POIs)")
-        return cached[1]
-    if cached:
-        # Expired entry — drop it
-        _poi_cache.pop(cache_key, None)
+def _fetch_overpass_elements(query: str) -> List[OverpassElement]:
+    """Blocking Overpass fetch with rate limiting and mirror fallback.
 
-    # Skip geocoding if lat/lon already provided; otherwise geocode
-    if request.latitude is not None and request.longitude is not None:
-        lat, lon = request.latitude, request.longitude
-        logging.debug(f"Using pre-geocoded coords: ({lat}, {lon})")
-    else:
-        lat, lon = await geocode_location(request.location)
-    # Calculate radius in meters
-    radius_m = int(request.radius_km * 1000)
-    # Build Overpass query
-    qp = OverpassQueryParams(tags=list(tags), lat=lat, lon=lon, radius_m=radius_m, wheelchair=request.wheelchair)
-    query = qp.to_query()
-    logging.debug(f"Overpass query:\n{query}\n")
+    Runs in a thread (via run_in_executor) — uses synchronous requests/sleep.
+    """
+    global _last_overpass_request_time
 
     # Rate limiting: ensure minimum time between requests
-    global _last_overpass_request_time
     current_time = time.time()
     time_since_last_request = current_time - _last_overpass_request_time
     if time_since_last_request < MIN_REQUEST_INTERVAL:
@@ -360,6 +336,44 @@ async def get_pois_from_overpass(
             status_code=503,
             detail="POI lookup is temporarily unavailable (all Overpass mirrors failed). Please try again in a minute.",
         )
+    return elements
+
+
+async def get_pois_from_overpass(
+    request: RouteGenerationRequest, tags: tuple[OverpassTag, ...], debug: bool = False
+) -> List[LLMPOISuggestion]:
+    """
+    Fetch, filter, thin and return POIs based on user request.
+    Results are cached for POI_CACHE_TTL seconds. Empty results are not cached.
+    """
+    # TTL cache lookup
+    cache_key = (request.location, request.radius_km, request.num_pois, tags, request.wheelchair)
+    now = time.time()
+    cached = _poi_cache.get(cache_key)
+    if cached and cached[0] > now:
+        logging.debug(f"POI cache HIT for {cache_key[:3]} ({len(cached[1])} POIs)")
+        return cached[1]
+    if cached:
+        # Expired entry — drop it
+        _poi_cache.pop(cache_key, None)
+
+    # Skip geocoding if lat/lon already provided; otherwise geocode
+    if request.latitude is not None and request.longitude is not None:
+        lat, lon = request.latitude, request.longitude
+        logging.debug(f"Using pre-geocoded coords: ({lat}, {lon})")
+    else:
+        lat, lon = await geocode_location(request.location)
+    # Calculate radius in meters
+    radius_m = int(request.radius_km * 1000)
+    # Build Overpass query
+    qp = OverpassQueryParams(tags=list(tags), lat=lat, lon=lon, radius_m=radius_m, wheelchair=request.wheelchair)
+    query = qp.to_query()
+    logging.debug(f"Overpass query:\n{query}\n")
+
+    # Blocking HTTP + sleeps run in a thread so the event loop stays responsive.
+    elements = await asyncio.get_running_loop().run_in_executor(
+        None, _fetch_overpass_elements, query
+    )
     # Filter elements by interests in description and matching tags.
     # We collect (score, poi) tuples so we can prefer well-tagged POIs during
     # the de-duplication thinning pass below.

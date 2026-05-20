@@ -10,11 +10,20 @@ export function useBackendHealth(): boolean | null {
     useEffect(() => {
         let cancelled = false;
         let timer: ReturnType<typeof setTimeout>;
+        let failures = 0;
 
         async function check() {
             const ok = await checkHealth();
             if (cancelled) return;
-            setHealthy(ok);
+            if (ok) {
+                failures = 0;
+                setHealthy(true);
+            } else {
+                // Require 2 consecutive failures before flagging unhealthy —
+                // avoids false positives from a single transient timeout.
+                failures += 1;
+                if (failures >= 2) setHealthy(false);
+            }
             timer = setTimeout(check, ok ? POLL_HEALTHY_MS : POLL_UNHEALTHY_MS);
         }
 

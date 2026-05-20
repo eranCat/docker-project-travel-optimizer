@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import List
 
@@ -14,7 +15,12 @@ from services.generate_optimized_routes import generate_optimized_routes
 async def call_pois_from_maps_service(
     payload: RouteGenerationRequest,
 ) -> List[LLMPOISuggestion]:
-    tags = get_overpass_tags_from_interests(payload.interests, payload.time_of_day)
+    # Groq call is synchronous (blocking) — offload so the event loop stays
+    # responsive (e.g. /health) during generation.
+    loop = asyncio.get_running_loop()
+    tags = await loop.run_in_executor(
+        None, get_overpass_tags_from_interests, payload.interests, payload.time_of_day
+    )
     logging.debug(f"Generated tags from interests: {tags}")
     return await get_pois_from_overpass(payload, tuple(tags))
 
