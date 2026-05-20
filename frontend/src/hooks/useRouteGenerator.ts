@@ -101,6 +101,7 @@ export function useRouteGenerator() {
                 latitude: form.latitude,
                 longitude: form.longitude,
             }),
+            wheelchair: form.wheelchair,
         });
 
         sseRef.current = source;

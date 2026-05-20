@@ -25,6 +25,7 @@ async def route_progress(
     travel_mode: str,
     latitude: float | None = None,
     longitude: float | None = None,
+    wheelchair: bool = False,
 ):
     async def event_generator():
         clear_log()
@@ -47,6 +48,7 @@ async def route_progress(
                 travel_mode=travel_mode,
                 latitude=lat,
                 longitude=lon,
+                wheelchair=wheelchair,
             )
 
             yield {"event": "stage", "data": "Fetching POIs from maps_service"}

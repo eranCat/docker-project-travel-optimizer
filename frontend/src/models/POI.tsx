@@ -6,6 +6,7 @@ export interface POI {
     longitude: number;
     categories?: string[];
     opening_hours?: string;
+    wheelchair_accessible?: boolean;
 }
 
 export interface Props {

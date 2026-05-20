@@ -13,6 +13,7 @@ class RouteGenerationRequest(BaseModel):
     travel_mode: str = Field(..., description="One of: walking, driving, cycling")
     latitude: Optional[float] = Field(None, description="Pre-geocoded latitude (skips re-geocoding)")
     longitude: Optional[float] = Field(None, description="Pre-geocoded longitude (skips re-geocoding)")
+    wheelchair: bool = Field(default=False, description="Filter for wheelchair-accessible POIs only")
 
     def __hash__(self):
-        return hash((self.interests, self.location, self.radius_km, self.num_routes, self.num_pois, self.travel_mode))
+        return hash((self.interests, self.location, self.radius_km, self.num_routes, self.num_pois, self.travel_mode, self.wheelchair))

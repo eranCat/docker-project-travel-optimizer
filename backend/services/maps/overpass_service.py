@@ -260,7 +260,7 @@ async def get_pois_from_overpass(
     Results are cached for POI_CACHE_TTL seconds. Empty results are not cached.
     """
     # TTL cache lookup
-    cache_key = (request.location, request.radius_km, request.num_pois, tags)
+    cache_key = (request.location, request.radius_km, request.num_pois, tags, request.wheelchair)
     now = time.time()
     cached = _poi_cache.get(cache_key)
     if cached and cached[0] > now:
@@ -279,7 +279,7 @@ async def get_pois_from_overpass(
     # Calculate radius in meters
     radius_m = int(request.radius_km * 1000)
     # Build Overpass query
-    qp = OverpassQueryParams(tags=list(tags), lat=lat, lon=lon, radius_m=radius_m)
+    qp = OverpassQueryParams(tags=list(tags), lat=lat, lon=lon, radius_m=radius_m, wheelchair=request.wheelchair)
     query = qp.to_query()
     logging.debug(f"Overpass query:\n{query}\n")
 
@@ -383,6 +383,8 @@ async def get_pois_from_overpass(
             continue
 
         opening_hours = tags_el.get("opening_hours") or None
+        wheelchair_val = tags_el.get("wheelchair")
+        wheelchair_accessible = wheelchair_val in ("yes", "limited") if wheelchair_val else None
 
         scored.append((
             quality_score(tags_el),
@@ -395,6 +397,7 @@ async def get_pois_from_overpass(
                 address=address,
                 categories=[category],
                 opening_hours=opening_hours,
+                wheelchair_accessible=wheelchair_accessible,
             ),
         ))
 

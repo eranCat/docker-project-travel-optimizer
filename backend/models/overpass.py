@@ -25,21 +25,23 @@ class OverpassQueryParams(BaseModel):
     lat: float
     lon: float
     radius_m: int = Field(..., gt=0)
-
+    wheelchair: bool = False
 
     def to_query(self) -> str:
         grouped_tags: Dict[str, set[str]] = defaultdict(set)
         for tag in self.tags:
             grouped_tags[tag.key].add(tag.value)
 
+        wheelchair_filter = '["wheelchair"~"^(yes|limited)$"]' if self.wheelchair else ""
+
         # Anchored alternation: "^(v1|v2|v3)$" — avoid accidental substring matches
         filters = [
-            f'{element}["{key}"~"^({"|".join(sorted(values))})$"](around:{self.radius_m},{self.lat},{self.lon});'
+            f'{element}["{key}"~"^({"|".join(sorted(values))})$"]{wheelchair_filter}(around:{self.radius_m},{self.lat},{self.lon});'
             for key, values in grouped_tags.items()
             for element in ("node", "way", "relation")
         ]
 
-        filter_block = "\n  ".join(filters)  # 🛠️ Fix: move this out of the f-string
+        filter_block = "\n  ".join(filters)
 
         return f"""[out:json][timeout:40];
             (

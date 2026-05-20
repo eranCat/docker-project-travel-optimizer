@@ -39,6 +39,7 @@ export function routeProgress(params: {
   travel_mode: string;
   latitude?: number;
   longitude?: number;
+  wheelchair?: boolean;
 }): EventSource {
   const url = new URL("/route-progress", import.meta.env.VITE_API_BASE_URL);
   const searchParams: Record<string, string> = {
@@ -47,18 +48,14 @@ export function routeProgress(params: {
     radius_km: String(params.radius_km),
     num_routes: String(params.num_routes),
     num_pois: String(params.num_pois),
-    travel_mode: String(params.travel_mode)
+    travel_mode: String(params.travel_mode),
   };
 
-  if (params.latitude !== undefined) {
-    searchParams.latitude = String(params.latitude);
-  }
-  if (params.longitude !== undefined) {
-    searchParams.longitude = String(params.longitude);
-  }
+  if (params.latitude !== undefined) searchParams.latitude = String(params.latitude);
+  if (params.longitude !== undefined) searchParams.longitude = String(params.longitude);
+  if (params.wheelchair) searchParams.wheelchair = "true";
 
   url.search = new URLSearchParams(searchParams).toString();
-
   return new EventSource(url.toString());
 }
 

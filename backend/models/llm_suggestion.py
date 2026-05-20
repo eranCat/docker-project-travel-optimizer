@@ -11,3 +11,4 @@ class LLMPOISuggestion(BaseModel):
     address: Optional[str] = None
     categories: List[str]
     opening_hours: Optional[str] = None
+    wheelchair_accessible: Optional[bool] = None

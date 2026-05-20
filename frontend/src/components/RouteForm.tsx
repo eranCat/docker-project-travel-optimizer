@@ -12,6 +12,8 @@ import {
     Collapse,
     IconButton,
     Tooltip,
+    FormControlLabel,
+    Switch,
 } from "@mui/material";
 import DirectionsWalkIcon from "@mui/icons-material/DirectionsWalk";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
@@ -22,6 +24,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import TuneIcon from "@mui/icons-material/Tune";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import AccessibleIcon from "@mui/icons-material/Accessible";
 import LocationAutocomplete from "./LocationAutocomplete";
 import LoadingProgress from "./LoadingProgress";
 
@@ -34,6 +37,7 @@ interface FormData {
     travel_mode: string;
     latitude?: number;
     longitude?: number;
+    wheelchair: boolean;
 }
 
 interface Props {
@@ -289,6 +293,23 @@ const RouteForm: React.FC<Props> = ({
                                 }}
                             />
                         </Stack>
+
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    size="small"
+                                    checked={form.wheelchair}
+                                    onChange={(e) => onChange({ target: { name: "wheelchair", value: e.target.checked } } as any)}
+                                />
+                            }
+                            label={
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                    <AccessibleIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                                    <Typography variant="caption" color="text.secondary">Wheelchair accessible only</Typography>
+                                </Box>
+                            }
+                            sx={{ ml: 0, mt: 1 }}
+                        />
                     </Collapse>
                 </Box>
             </Stack>
