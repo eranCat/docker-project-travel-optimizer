@@ -1,10 +1,12 @@
 import logging
 import time
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from routers import autocomplete_location, health, route_progress
 from services.maps.overpass_service import get_overpass_tags_from_interests, _poi_cache
 from fastapi.exceptions import HTTPException
@@ -14,6 +16,11 @@ from utils.error_handlers import (
 )
 from utils.log_cleanup import clear_log
 from fastapi.middleware.cors import CORSMiddleware
+
+# Per-IP rate limit: max 5 route-progress requests per 60 seconds
+_ip_requests: dict[str, list[float]] = defaultdict(list)
+RATE_WINDOW_SEC = 60
+RATE_MAX = 5
 
 LOG_DIR = Path(__file__).parent.parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
@@ -63,6 +70,24 @@ app.include_router(autocomplete_location.router)
 app.include_router(route_progress.router)
 
 app.include_router(health.router)
+
+
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    if "/route-progress" in request.url.path:
+        ip = request.client.host if request.client else "unknown"
+        now = time.time()
+        window_start = now - RATE_WINDOW_SEC
+        recent = [t for t in _ip_requests[ip] if t > window_start]
+        _ip_requests[ip] = recent
+        if len(recent) >= RATE_MAX:
+            logging.warning(f"Rate limit hit for {ip}: {len(recent)} requests in {RATE_WINDOW_SEC}s")
+            return JSONResponse(
+                status_code=429,
+                content={"detail": f"Too many requests. You can generate up to {RATE_MAX} routes per minute."},
+            )
+        _ip_requests[ip].append(now)
+    return await call_next(request)
 
 
 @app.middleware("http")
