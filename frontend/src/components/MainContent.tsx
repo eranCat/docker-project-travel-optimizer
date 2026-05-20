@@ -43,6 +43,11 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
 
     const hasResults = pois.length > 0 || loading;
 
+    const handleFocusPOI = (poi: typeof focusedPOI) => {
+        if (poi) setFocusedPOI(poi);
+        if (isMobile) setMobileTab(1);
+    };
+
     const formProps = {
         form,
         loading,
@@ -130,7 +135,7 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
                 onSelectRoute={setSelectedIndex}
                 pois={pois}
                 focusedPOI={focusedPOI}
-                onFocusPOI={setFocusedPOI}
+                onFocusPOI={handleFocusPOI}
                 loading={loading}
                 currentRoute={currentRoute}
                 onShareRoute={handleShareRoute}

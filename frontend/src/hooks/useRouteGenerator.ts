@@ -5,6 +5,7 @@ import { POI } from "../models/POI";
 import { DEFAULT_FORM, FORM_VERSION } from "../constants/formDefaults";
 import { SURPRISE_INTERESTS } from "../constants/surpriseInterests";
 import { getLatestRoutes, routeProgress, logToServer } from "../services/API";
+import { setGenerationActive } from "../services/generationState";
 
 export function useRouteGenerator() {
     // Bust stale persisted form when defaults change
@@ -88,6 +89,7 @@ export function useRouteGenerator() {
         // Clean up any previous SSE
         sseRef.current?.close();
         setLoading(true);
+        setGenerationActive(true);
         setError("");
         setStage(0);
 
@@ -149,6 +151,7 @@ export function useRouteGenerator() {
                 setError("❌ Failed to load routes: " + (err?.message || "unknown"));
             } finally {
                 setLoading(false);
+                setGenerationActive(false);
                 source.close();
                 sseRef.current = null;
             }
@@ -193,6 +196,7 @@ export function useRouteGenerator() {
                 setError(errorText);
 
                 setLoading(false);
+                setGenerationActive(false);
                 source.close();
                 sseRef.current = null;
             },
@@ -206,6 +210,9 @@ export function useRouteGenerator() {
         canceledRef.current = true;
         setError("❌ Generation cancelled.");
         setLoading(false);
+        setGenerationActive(false);
+        sseRef.current?.close();
+        sseRef.current = null;
         setTimeout(() => setError(""), 2000);
     };
 
@@ -280,6 +287,12 @@ export function useRouteGenerator() {
         if (form.location && form.location.trim() !== "") {
             setLocationSelected(true);
         }
+    }, []);
+
+    // Close any open SSE and clear generation flag on unmount
+    useEffect(() => () => {
+        sseRef.current?.close();
+        setGenerationActive(false);
     }, []);
 
     return {

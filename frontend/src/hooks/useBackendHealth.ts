@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { checkHealth } from "../services/API";
+import { isGenerationActive } from "../services/generationState";
 
 const POLL_HEALTHY_MS = 30_000;
 const POLL_UNHEALTHY_MS = 10_000;
@@ -13,9 +14,17 @@ export function useBackendHealth(): boolean | null {
         let failures = 0;
 
         async function check() {
+            // An active SSE generation already proves the backend is alive —
+            // skip polling to avoid false negatives from a busy backend.
+            if (isGenerationActive()) {
+                failures = 0;
+                setHealthy(true);
+                timer = setTimeout(check, POLL_UNHEALTHY_MS);
+                return;
+            }
             const ok = await checkHealth();
             if (cancelled) return;
-            if (ok) {
+            if (ok || isGenerationActive()) {
                 failures = 0;
                 setHealthy(true);
             } else {
