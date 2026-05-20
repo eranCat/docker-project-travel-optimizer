@@ -342,7 +342,7 @@ const RouteForm: React.FC<Props> = ({
                             <Slider
                                 size="small"
                                 min={1} max={5} step={1}
-                                value={form.num_days}
+                                value={Number(form.num_days)}
                                 onChange={(_, v) => onChange({ target: { name: "num_days", value: String(v) } } as any)}
                                 marks
                                 valueLabelDisplay="auto"
