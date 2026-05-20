@@ -14,7 +14,7 @@ from services.generate_optimized_routes import generate_optimized_routes
 async def call_pois_from_maps_service(
     payload: RouteGenerationRequest,
 ) -> List[LLMPOISuggestion]:
-    tags = get_overpass_tags_from_interests(payload.interests)
+    tags = get_overpass_tags_from_interests(payload.interests, payload.time_of_day)
     logging.debug(f"Generated tags from interests: {tags}")
     return await get_pois_from_overpass(payload, tuple(tags))
 

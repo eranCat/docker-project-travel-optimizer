@@ -102,6 +102,7 @@ export function useRouteGenerator() {
                 longitude: form.longitude,
             }),
             wheelchair: form.wheelchair,
+            time_of_day: form.time_of_day || undefined,
         });
 
         sseRef.current = source;

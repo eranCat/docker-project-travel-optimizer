@@ -14,6 +14,8 @@ import {
     Tooltip,
     FormControlLabel,
     Switch,
+    MenuItem,
+    Select,
 } from "@mui/material";
 import DirectionsWalkIcon from "@mui/icons-material/DirectionsWalk";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
@@ -38,6 +40,7 @@ interface FormData {
     latitude?: number;
     longitude?: number;
     wheelchair: boolean;
+    time_of_day: string;
 }
 
 interface Props {
@@ -294,6 +297,27 @@ const RouteForm: React.FC<Props> = ({
                             />
                         </Stack>
 
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block", fontWeight: 500 }}>
+                                Time of day
+                            </Typography>
+                            <Select
+                                name="time_of_day"
+                                size="small"
+                                fullWidth
+                                displayEmpty
+                                value={form.time_of_day}
+                                onChange={(e) => onChange({ target: { name: "time_of_day", value: e.target.value } } as any)}
+                                sx={{ fontSize: "0.85rem" }}
+                            >
+                                <MenuItem value=""><em>Any time</em></MenuItem>
+                                <MenuItem value="morning">Morning</MenuItem>
+                                <MenuItem value="afternoon">Afternoon</MenuItem>
+                                <MenuItem value="evening">Evening</MenuItem>
+                                <MenuItem value="night">Night</MenuItem>
+                            </Select>
+                        </Box>
+
                         <FormControlLabel
                             control={
                                 <Switch
@@ -308,7 +332,7 @@ const RouteForm: React.FC<Props> = ({
                                     <Typography variant="caption" color="text.secondary">Wheelchair accessible only</Typography>
                                 </Box>
                             }
-                            sx={{ ml: 0, mt: 1 }}
+                            sx={{ ml: 0, mt: 0.5 }}
                         />
                     </Collapse>
                 </Box>

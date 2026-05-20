@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from typing import Optional
 from fastapi import HTTPException
 from openai import OpenAI
 from config import settings
@@ -46,12 +47,19 @@ Only include tags from this list:
 
 Return ONLY a JSON array of objects. Include 3–8 tags that directly match the user's interests — quality over quantity.
 
-User interests: {user_interests}
+{time_of_day_context}User interests: {user_interests}
 """.strip()
+
+_TIME_OF_DAY_HINTS = {
+    "morning": "CONTEXT: User is planning a morning trip. Prefer venues open early (cafes, bakeries, parks, markets, museums).\n",
+    "afternoon": "CONTEXT: User is planning an afternoon trip. Most venues are open — include a broad mix.\n",
+    "evening": "CONTEXT: User is planning an evening trip. Prefer venues active in the evening (restaurants, bars, theatres, night markets, viewpoints).\n",
+    "night": "CONTEXT: User is planning a night out. Strongly prefer nightlife venues (bars, pubs, clubs, late-night restaurants, live music).\n",
+}
 
 
 # --- Main Groq Call ---
-def call_groq_for_tags(user_interests: str, valid_tags: dict) -> list[dict]:
+def call_groq_for_tags(user_interests: str, valid_tags: dict, time_of_day: Optional[str] = None) -> list[dict]:
     """Generate Overpass tags from user interests using Groq LLM."""
 
     formatted_tags = [
@@ -59,9 +67,12 @@ def call_groq_for_tags(user_interests: str, valid_tags: dict) -> list[dict]:
     ]
     readable_tag_list = "\n- ".join(formatted_tags)
 
+    time_of_day_context = _TIME_OF_DAY_HINTS.get(time_of_day or "", "") if time_of_day else ""
+
     prompt = USER_PROMPT_TEMPLATE.format(
         valid_tags=json.dumps(readable_tag_list, indent=2),
         user_interests=user_interests,
+        time_of_day_context=time_of_day_context,
     )
 
     try:

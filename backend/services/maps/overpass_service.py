@@ -202,10 +202,10 @@ def thin_pois_by_min_distance(
 
 
 @lru_cache(maxsize=500)
-def get_overpass_tags_from_interests(interests: str) -> List[OverpassTag]:
+def get_overpass_tags_from_interests(interests: str, time_of_day: Optional[str] = None) -> List[OverpassTag]:
     valid_ref = load_osm_tag_reference()
     try:
-        raw = call_groq_for_tags(interests, valid_ref)
+        raw = call_groq_for_tags(interests, valid_ref, time_of_day=time_of_day)
     except Exception as e:
         logging.error(f"LLM tag generation error: {e}. Using fallback tags.")
         # Broad fallback covering the main tourist categories. Used only when

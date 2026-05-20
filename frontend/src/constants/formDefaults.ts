@@ -10,4 +10,5 @@ export const DEFAULT_FORM = {
     latitude: undefined as number | undefined,
     longitude: undefined as number | undefined,
     wheelchair: false,
+    time_of_day: "" as string,
 };

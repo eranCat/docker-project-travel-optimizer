@@ -26,6 +26,7 @@ async def route_progress(
     latitude: float | None = None,
     longitude: float | None = None,
     wheelchair: bool = False,
+    time_of_day: str | None = None,
 ):
     async def event_generator():
         clear_log()
@@ -49,6 +50,7 @@ async def route_progress(
                 latitude=lat,
                 longitude=lon,
                 wheelchair=wheelchair,
+                time_of_day=time_of_day,
             )
 
             yield {"event": "stage", "data": "Fetching POIs from maps_service"}

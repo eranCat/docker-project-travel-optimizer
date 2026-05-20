@@ -40,6 +40,7 @@ export function routeProgress(params: {
   latitude?: number;
   longitude?: number;
   wheelchair?: boolean;
+  time_of_day?: string;
 }): EventSource {
   const url = new URL("/route-progress", import.meta.env.VITE_API_BASE_URL);
   const searchParams: Record<string, string> = {
@@ -54,6 +55,7 @@ export function routeProgress(params: {
   if (params.latitude !== undefined) searchParams.latitude = String(params.latitude);
   if (params.longitude !== undefined) searchParams.longitude = String(params.longitude);
   if (params.wheelchair) searchParams.wheelchair = "true";
+  if (params.time_of_day) searchParams.time_of_day = params.time_of_day;
 
   url.search = new URLSearchParams(searchParams).toString();
   return new EventSource(url.toString());
