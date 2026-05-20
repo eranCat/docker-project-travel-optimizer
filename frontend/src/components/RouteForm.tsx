@@ -27,6 +27,7 @@ import TuneIcon from "@mui/icons-material/Tune";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AccessibleIcon from "@mui/icons-material/Accessible";
+import CasinoIcon from "@mui/icons-material/Casino";
 import LocationAutocomplete from "./LocationAutocomplete";
 import LoadingProgress from "./LoadingProgress";
 
@@ -58,6 +59,7 @@ interface Props {
     onValidLocationSelected: () => void;
     onLocationSelected: (lat: number, lon: number) => void;
     onCancel: () => void;
+    onSurpriseMe: () => void;
     isFormValid: boolean;
     compact?: boolean;
 }
@@ -83,6 +85,7 @@ const RouteForm: React.FC<Props> = ({
     onValidLocationSelected,
     onLocationSelected,
     onCancel,
+    onSurpriseMe,
     isFormValid,
     compact = false,
 }) => {
@@ -174,7 +177,7 @@ const RouteForm: React.FC<Props> = ({
                     }}
                 />
 
-                {/* Interests */}
+                {/* Interests + Surprise Me */}
                 <TextField
                     label="Interests"
                     name="interests"
@@ -184,6 +187,18 @@ const RouteForm: React.FC<Props> = ({
                     onChange={onChange}
                     placeholder="food, art, hiking…"
                     helperText="Separate with commas"
+                    slotProps={{
+                        input: {
+                            endAdornment: (
+                                <Tooltip title="Surprise me — pick random interests">
+                                    <IconButton size="small" onClick={onSurpriseMe} tabIndex={-1}
+                                        sx={{ color: "text.disabled", "&:hover": { color: "primary.main" } }}>
+                                        <CasinoIcon sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                </Tooltip>
+                            ),
+                        },
+                    }}
                 />
 
                 {/* Travel mode */}

@@ -28,6 +28,7 @@ export default function MainContent() {
         handleReset,
         handleEdit,
         handleBackToRoutes,
+        handleSurpriseMe,
         savedRoutes,
         setLocationSelected,
     } = useRouteGenerator();
@@ -68,6 +69,7 @@ export default function MainContent() {
                     hasSavedRoutes={savedRoutes.length > 0}
                     onValidLocationSelected={() => setLocationSelected(true)}
                     onLocationSelected={handleLocationSelected}
+                    onSurpriseMe={handleSurpriseMe}
                     compact={hasResults}
                 />
 

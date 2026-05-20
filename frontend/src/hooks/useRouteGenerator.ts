@@ -1,8 +1,9 @@
-import { FormEvent, useRef, useState, useEffect } from "react";
+import { FormEvent, useRef, useState, useEffect, useCallback } from "react";
 import { usePersistedState } from "./usePersistedState";
 import { RouteData } from "../models/RouteData";
 import { POI } from "../models/POI";
 import { DEFAULT_FORM, FORM_VERSION } from "../constants/formDefaults";
+import { SURPRISE_INTERESTS } from "../constants/surpriseInterests";
 import { getLatestRoutes, routeProgress, logToServer } from "../services/API";
 
 export function useRouteGenerator() {
@@ -231,6 +232,11 @@ export function useRouteGenerator() {
         setError("");
     };
 
+    const handleSurpriseMe = useCallback(() => {
+        const pick = SURPRISE_INTERESTS[Math.floor(Math.random() * SURPRISE_INTERESTS.length)];
+        setFormData(prev => ({ ...prev, interests: pick }));
+    }, [setFormData]);
+
     // Initialize locationSelected if there is an existing location
     useEffect(() => {
         if (form.location && form.location.trim() !== "") {
@@ -261,6 +267,7 @@ export function useRouteGenerator() {
         handleReset,
         handleEdit,
         handleBackToRoutes,
+        handleSurpriseMe,
         savedRoutes,
         locationSelected,
         setLocationSelected,
