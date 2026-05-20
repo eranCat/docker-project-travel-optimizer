@@ -1,5 +1,6 @@
 import logging
 import json
+import re
 import time
 from pathlib import Path
 import requests
@@ -46,6 +47,19 @@ NON_TOURIST_TAG_PAIRS: set[tuple[str, str]] = {
     ("historic", "grave"),
     ("historic", "wayside_shrine"),
 }
+
+# Name-pattern block: catches elements only tagged tourism=attraction whose
+# true nature (cemetery, shelter, infrastructure) is visible in the name.
+_NON_TOURIST_NAME_SUBSTRINGS = frozenset({
+    "קברות", "בית קברות", "cemetery", "graveyard",
+    "מצבה", "مقبرة", "جبانة",
+    "bomb shelter", "מרחב מוגן", "ממ\"ד", "ממד",
+    "sewage", "wastewater", "power station", "transformer",
+})
+
+def _name_is_blocked(name: str) -> bool:
+    lower = name.lower()
+    return any(sub in lower for sub in _NON_TOURIST_NAME_SUBSTRINGS)
 
 # Configuration
 OVERPASS_MIRRORS = [
@@ -334,10 +348,8 @@ async def get_pois_from_overpass(
             address = None
         desc = tags_el.get("description") or tags_el.get("note") or None
 
-        # Hard-block: reject elements whose raw OSM tags mark them as non-tourist
-        # regardless of what primary category was resolved (e.g. a cemetery tagged
-        # tourism=attraction still has landuse=cemetery in its full tag dict).
-        if any(tags_el.get(k) == v for k, v in NON_TOURIST_TAG_PAIRS):
+        # Hard-block: reject by raw OSM tag pairs or by name pattern.
+        if any(tags_el.get(k) == v for k, v in NON_TOURIST_TAG_PAIRS) or _name_is_blocked(name):
             drop_counts["non_tourist"] += 1
             continue
 

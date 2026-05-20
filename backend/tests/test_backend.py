@@ -170,12 +170,14 @@ class TestNonTouristTagPairsBlock(unittest.TestCase):
         """Return True if the element would be kept by the POI filter."""
         from services.maps.overpass_service import (
             NON_TOURIST_TAG_PAIRS, NON_TOURIST_CATEGORIES,
-            extract_primary_category,
+            extract_primary_category, _name_is_blocked,
         )
         from models.overpass import OverpassTag
 
-        # Hard-block check (new guard)
+        name = tags_el.get("name", "")
         if any(tags_el.get(k) == v for k, v in NON_TOURIST_TAG_PAIRS):
+            return False
+        if _name_is_blocked(name):
             return False
 
         overpass_tags = [OverpassTag(key="tourism", value="attraction")]
@@ -218,6 +220,35 @@ class TestNonTouristTagPairsBlock(unittest.TestCase):
 
     def test_historic_castle_not_blocked(self):
         tags = {"name": "Crusader Castle", "historic": "castle", "tourism": "attraction"}
+        self.assertTrue(self._run_filter(tags))
+
+    # Name-pattern block (no landuse/amenity tag, only tourism=attraction)
+    def test_hebrew_cemetery_name_blocked(self):
+        tags = {"name": "בית קברות מוסלמי", "tourism": "attraction"}
+        self.assertFalse(self._run_filter(tags))
+
+    def test_hebrew_cemetery_partial_name_blocked(self):
+        tags = {"name": "קברות ישנות", "tourism": "attraction"}
+        self.assertFalse(self._run_filter(tags))
+
+    def test_bomb_shelter_name_blocked(self):
+        tags = {"name": "מרחב מוגן רייכמן", "tourism": "attraction"}
+        self.assertFalse(self._run_filter(tags))
+
+    def test_english_cemetery_name_blocked(self):
+        tags = {"name": "Old Jewish Cemetery", "tourism": "attraction"}
+        self.assertFalse(self._run_filter(tags))
+
+    def test_arabic_cemetery_name_blocked(self):
+        tags = {"name": "מקבرة باب الرحمة", "tourism": "attraction"}
+        self.assertFalse(self._run_filter(tags))
+
+    def test_legitimate_name_not_blocked(self):
+        tags = {"name": "Gordon Beach", "tourism": "attraction"}
+        self.assertTrue(self._run_filter(tags))
+
+    def test_museum_name_not_blocked(self):
+        tags = {"name": "Tel Aviv Museum of Art", "tourism": "museum"}
         self.assertTrue(self._run_filter(tags))
 
 
