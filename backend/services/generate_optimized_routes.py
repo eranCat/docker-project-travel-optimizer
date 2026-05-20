@@ -274,13 +274,13 @@ def generate_optimized_routes(
 
         coords = [(p.longitude, p.latitude) for p in selected]
         try:
-            path = get_real_route(coords, profile=ors_profile)
+            path, duration_seconds = get_real_route(coords, profile=ors_profile)
             if not path or len(path) < 2:
                 logging.warning(
                     f"Invalid path returned: {len(path) if path else 0} points"
                 )
                 continue
-            logging.debug(f"Successfully got route with {len(path)} points")
+            logging.debug(f"Successfully got route with {len(path)} points, duration {duration_seconds:.0f}s")
         except Exception as e:
             logging.error(f"Routing error for {len(coords)} waypoints: {str(e)}")
             continue
@@ -296,6 +296,7 @@ def generate_optimized_routes(
                     "geometry": {"type": "LineString", "coordinates": path},
                 },
                 "pois": [p.model_dump() for p in selected],
+                "duration_seconds": duration_seconds,
                 "_start": start_poi,  # internal — used for next route's farthest-point pick
             }
         )

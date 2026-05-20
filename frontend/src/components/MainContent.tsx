@@ -9,6 +9,7 @@ export default function MainContent() {
     const {
         form,
         routes,
+        currentRoute,
         selectedIndex,
         setSelectedIndex,
         pois,
@@ -92,6 +93,7 @@ export default function MainContent() {
                             focusedPOI={focusedPOI}
                             onFocusPOI={setFocusedPOI}
                             loading={loading}
+                            currentRoute={currentRoute}
                         />
                     </Box>
                 )}

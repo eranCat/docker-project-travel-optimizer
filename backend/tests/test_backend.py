@@ -530,7 +530,8 @@ class TestPickDistinctStarts(unittest.TestCase):
 # ─── generate_optimized_routes: full pipeline (ORS mocked) ───────────────────
 
 class TestGenerateOptimizedRoutes(unittest.TestCase):
-    _FAKE_PATH = [(2.35, 48.85), (2.36, 48.86), (2.37, 48.87)]
+    # get_real_route now returns (path, duration_seconds)
+    _FAKE_PATH = ([(2.35, 48.85), (2.36, 48.86), (2.37, 48.87)], 300.0)
 
     def test_raises_http_422_if_fewer_than_two_categories(self):
         from services.generate_optimized_routes import generate_optimized_routes

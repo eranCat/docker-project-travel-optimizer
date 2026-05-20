@@ -1,10 +1,12 @@
-import { Box, Typography, Fade } from "@mui/material";
+import { Box, Typography, Fade, Chip } from "@mui/material";
 import RouteSelector from "./RouteSelector";
 import POIList from "./POIList";
 import POISkeleton from "./POISkeleton";
 import { POI } from "../models/POI";
+import { RouteData } from "../models/RouteData";
 import PlaceIcon from "@mui/icons-material/Place";
 import LoopIcon from "@mui/icons-material/Loop";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
 interface RouteSidebarProps {
     routesCount: number;
@@ -14,6 +16,16 @@ interface RouteSidebarProps {
     focusedPOI: POI | null;
     onFocusPOI: (poi: POI) => void;
     loading: boolean;
+    currentRoute?: RouteData | null;
+}
+
+function formatDuration(seconds: number): string {
+    if (seconds < 60) return `${Math.round(seconds)}s`;
+    const mins = Math.round(seconds / 60);
+    if (mins < 60) return `${mins} min`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
 export default function RouteSidebar({
@@ -24,8 +36,10 @@ export default function RouteSidebar({
     focusedPOI,
     onFocusPOI,
     loading,
+    currentRoute,
 }: RouteSidebarProps) {
     const showSkeleton = loading && pois.length === 0;
+    const hasDuration = currentRoute?.duration_seconds != null && currentRoute.duration_seconds > 0;
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
@@ -41,7 +55,7 @@ export default function RouteSidebar({
                     borderColor: "divider",
                 }}
             >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.25 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
                     {loading ? (
                         <LoopIcon
                             sx={{
@@ -68,6 +82,18 @@ export default function RouteSidebar({
                             : `${pois.length} stop${pois.length !== 1 ? "s" : ""} found`}
                     </Typography>
                 </Box>
+
+                {!loading && hasDuration && (
+                    <Box sx={{ mb: 0.75 }}>
+                        <Chip
+                            size="small"
+                            icon={<AccessTimeIcon sx={{ fontSize: "0.65rem !important", ml: "4px !important" }} />}
+                            label={formatDuration(currentRoute!.duration_seconds!)}
+                            variant="outlined"
+                            sx={{ height: 18, fontSize: "0.65rem", "& .MuiChip-label": { px: 0.5 } }}
+                        />
+                    </Box>
+                )}
 
                 {!loading && (
                     <RouteSelector

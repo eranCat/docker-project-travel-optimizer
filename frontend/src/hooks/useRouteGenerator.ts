@@ -242,6 +242,7 @@ export function useRouteGenerator() {
         form,
         setFormData,
         routes,
+        currentRoute,
         selectedIndex,
         setSelectedIndex,
         pois,

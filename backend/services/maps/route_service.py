@@ -9,13 +9,17 @@ ors_client = openrouteservice.Client(key=settings.ors_api_key)
 
 def get_real_route(
     waypoints: List[Tuple[float, float]], profile: str = "foot-walking"
-) -> List[Tuple[float, float]]:
+) -> Tuple[List[Tuple[float, float]], float]:
+    """Returns (path_coords, duration_seconds)."""
     try:
         response = ors_client.directions(
             coordinates=waypoints, profile=profile, format="geojson"
         )
-        geometry = response["features"][0]["geometry"]["coordinates"]
-        return [(lon, lat) for lon, lat in geometry]
+        feature = response["features"][0]
+        geometry = feature["geometry"]["coordinates"]
+        duration = feature.get("properties", {}).get("summary", {}).get("duration", 0.0)
+        path = [(lon, lat) for lon, lat in geometry]
+        return path, duration
     except Exception as e:
         logging.error(f"❌ ORS routing failed: {type(e).__name__}: {str(e)}")
         raise HTTPException(
