@@ -16,3 +16,11 @@ def cleanup_logs():
             logging.debug(f"Deleted log: {log_file.name}")
         except Exception as e:
             logging.warning(f"Failed to delete {log_file.name}: {e}")
+
+
+def clear_log():
+    for handler in logging.root.handlers:
+        if isinstance(handler, logging.FileHandler):
+            handler.stream.seek(0)
+            handler.stream.truncate()
+            break

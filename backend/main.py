@@ -12,6 +12,7 @@ from utils.error_handlers import (
     http_exception_handler,
     unhandled_exception_handler,
 )
+from utils.log_cleanup import clear_log
 from fastapi.middleware.cors import CORSMiddleware
 
 LOG_DIR = Path(__file__).parent.parent / "logs"
@@ -31,6 +32,7 @@ for noisy in ("httpcore", "httpx", "urllib3", "openai._base_client"):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    clear_log()
     logging.info("=== Backend starting up ===")
     load_dotenv()
     get_overpass_tags_from_interests.cache_clear()

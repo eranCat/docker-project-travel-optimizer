@@ -9,7 +9,7 @@ from models.route_request import RouteGenerationRequest
 from sse_starlette.sse import EventSourceResponse
 import uuid
 from routers.routes_cache import routes_cache
-from utils.log_cleanup import cleanup_logs
+from utils.log_cleanup import cleanup_logs, clear_log
 
 router = APIRouter()
 _generation_count = 0
@@ -27,6 +27,7 @@ async def route_progress(
     longitude: float | None = None,
 ):
     async def event_generator():
+        clear_log()
         try:
             # Use pre-geocoded coordinates if provided, otherwise geocode
             if latitude is not None and longitude is not None:
