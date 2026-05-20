@@ -7,6 +7,17 @@ const API = axios.create({
   },
 });
 
+export async function checkHealth(): Promise<boolean> {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/health`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export function logToServer(level: "info" | "warning" | "error", message: string, data?: unknown) {
   try {
     fetch(`${import.meta.env.VITE_API_BASE_URL}/frontend-log`, {
@@ -21,13 +32,16 @@ export function logToServer(level: "info" | "warning" | "error", message: string
   }
 }
 
-export const fetchLocationSuggestions = async (query: string, signal?: AbortSignal) => {
-  const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/autocomplete`, {
-    params: { q: query },
-    signal,
-  });
+export const fetchLocationSuggestions = async (query: string, signal?: AbortSignal): Promise<{ display_name: string; lat: string; lon: string }[]> => {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("q", query);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("limit", "5");
+  url.searchParams.set("addressdetails", "1");
 
-  return res.data || [];
+  const res = await fetch(url.toString(), { signal });
+  if (!res.ok) return [];
+  return res.json();
 };
 
 export function routeProgress(params: {

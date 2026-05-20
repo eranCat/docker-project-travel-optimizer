@@ -5,7 +5,7 @@ import MapViewer from "./MapViewer";
 import { useRouteGenerator } from "../hooks/useRouteGenerator";
 import RouteSidebar from "./RouteSidebar";
 
-export default function MainContent() {
+export default function MainContent({ backendHealthy }: { backendHealthy?: boolean | null }) {
     const {
         form,
         routes,
@@ -60,7 +60,7 @@ export default function MainContent() {
                     stage={stage}
                     stages={stages}
                     error={error}
-                    isFormValid={isFormValid()}
+                    isFormValid={isFormValid() && backendHealthy !== false}
                     onChange={handleChange}
                     onSubmit={handleSubmit}
                     onCancel={handleCancel}
