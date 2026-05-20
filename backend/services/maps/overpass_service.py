@@ -49,7 +49,7 @@ MIN_REQUEST_INTERVAL = 1.0  # Minimum seconds between Overpass requests
 # POI cache (TTL-based) — speeds up repeat searches with the same inputs.
 # Empty results are NOT cached, so a transient Overpass failure doesn't pin
 # zero POIs in memory. Max entries keeps memory bounded.
-POI_CACHE_TTL = 300  # seconds (5 minutes)
+POI_CACHE_TTL = 1800  # seconds (30 minutes) — OSM data stable enough for this
 POI_CACHE_MAX = 64
 _poi_cache: dict = {}  # key -> (expires_at, list[LLMPOISuggestion])
 
@@ -204,7 +204,7 @@ def get_overpass_tags_from_interests(interests: str) -> List[OverpassTag]:
     return pruned
 
 
-def get_pois_from_overpass(
+async def get_pois_from_overpass(
     request: RouteGenerationRequest, tags: tuple[OverpassTag, ...], debug: bool = False
 ) -> List[LLMPOISuggestion]:
     """
@@ -222,8 +222,12 @@ def get_pois_from_overpass(
         # Expired entry — drop it
         _poi_cache.pop(cache_key, None)
 
-    # Geocode user location
-    lat, lon = geocode_location(request.location)
+    # Skip geocoding if lat/lon already provided; otherwise geocode
+    if request.latitude is not None and request.longitude is not None:
+        lat, lon = request.latitude, request.longitude
+        logging.debug(f"Using pre-geocoded coords: ({lat}, {lon})")
+    else:
+        lat, lon = await geocode_location(request.location)
     # Calculate radius in meters
     radius_m = int(request.radius_km * 1000)
     # Build Overpass query

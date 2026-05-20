@@ -21,10 +21,13 @@ export default function MainContent() {
         error,
         isFormValid,
         handleChange,
+        handleLocationSelected,
         handleSubmit,
         handleCancel,
         handleReset,
         handleEdit,
+        handleBackToRoutes,
+        savedRoutes,
         setLocationSelected,
     } = useRouteGenerator();
 
@@ -60,7 +63,10 @@ export default function MainContent() {
                     onCancel={handleCancel}
                     onReset={handleReset}
                     onEdit={handleEdit}
+                    onBackToRoutes={handleBackToRoutes}
+                    hasSavedRoutes={savedRoutes.length > 0}
                     onValidLocationSelected={() => setLocationSelected(true)}
+                    onLocationSelected={handleLocationSelected}
                     compact={hasResults}
                 />
 

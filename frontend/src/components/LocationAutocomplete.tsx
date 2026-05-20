@@ -18,11 +18,13 @@ import { fetchLocationSuggestions } from "../services/API";
 interface Props {
     value: string;
     onChange: (val: string) => void;
-    onSelect: (val: string) => void;
+    onSelect: (val: string, lat?: number, lon?: number) => void;
 }
 
 interface Suggestion {
     display_name: string;
+    lat: string;
+    lon: string;
 }
 
 const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) => {
@@ -71,8 +73,8 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
         };
     }, [value]);
 
-    const handleSelect = (name: string) => {
-        onSelect(name);
+    const handleSelect = (name: string, lat?: number, lon?: number) => {
+        onSelect(name, lat, lon);
         setDisableFetch(true);
         setShowDropdown(false);
         setSuggestions([]);
@@ -99,7 +101,8 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
                         setHighlightedIndex((p) => (p - 1 + suggestions.length) % suggestions.length);
                     } else if (e.key === "Enter" && highlightedIndex >= 0) {
                         e.preventDefault();
-                        handleSelect(suggestions[highlightedIndex].display_name);
+                        const s = suggestions[highlightedIndex];
+                        handleSelect(s.display_name, parseFloat(s.lat), parseFloat(s.lon));
                         requestAnimationFrame(() => {
                             document.getElementById("location-input")?.focus();
                         });
@@ -148,7 +151,7 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
                         {suggestions.map((s, i) => (
                             <ListItemButton
                                 key={i}
-                                onClick={() => handleSelect(s.display_name)}
+                                onClick={() => handleSelect(s.display_name, parseFloat(s.lat), parseFloat(s.lon))}
                                 selected={i === highlightedIndex}
                                 sx={{
                                     borderRadius: 1.5,

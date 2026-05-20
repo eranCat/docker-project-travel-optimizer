@@ -21,6 +21,7 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import CancelIcon from "@mui/icons-material/Cancel";
 import TuneIcon from "@mui/icons-material/Tune";
 import EditIcon from "@mui/icons-material/Edit";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LocationAutocomplete from "./LocationAutocomplete";
 import LoadingProgress from "./LoadingProgress";
 
@@ -31,6 +32,8 @@ interface FormData {
     num_routes: number;
     num_pois: number;
     travel_mode: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 interface Props {
@@ -43,7 +46,10 @@ interface Props {
     onSubmit: (e: React.FormEvent) => void;
     onReset: () => void;
     onEdit: () => void;
+    onBackToRoutes?: () => void;
+    hasSavedRoutes?: boolean;
     onValidLocationSelected: () => void;
+    onLocationSelected: (lat: number, lon: number) => void;
     onCancel: () => void;
     isFormValid: boolean;
     compact?: boolean;
@@ -65,7 +71,10 @@ const RouteForm: React.FC<Props> = ({
     onSubmit,
     onReset,
     onEdit,
+    onBackToRoutes,
+    hasSavedRoutes = false,
     onValidLocationSelected,
+    onLocationSelected,
     onCancel,
     isFormValid,
     compact = false,
@@ -149,8 +158,11 @@ const RouteForm: React.FC<Props> = ({
                     onChange={(val) =>
                         onChange({ target: { name: "location", value: val } } as any)
                     }
-                    onSelect={(val) => {
+                    onSelect={(val, lat, lon) => {
                         onChange({ target: { name: "location", value: val } } as any);
+                        if (lat !== undefined && lon !== undefined) {
+                            onLocationSelected(lat, lon);
+                        }
                         onValidLocationSelected();
                     }}
                 />
@@ -296,7 +308,19 @@ const RouteForm: React.FC<Props> = ({
             </Box>
 
             {/* CTA */}
-            <Box sx={{ mt: 1.5 }}>
+            <Box sx={{ mt: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
+                {hasSavedRoutes && !loading && (
+                    <Button
+                        variant="outlined"
+                        fullWidth
+                        size="small"
+                        onClick={onBackToRoutes}
+                        startIcon={<ArrowBackIcon fontSize="small" />}
+                        sx={{ fontWeight: 600 }}
+                    >
+                        Back to results
+                    </Button>
+                )}
                 {loading ? (
                     <Button
                         variant="outlined"

@@ -36,17 +36,28 @@ export function routeProgress(params: {
   radius_km: number;
   num_routes: number;
   num_pois: number;
-  travel_mode:string;
+  travel_mode: string;
+  latitude?: number;
+  longitude?: number;
 }): EventSource {
   const url = new URL("/route-progress", import.meta.env.VITE_API_BASE_URL);
-  url.search = new URLSearchParams({
+  const searchParams: Record<string, string> = {
     interests: params.interests,
     location: params.location,
     radius_km: String(params.radius_km),
     num_routes: String(params.num_routes),
     num_pois: String(params.num_pois),
-    travel_mode : String(params.travel_mode)
-  }).toString();
+    travel_mode: String(params.travel_mode)
+  };
+
+  if (params.latitude !== undefined) {
+    searchParams.latitude = String(params.latitude);
+  }
+  if (params.longitude !== undefined) {
+    searchParams.longitude = String(params.longitude);
+  }
+
+  url.search = new URLSearchParams(searchParams).toString();
 
   return new EventSource(url.toString());
 }

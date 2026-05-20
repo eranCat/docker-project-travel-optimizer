@@ -4,12 +4,15 @@ import logging
 import traceback
 from fastapi import APIRouter, HTTPException
 from services.maps.maps_client import call_optimized_routes_from_maps_service, call_pois_from_maps_service
+from services.maps.geocoding import geocode_location
 from models.route_request import RouteGenerationRequest
 from sse_starlette.sse import EventSourceResponse
 import uuid
 from routers.routes_cache import routes_cache
+from utils.log_cleanup import cleanup_logs
 
 router = APIRouter()
+_generation_count = 0
 
 
 @router.get("/route-progress")
@@ -19,11 +22,21 @@ async def route_progress(
     radius_km: float,
     num_routes: int,
     num_pois: int,
-    travel_mode : str,
+    travel_mode: str,
+    latitude: float | None = None,
+    longitude: float | None = None,
 ):
     async def event_generator():
         try:
-            # Build request
+            # Use pre-geocoded coordinates if provided, otherwise geocode
+            if latitude is not None and longitude is not None:
+                lat, lon = latitude, longitude
+                logging.debug(f"Using pre-geocoded coords: ({lat}, {lon})")
+            else:
+                yield {"event": "stage", "data": "Geocoding location"}
+                lat, lon = await geocode_location(location)
+
+            # Build request with geocoded coordinates
             request_data = RouteGenerationRequest(
                 location=location,
                 interests=interests,
@@ -31,11 +44,12 @@ async def route_progress(
                 num_routes=num_routes,
                 num_pois=num_pois,
                 travel_mode=travel_mode,
+                latitude=lat,
+                longitude=lon,
             )
 
             yield {"event": "stage", "data": "Fetching POIs from maps_service"}
-            loop = asyncio.get_event_loop()
-            pois = await loop.run_in_executor(None, call_pois_from_maps_service, request_data)
+            pois = await call_pois_from_maps_service(request_data)
             if not pois:
                 yield {
                     "event": "error",
@@ -55,12 +69,19 @@ async def route_progress(
             await asyncio.sleep(0.1)
 
             yield {"event": "stage", "data": "Generating optimized routes"}
+            loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(None, call_optimized_routes_from_maps_service, request_data, pois)
 
             await asyncio.sleep(0.1)
 
             route_id = str(uuid.uuid4())
             routes_cache[route_id] = result["routes"]
+
+            global _generation_count
+            _generation_count += 1
+            if _generation_count % 3 == 0:
+                cleanup_logs()
+                logging.info(f"Cleaned up logs after {_generation_count} generations")
 
             yield {"event": "complete", "data": route_id}
 

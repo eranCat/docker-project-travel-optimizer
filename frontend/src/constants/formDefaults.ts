@@ -1,4 +1,4 @@
-export const FORM_VERSION = 2;
+export const FORM_VERSION = 3;
 
 export const DEFAULT_FORM = {
     interests: "",
@@ -7,4 +7,6 @@ export const DEFAULT_FORM = {
     num_routes: 2,
     num_pois: 6,
     travel_mode: "walking",
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
 };

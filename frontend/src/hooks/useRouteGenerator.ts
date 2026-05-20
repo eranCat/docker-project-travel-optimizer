@@ -13,6 +13,7 @@ export function useRouteGenerator() {
     }
     const [form, setFormData] = usePersistedState("travel-form", DEFAULT_FORM);
     const [routes, setRoutes] = usePersistedState<RouteData[]>("travel-routes", []);
+    const [savedRoutes, setSavedRoutes] = useState<RouteData[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [loading, setLoading] = useState(false);
     const [stage, setStage] = useState(0);
@@ -71,6 +72,10 @@ export function useRouteGenerator() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleLocationSelected = (lat: number, lon: number) => {
+        setFormData(prev => ({ ...prev, latitude: lat, longitude: lon }));
+    };
+
     const handleSubmit = (e?: FormEvent) => {
         e?.preventDefault();
         if (!isFormValid()) return;
@@ -92,6 +97,10 @@ export function useRouteGenerator() {
             num_routes: form.num_routes,
             num_pois: form.num_pois,
             travel_mode: form.travel_mode,
+            ...(form.latitude !== undefined && form.longitude !== undefined && {
+                latitude: form.latitude,
+                longitude: form.longitude,
+            }),
         });
 
         sseRef.current = source;
@@ -200,6 +209,7 @@ export function useRouteGenerator() {
     const handleReset = () => {
         setFormData({ ...DEFAULT_FORM });
         setRoutes([]);
+        setSavedRoutes([]);
         setSelectedIndex(0);
         setError("");
         setLocationSelected(false);
@@ -207,8 +217,15 @@ export function useRouteGenerator() {
     };
 
     const handleEdit = () => {
+        if (normalizedRoutes.length > 0) setSavedRoutes(normalizedRoutes);
         setRoutes([]);
         setSelectedIndex(0);
+        setError("");
+    };
+
+    const handleBackToRoutes = () => {
+        setRoutes(savedRoutes);
+        setSavedRoutes([]);
         setError("");
     };
 
@@ -235,10 +252,13 @@ export function useRouteGenerator() {
         error,
         isFormValid,
         handleChange,
+        handleLocationSelected,
         handleSubmit,
         handleCancel,
         handleReset,
         handleEdit,
+        handleBackToRoutes,
+        savedRoutes,
         locationSelected,
         setLocationSelected,
     };
