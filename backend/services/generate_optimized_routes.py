@@ -1,5 +1,6 @@
 import logging
 import random
+from collections import Counter
 from typing import List
 
 from fastapi import HTTPException
@@ -7,6 +8,25 @@ from services.maps.route_service import get_real_route
 from models.llm_suggestion import LLMPOISuggestion
 from models.route_request import RouteGenerationRequest
 from geopy.distance import geodesic
+
+_VIBE_MAP = {
+    "restaurant": "Foodie trail", "cafe": "Coffee lovers' walk", "bar": "Bar crawl",
+    "pub": "Pub crawl", "nightclub": "Nightlife circuit", "brewery": "Craft beer tour",
+    "museum": "Museum circuit", "gallery": "Art scene tour", "arts_centre": "Arts & culture",
+    "castle": "Historic journey", "ruins": "Ancient ruins walk", "monument": "Heritage trail",
+    "park": "Nature escape", "garden": "Garden stroll", "viewpoint": "Scenic lookout tour",
+    "theatre": "Theatre district walk", "cinema": "Entertainment circuit",
+    "attraction": "Sightseeing tour", "zoo": "Wildlife adventure",
+    "aquarium": "Marine discovery", "theme_park": "Amusement adventure",
+}
+
+
+def compute_route_vibe(pois: List[LLMPOISuggestion]) -> str:
+    counts = Counter(cat for p in pois for cat in p.categories)
+    for cat, _ in counts.most_common():
+        if cat in _VIBE_MAP:
+            return _VIBE_MAP[cat]
+    return "Mixed discovery route"
 
 
 TRAVEL_MODE_MAPPING = {
@@ -297,6 +317,7 @@ def generate_optimized_routes(
                 },
                 "pois": [p.model_dump() for p in selected],
                 "duration_seconds": duration_seconds,
+                "vibe": compute_route_vibe(selected),
                 "_start": start_poi,  # internal — used for next route's farthest-point pick
             }
         )

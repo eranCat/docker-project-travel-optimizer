@@ -40,6 +40,7 @@ export default function RouteSidebar({
 }: RouteSidebarProps) {
     const showSkeleton = loading && pois.length === 0;
     const hasDuration = currentRoute?.duration_seconds != null && currentRoute.duration_seconds > 0;
+    const vibe = currentRoute?.vibe;
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
@@ -83,15 +84,24 @@ export default function RouteSidebar({
                     </Typography>
                 </Box>
 
-                {!loading && hasDuration && (
-                    <Box sx={{ mb: 0.75 }}>
-                        <Chip
-                            size="small"
-                            icon={<AccessTimeIcon sx={{ fontSize: "0.65rem !important", ml: "4px !important" }} />}
-                            label={formatDuration(currentRoute!.duration_seconds!)}
-                            variant="outlined"
-                            sx={{ height: 18, fontSize: "0.65rem", "& .MuiChip-label": { px: 0.5 } }}
-                        />
+                {!loading && (vibe || hasDuration) && (
+                    <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mb: 0.75 }}>
+                        {vibe && (
+                            <Chip
+                                size="small"
+                                label={vibe}
+                                sx={{ height: 18, fontSize: "0.65rem", bgcolor: "primary.main", color: "#fff", "& .MuiChip-label": { px: 0.75 } }}
+                            />
+                        )}
+                        {hasDuration && (
+                            <Chip
+                                size="small"
+                                icon={<AccessTimeIcon sx={{ fontSize: "0.65rem !important", ml: "4px !important" }} />}
+                                label={formatDuration(currentRoute!.duration_seconds!)}
+                                variant="outlined"
+                                sx={{ height: 18, fontSize: "0.65rem", "& .MuiChip-label": { px: 0.5 } }}
+                            />
+                        )}
                     </Box>
                 )}
 
