@@ -240,7 +240,7 @@ class TestNonTouristTagPairsBlock(unittest.TestCase):
         self.assertFalse(self._run_filter(tags))
 
     def test_arabic_cemetery_name_blocked(self):
-        tags = {"name": "מקבرة باب الرحمة", "tourism": "attraction"}
+        tags = {"name": "مقبرة باب الرحمة", "tourism": "attraction"}
         self.assertFalse(self._run_filter(tags))
 
     def test_legitimate_name_not_blocked(self):
@@ -250,6 +250,45 @@ class TestNonTouristTagPairsBlock(unittest.TestCase):
     def test_museum_name_not_blocked(self):
         tags = {"name": "Tel Aviv Museum of Art", "tourism": "museum"}
         self.assertTrue(self._run_filter(tags))
+
+
+# ─── overpass_service: _is_permanently_closed ────────────────────────────────
+
+class TestIsPermanentlyClosed(unittest.TestCase):
+
+    def setUp(self):
+        from services.maps.overpass_service import _is_permanently_closed
+        self.fn = _is_permanently_closed
+
+    def test_opening_hours_off_is_closed(self):
+        self.assertTrue(self.fn({"opening_hours": "off", "amenity": "restaurant"}))
+
+    def test_closed_yes_is_closed(self):
+        self.assertTrue(self.fn({"closed": "yes", "tourism": "attraction"}))
+
+    def test_disused_yes_is_closed(self):
+        self.assertTrue(self.fn({"disused": "yes", "amenity": "cafe"}))
+
+    def test_abandoned_yes_is_closed(self):
+        self.assertTrue(self.fn({"abandoned": "yes", "amenity": "museum"}))
+
+    def test_shop_vacant_is_closed(self):
+        self.assertTrue(self.fn({"shop": "vacant"}))
+
+    def test_disused_prefix_key_is_closed(self):
+        self.assertTrue(self.fn({"disused:amenity": "restaurant", "name": "Old Cafe"}))
+
+    def test_abandoned_prefix_key_is_closed(self):
+        self.assertTrue(self.fn({"abandoned:shop": "bakery"}))
+
+    def test_normal_open_place_not_closed(self):
+        self.assertFalse(self.fn({"amenity": "restaurant", "opening_hours": "Mo-Su 09:00-22:00"}))
+
+    def test_no_tags_not_closed(self):
+        self.assertFalse(self.fn({}))
+
+    def test_opening_hours_not_off(self):
+        self.assertFalse(self.fn({"opening_hours": "24/7", "amenity": "cafe"}))
 
 
 # ─── overpass_service: quality_score ─────────────────────────────────────────

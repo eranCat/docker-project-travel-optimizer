@@ -61,6 +61,31 @@ def _name_is_blocked(name: str) -> bool:
     lower = name.lower()
     return any(sub in lower for sub in _NON_TOURIST_NAME_SUBSTRINGS)
 
+
+_CLOSED_TAG_PREFIXES = ("disused:", "abandoned:", "demolished:", "removed:", "was:")
+
+def _is_permanently_closed(tags_el: dict) -> bool:
+    """Return True if OSM tags indicate the place is permanently closed.
+    Note: only catches closures that OSM contributors have already tagged.
+    Stale OSM data for real-world closed places cannot be detected here.
+    """
+    if tags_el.get("opening_hours") == "off":
+        return True
+    if tags_el.get("closed") in ("yes", "true"):
+        return True
+    if tags_el.get("disused") in ("yes", "true") or tags_el.get("abandoned") in ("yes", "true"):
+        return True
+    if tags_el.get("shop") == "vacant" or tags_el.get("amenity") == "vacant":
+        return True
+    if tags_el.get("operational_status") in ("closed", "disused", "abandoned"):
+        return True
+    if tags_el.get("end_date"):
+        return True
+    # disused:amenity, abandoned:shop, etc.
+    if any(k.startswith(_CLOSED_TAG_PREFIXES) for k in tags_el):
+        return True
+    return False
+
 # Configuration
 OVERPASS_MIRRORS = [
     settings.overpass_api_url,
@@ -341,7 +366,7 @@ async def get_pois_from_overpass(
     scored: List[tuple[int, LLMPOISuggestion]] = []
     drop_counts = {
         "no_name": 0, "no_category": 0, "no_coords": 0,
-        "no_tag_match": 0, "non_tourist": 0,
+        "no_tag_match": 0, "non_tourist": 0, "closed": 0,
     }
     logging.info(f"Overpass returned {len(elements)} raw elements")
     for el in elements:
@@ -370,6 +395,11 @@ async def get_pois_from_overpass(
         # Hard-block: reject by raw OSM tag pairs or by name pattern.
         if any(tags_el.get(k) == v for k, v in NON_TOURIST_TAG_PAIRS) or _name_is_blocked(name):
             drop_counts["non_tourist"] += 1
+            continue
+
+        # Drop permanently closed places.
+        if _is_permanently_closed(tags_el):
+            drop_counts["closed"] += 1
             continue
 
         # Check if tags match

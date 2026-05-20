@@ -27,6 +27,12 @@ LOG_FILE = LOG_DIR / "backend.log"
 
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.DEBUG)
+# Remove any StreamHandlers that may use Windows cp1252/charmap encoding —
+# they raise UnicodeEncodeError on emoji characters (e.g. from watchfiles reload
+# messages). All log output goes to our UTF-8 file handler instead.
+for _h in root_logger.handlers[:]:
+    if isinstance(_h, logging.StreamHandler) and not isinstance(_h, logging.FileHandler):
+        root_logger.removeHandler(_h)
 file_handler = logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8")
 file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s | %(message)s"))
 if not any(isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", None) == str(LOG_FILE) for h in root_logger.handlers):
