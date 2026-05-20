@@ -101,7 +101,7 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                                 {idx + 1}
                             </Box>
 
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box sx={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
                                 <Typography
                                     component="a"
                                     href={createSearchQuery(poi)}
@@ -125,6 +125,30 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                                     {poi.name}
                                     <OpenInNewIcon sx={{ fontSize: 11, opacity: 0.5, flexShrink: 0 }} />
                                 </Typography>
+                                {Array.isArray(poi.categories) && poi.categories.map((cat, i) => {
+                                    const iconClass = CATEGORY_ICONS[cat.toLowerCase()] || CATEGORY_ICONS.default;
+                                    return (
+                                        <Chip
+                                            key={i}
+                                            size="small"
+                                            label={
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                                    <i className={`fas ${iconClass}`} style={{ fontSize: "0.75rem" }} />
+                                                    {cat}
+                                                </Box>
+                                            }
+                                            sx={{
+                                                height: 22,
+                                                fontSize: "0.75rem",
+                                                bgcolor: isActive ? "primary.main" : accentColor,
+                                                color: "#fff",
+                                                opacity: 0.9,
+                                                transition: "background-color 200ms ease",
+                                                "& .MuiChip-label": { px: 1.25 },
+                                            }}
+                                        />
+                                    );
+                                })}
                             </Box>
 
                             <Tooltip title={canFocus ? "Show on map" : "No coordinates"}>
@@ -150,8 +174,8 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                             </Tooltip>
                         </Box>
 
-                        {/* Address + opening hours + wheelchair + chips */}
-                        {(poi.address || poi.opening_hours || poi.wheelchair_accessible || (Array.isArray(poi.categories) && poi.categories.length > 0)) && (
+                        {/* Address + opening hours + wheelchair */}
+                        {(poi.address || poi.opening_hours || poi.wheelchair_accessible) && (
                             <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5, pl: "26px" }}>
                                 {poi.address && (
                                     <>
@@ -178,30 +202,6 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                                         <AccessibleIcon sx={{ fontSize: 12, color: "success.main" }} />
                                     </Tooltip>
                                 )}
-                                {Array.isArray(poi.categories) && poi.categories.map((cat, i) => {
-                                    const iconClass = CATEGORY_ICONS[cat.toLowerCase()] || CATEGORY_ICONS.default;
-                                    return (
-                                        <Chip
-                                            key={i}
-                                            size="small"
-                                            label={
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
-                                                    <i className={`fas ${iconClass}`} style={{ fontSize: "0.65rem" }} />
-                                                    {cat}
-                                                </Box>
-                                            }
-                                            sx={{
-                                                height: 16,
-                                                fontSize: "0.65rem",
-                                                bgcolor: isActive ? "primary.main" : accentColor,
-                                                color: "#fff",
-                                                opacity: 0.9,
-                                                transition: "background-color 200ms ease",
-                                                "& .MuiChip-label": { px: 0.75 },
-                                            }}
-                                        />
-                                    );
-                                })}
                             </Box>
                         )}
                     </Box>
