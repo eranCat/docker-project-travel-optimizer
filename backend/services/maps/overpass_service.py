@@ -28,8 +28,23 @@ NON_TOURIST_CATEGORIES = {
     "service", "footway", "cycleway", "path", "steps", "platform", "station",
     "halt", "tram_stop", "subway_entrance", "fence", "wall", "gate", "bollard",
     "generator", "power", "telecom", "mast", "drain", "ditch", "farmland",
-    "cemetery", "kiosk", "butcher", "shoes", "clothes", "alcohol", "cannabis",
-    "beverages", "electrician", "carpenter", "shoemaker", "tailor",
+    "cemetery", "grave_yard", "place_of_worship", "kiosk", "butcher", "shoes",
+    "clothes", "alcohol", "cannabis", "beverages", "electrician", "carpenter",
+    "shoemaker", "tailor",
+}
+
+# Hard-block by raw OSM tag key/value — catches elements that carry a tourist tag
+# (e.g. tourism=attraction) alongside a non-tourist landuse/amenity tag. Primary
+# category extraction would pick "attraction" and skip the NON_TOURIST_CATEGORIES
+# check, so we must test the full tag dict before resolving the primary category.
+NON_TOURIST_TAG_PAIRS: set[tuple[str, str]] = {
+    ("landuse", "cemetery"),
+    ("amenity", "grave_yard"),
+    ("amenity", "cemetery"),
+    ("landuse", "grave_yard"),
+    ("historic", "tomb"),
+    ("historic", "grave"),
+    ("historic", "wayside_shrine"),
 }
 
 # Configuration
@@ -318,6 +333,13 @@ async def get_pois_from_overpass(
         if address and address.startswith("Near "):
             address = None
         desc = tags_el.get("description") or tags_el.get("note") or None
+
+        # Hard-block: reject elements whose raw OSM tags mark them as non-tourist
+        # regardless of what primary category was resolved (e.g. a cemetery tagged
+        # tourism=attraction still has landuse=cemetery in its full tag dict).
+        if any(tags_el.get(k) == v for k, v in NON_TOURIST_TAG_PAIRS):
+            drop_counts["non_tourist"] += 1
+            continue
 
         # Check if tags match
         if not any(tag.key in tags_el and tags_el[tag.key] == tag.value for tag in tags):

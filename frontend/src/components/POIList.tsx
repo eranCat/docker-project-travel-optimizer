@@ -2,8 +2,8 @@ import React, { useEffect, useRef } from "react";
 import { POI } from "../models/POI";
 import {
     Box,
-    Button,
     Chip,
+    IconButton,
     Typography,
     Tooltip,
 } from "@mui/material";
@@ -36,7 +36,7 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
     }, [focusedPOI]);
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
             {pois.map((poi, idx) => {
                 const canFocus = Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude);
                 const isActive = isSamePOI(focusedPOI, poi);
@@ -51,11 +51,11 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                             bgcolor: "background.paper",
                             border: "1px solid",
                             borderColor: isActive ? "primary.main" : "divider",
-                            borderRadius: 3,
-                            p: 2,
+                            borderRadius: 2,
+                            p: 0.75,
                             display: "flex",
                             flexDirection: "column",
-                            gap: 1,
+                            gap: 0.4,
                             cursor: canFocus ? "pointer" : "default",
                             boxShadow: isActive ? 4 : 1,
                             outline: isActive ? (t: any) => `2px solid ${t.palette.primary.main}` : "none",
@@ -77,22 +77,21 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                         }}
                         aria-pressed={isActive}
                     >
-                        {/* Step number + name */}
-                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                        {/* Step number + name + map icon */}
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                             <Box
                                 sx={{
                                     flexShrink: 0,
-                                    width: 26,
-                                    height: 26,
+                                    width: 20,
+                                    height: 20,
                                     borderRadius: "50%",
                                     bgcolor: isActive ? "primary.main" : accentColor,
                                     color: "#fff",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                    fontSize: "0.75rem",
+                                    fontSize: "0.65rem",
                                     fontWeight: 700,
-                                    mt: "1px",
                                     boxShadow: isActive ? `0 0 0 3px rgba(15,118,110,0.25)` : "none",
                                     transition: "background-color 200ms ease, box-shadow 200ms ease",
                                 }}
@@ -112,7 +111,7 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                                     sx={{
                                         color: isActive ? "primary.main" : "text.primary",
                                         textDecoration: "none",
-                                        lineHeight: 1.35,
+                                        lineHeight: 1.3,
                                         direction: detectDirectionFromText(poi.name),
                                         display: "inline-flex",
                                         alignItems: "center",
@@ -122,82 +121,74 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                                     }}
                                 >
                                     {poi.name}
-                                    <OpenInNewIcon sx={{ fontSize: 12, opacity: 0.5, flexShrink: 0 }} />
+                                    <OpenInNewIcon sx={{ fontSize: 11, opacity: 0.5, flexShrink: 0 }} />
                                 </Typography>
                             </Box>
+
+                            <Tooltip title={canFocus ? "Show on map" : "No coordinates"}>
+                                <span>
+                                    <IconButton
+                                        size="small"
+                                        color={isActive ? "primary" : "default"}
+                                        disabled={!canFocus}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onFocusPOI(poi);
+                                        }}
+                                        sx={{
+                                            p: 0.5,
+                                            color: isActive ? "primary.main" : "text.disabled",
+                                            transition: "color 150ms ease",
+                                            "&:hover": { color: "primary.main" },
+                                        }}
+                                    >
+                                        <MyLocationIcon sx={{ fontSize: 14 }} />
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
                         </Box>
 
-                        {/* Address */}
-                        {poi.address && (
-                            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, pl: "34px" }}>
-                                <PlaceIcon sx={{ fontSize: 13, color: "text.disabled", mt: "2px", flexShrink: 0 }} />
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{ direction: detectDirectionFromText(poi.address), lineHeight: 1.5 }}
-                                >
-                                    {poi.address}
-                                </Typography>
-                            </Box>
-                        )}
-
-                        {/* Category chips */}
-                        {Array.isArray(poi.categories) && poi.categories.length > 0 && (
-                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, pl: "34px" }}>
-                                {poi.categories.map((cat, i) => {
+                        {/* Address + chips in one row */}
+                        {(poi.address || (Array.isArray(poi.categories) && poi.categories.length > 0)) && (
+                            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5, pl: "26px" }}>
+                                {poi.address && (
+                                    <>
+                                        <PlaceIcon sx={{ fontSize: 10, color: "text.disabled", flexShrink: 0 }} />
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            sx={{ direction: detectDirectionFromText(poi.address), lineHeight: 1.4, mr: 0.5 }}
+                                        >
+                                            {poi.address}
+                                        </Typography>
+                                    </>
+                                )}
+                                {Array.isArray(poi.categories) && poi.categories.map((cat, i) => {
                                     const iconClass = CATEGORY_ICONS[cat.toLowerCase()] || CATEGORY_ICONS.default;
                                     return (
                                         <Chip
                                             key={i}
                                             size="small"
                                             label={
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                                    <i className={`fas ${iconClass}`} style={{ fontSize: "0.7rem" }} />
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
+                                                    <i className={`fas ${iconClass}`} style={{ fontSize: "0.65rem" }} />
                                                     {cat}
                                                 </Box>
                                             }
                                             sx={{
-                                                height: 22,
-                                                fontSize: "0.75rem",
+                                                height: 16,
+                                                fontSize: "0.65rem",
                                                 bgcolor: isActive ? "primary.main" : accentColor,
                                                 color: "#fff",
                                                 opacity: 0.9,
                                                 transition: "background-color 200ms ease",
+                                                "& .MuiChip-label": { px: 0.75 },
                                             }}
                                         />
                                     );
                                 })}
                             </Box>
                         )}
-
-                        {/* Show on map button */}
-                        <Box sx={{ pl: "34px", mt: 0.25 }}>
-                            <Tooltip title={canFocus ? "Click card or use button to focus map" : "No coordinates"}>
-                                <span>
-                                    <Button
-                                        variant={isActive ? "contained" : "outlined"}
-                                        size="small"
-                                        color="primary"
-                                        disabled={!canFocus}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onFocusPOI(poi);
-                                        }}
-                                        startIcon={<MyLocationIcon fontSize="small" />}
-                                        sx={{
-                                            borderRadius: 20,
-                                            fontSize: "0.75rem",
-                                            py: 0.4,
-                                            px: 1.5,
-                                            minHeight: 32,
-                                            transition: "all 150ms ease",
-                                        }}
-                                    >
-                                        {isActive ? "Focused" : "Show on map"}
-                                    </Button>
-                                </span>
-                            </Tooltip>
-                        </Box>
                     </Box>
                 );
             })}

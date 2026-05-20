@@ -111,5 +111,10 @@
     "cable_car",
     "chair_lift",
     "gondola"
+  ],
+  "lgbtq": [
+    "primary",
+    "welcome",
+    "only"
   ]
 }

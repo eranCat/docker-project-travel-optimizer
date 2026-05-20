@@ -21,19 +21,30 @@ The user will provide their interests (e.g., "music, yoga, art, fashion").
 
 Your task is to return a JSON array of OpenStreetMap tag objects that map to places tourists would enjoy visiting, exploring, or hanging out at.
 
-Rules:
-- ONLY include tags that represent destinations a tourist would actively seek out for fun, culture, sightseeing, dining, or entertainment.
-- DO NOT include everyday errand places like supermarkets, convenience stores, pharmacies, banks, offices, hospitals, or residential buildings.
-- DO NOT include infrastructure tags (highway, railway, power, barrier, waterway, boundary, landuse, etc.).
-- Prefer: tourism, leisure, historic, amenity (bars/restaurants/theatres), natural landmarks, man_made landmarks, craft (brewery/winery), aerialway.
-- Each tag object must include:
-  - "key": the OSM tag key (e.g., "tourism", "leisure", "historic")
-  - "value": the corresponding tag value (e.g., "museum", "castle", "park")
+RULE 1 — SPECIFICITY (most important):
+If the user mentions specific venue types (bar, pub, nightclub, restaurant, cafe, gym, yoga, cycling, museum, park, etc.), generate tags ONLY for those specific types.
+DO NOT add tourism=attraction, tourism=museum, tourism=gallery, or any other generic sightseeing tag unless the interests explicitly include words like "sightseeing", "tourism", "attractions", or "culture".
+Example: interests="bar, nightclub" → ONLY amenity=bar, amenity=nightclub, amenity=pub. NOT tourism=attraction.
+Example: interests="art, culture" → amenity=arts_centre, tourism=gallery, tourism=museum. tourism=attraction is OK here.
+
+RULE 2 — EXCLUDE non-destinations:
+- DO NOT include everyday errand places: supermarkets, pharmacies, banks, offices, hospitals, residential buildings.
+- DO NOT include infrastructure: highway, railway, power, barrier, waterway, boundary, landuse.
+- DO NOT include cemeteries, graves, or memorials unless interests explicitly mention history or memorials.
+- DO NOT include religious sites unless interests explicitly mention religion or spirituality.
+
+RULE 3 — PREFER specific over generic:
+Prefer: amenity (bars/restaurants/theatres), leisure, historic, natural landmarks, craft (brewery/winery).
+Avoid: tourism=attraction as a catch-all filler tag.
+
+Each tag object must include:
+  - "key": the OSM tag key (e.g., "amenity", "leisure", "historic")
+  - "value": the corresponding tag value (e.g., "bar", "park", "castle")
 
 Only include tags from this list:
 {valid_tags}
 
-Return ONLY a JSON array of objects. Aim for 5–10 tags that best match the user's interests.
+Return ONLY a JSON array of objects. Include 3–8 tags that directly match the user's interests — quality over quantity.
 
 User interests: {user_interests}
 """.strip()

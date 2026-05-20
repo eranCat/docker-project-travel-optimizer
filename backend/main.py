@@ -6,6 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from routers import autocomplete_location, health, route_progress
+from services.maps.overpass_service import get_overpass_tags_from_interests, _poi_cache
 from fastapi.exceptions import HTTPException
 from utils.error_handlers import (
     http_exception_handler,
@@ -32,6 +33,8 @@ for noisy in ("httpcore", "httpx", "urllib3", "openai._base_client"):
 async def lifespan(app: FastAPI):
     logging.info("=== Backend starting up ===")
     load_dotenv()
+    get_overpass_tags_from_interests.cache_clear()
+    _poi_cache.clear()
     yield
     logging.info("=== Backend shutdown ===")
 
