@@ -19,6 +19,10 @@ interface Props {
     value: string;
     onChange: (val: string) => void;
     onSelect: (val: string, lat?: number, lon?: number) => void;
+    id?: string;
+    name?: string;
+    label?: string;
+    placeholder?: string;
 }
 
 interface Suggestion {
@@ -27,7 +31,15 @@ interface Suggestion {
     lon: string;
 }
 
-const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) => {
+const LocationAutocomplete: React.FC<Props> = ({
+    value,
+    onChange,
+    onSelect,
+    id = "location-input",
+    name = "location",
+    label = "Location",
+    placeholder = "e.g. Tel Aviv",
+}) => {
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -79,16 +91,16 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
         setShowDropdown(false);
         setSuggestions([]);
         requestAnimationFrame(() => {
-            document.getElementById("location-input")?.blur();
+            document.getElementById(id)?.blur();
         });
     };
 
     return (
         <Box sx={{ position: "relative" }}>
             <TextField
-                id="location-input"
-                name="location"
-                label="Location"
+                id={id}
+                name={name}
+                label={label}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 onKeyDown={(e) => {
@@ -104,7 +116,7 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
                         const s = suggestions[highlightedIndex];
                         handleSelect(s.display_name, parseFloat(s.lat), parseFloat(s.lon));
                         requestAnimationFrame(() => {
-                            document.getElementById("location-input")?.focus();
+                            document.getElementById(id)?.focus();
                         });
                     } else if (e.key === "Escape") {
                         setShowDropdown(false);
@@ -112,7 +124,7 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
                 }}
                 onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                 fullWidth
-                placeholder="e.g. Tel Aviv"
+                placeholder={placeholder}
                 autoComplete="off"
                 slotProps={{
                     input: {

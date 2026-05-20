@@ -29,6 +29,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AccessibleIcon from "@mui/icons-material/Accessible";
 import CasinoIcon from "@mui/icons-material/Casino";
+import ExploreIcon from "@mui/icons-material/Explore";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import LocationAutocomplete from "./LocationAutocomplete";
 import LoadingProgress from "./LoadingProgress";
 
@@ -44,6 +46,10 @@ interface FormData {
     wheelchair: boolean;
     time_of_day: string;
     num_days: number;
+    mode: "explore" | "trip";
+    dest_location: string;
+    dest_latitude?: number;
+    dest_longitude?: number;
 }
 
 interface Props {
@@ -60,6 +66,8 @@ interface Props {
     hasSavedRoutes?: boolean;
     onValidLocationSelected: () => void;
     onLocationSelected: (lat: number, lon: number) => void;
+    onValidDestSelected: () => void;
+    onDestLocationSelected: (lat: number, lon: number) => void;
     onCancel: () => void;
     onSurpriseMe: () => void;
     isFormValid: boolean;
@@ -86,11 +94,14 @@ const RouteForm: React.FC<Props> = ({
     hasSavedRoutes = false,
     onValidLocationSelected,
     onLocationSelected,
+    onValidDestSelected,
+    onDestLocationSelected,
     onCancel,
     onSurpriseMe,
     isFormValid,
     compact = false,
 }) => {
+    const isTrip = form.mode === "trip";
     const [showAdvanced, setShowAdvanced] = useState(false);
 
     // Compact summary bar shown after search is initiated
@@ -115,7 +126,9 @@ const RouteForm: React.FC<Props> = ({
                         noWrap
                         sx={{ display: "block", lineHeight: 1.3, fontFamily: '"Space Grotesk", "Inter", sans-serif' }}
                     >
-                        {form.location || "Unknown location"}
+                        {form.mode === "trip"
+                            ? `${form.location || "Start"} → ${form.dest_location || "Destination"}`
+                            : form.location || "Unknown location"}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", lineHeight: 1.4 }}>
                         {form.interests || "No interests"} · {TRAVEL_MODES.find(m => m.value === form.travel_mode)?.label ?? form.travel_mode}
@@ -164,8 +177,54 @@ const RouteForm: React.FC<Props> = ({
             </Box>
 
             <Stack spacing={1.75} sx={{ flexGrow: 1, overflowY: "auto", minHeight: 0, pr: 0.5 }}>
-                {/* Location */}
+                {/* Mode: explore an area vs plan an A→B trip */}
+                <ToggleButtonGroup
+                    value={form.mode}
+                    exclusive
+                    onChange={(_, val) => {
+                        if (val !== null) {
+                            onChange({ target: { name: "mode", value: val } } as any);
+                        }
+                    }}
+                    fullWidth
+                    size="small"
+                    aria-label="Route mode"
+                    sx={{
+                        gap: 0.75,
+                        "& .MuiToggleButton-root": {
+                            flex: 1,
+                            gap: 0.5,
+                            fontWeight: 500,
+                            fontSize: "0.8rem",
+                            borderRadius: "8px !important",
+                            border: "1px solid",
+                            borderColor: "divider",
+                            minHeight: 40,
+                            color: "text.secondary",
+                            "&.Mui-selected": {
+                                bgcolor: "primary.main",
+                                color: "primary.contrastText",
+                                borderColor: "primary.main",
+                                "&:hover": { bgcolor: "primary.dark" },
+                            },
+                        },
+                    }}
+                >
+                    <ToggleButton value="explore" aria-label="Explore area">
+                        <ExploreIcon sx={{ fontSize: 18 }} />
+                        Explore area
+                    </ToggleButton>
+                    <ToggleButton value="trip" aria-label="A to B trip">
+                        <SwapHorizIcon sx={{ fontSize: 18 }} />
+                        A → B trip
+                    </ToggleButton>
+                </ToggleButtonGroup>
+
+                {/* Start location */}
                 <LocationAutocomplete
+                    id="location-input"
+                    name="location"
+                    label={isTrip ? "Start" : "Location"}
                     value={form.location}
                     onChange={(val) =>
                         onChange({ target: { name: "location", value: val } } as any)
@@ -178,6 +237,27 @@ const RouteForm: React.FC<Props> = ({
                         onValidLocationSelected();
                     }}
                 />
+
+                {/* Destination (A→B mode only) */}
+                {isTrip && (
+                    <LocationAutocomplete
+                        id="dest-location-input"
+                        name="dest_location"
+                        label="Destination"
+                        placeholder="e.g. Jerusalem"
+                        value={form.dest_location}
+                        onChange={(val) =>
+                            onChange({ target: { name: "dest_location", value: val } } as any)
+                        }
+                        onSelect={(val, lat, lon) => {
+                            onChange({ target: { name: "dest_location", value: val } } as any);
+                            if (lat !== undefined && lon !== undefined) {
+                                onDestLocationSelected(lat, lon);
+                            }
+                            onValidDestSelected();
+                        }}
+                    />
+                )}
 
                 {/* Interests + Surprise Me */}
                 <TextField
@@ -275,7 +355,7 @@ const RouteForm: React.FC<Props> = ({
                         <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
                             <TextField
                                 fullWidth
-                                label="Radius (km)"
+                                label={isTrip ? "Corridor (km)" : "Radius (km)"}
                                 name="radius_km"
                                 type="number"
                                 size="small"
@@ -286,19 +366,21 @@ const RouteForm: React.FC<Props> = ({
                                     inputLabel: { shrink: true },
                                 }}
                             />
-                            <TextField
-                                fullWidth
-                                label="Routes"
-                                name="num_routes"
-                                type="number"
-                                size="small"
-                                value={form.num_routes}
-                                onChange={onChange}
-                                slotProps={{
-                                    input: { inputMode: "numeric" },
-                                    inputLabel: { shrink: true },
-                                }}
-                            />
+                            {!isTrip && (
+                                <TextField
+                                    fullWidth
+                                    label="Routes"
+                                    name="num_routes"
+                                    type="number"
+                                    size="small"
+                                    value={form.num_routes}
+                                    onChange={onChange}
+                                    slotProps={{
+                                        input: { inputMode: "numeric" },
+                                        inputLabel: { shrink: true },
+                                    }}
+                                />
+                            )}
                             <TextField
                                 fullWidth
                                 label="POIs"

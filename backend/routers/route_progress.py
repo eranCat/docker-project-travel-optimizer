@@ -27,6 +27,9 @@ async def route_progress(
     longitude: float | None = None,
     wheelchair: bool = False,
     time_of_day: str | None = None,
+    dest_location: str | None = None,
+    dest_latitude: float | None = None,
+    dest_longitude: float | None = None,
 ):
     async def event_generator():
         clear_log()
@@ -38,6 +41,12 @@ async def route_progress(
             else:
                 yield {"event": "stage", "data": "Geocoding location"}
                 lat, lon = await geocode_location(location)
+
+            # A→B mode: resolve destination coordinates (geocode if not supplied)
+            d_lat, d_lon = dest_latitude, dest_longitude
+            if dest_location and (d_lat is None or d_lon is None):
+                yield {"event": "stage", "data": "Geocoding location"}
+                d_lat, d_lon = await geocode_location(dest_location)
 
             # Build request with geocoded coordinates
             request_data = RouteGenerationRequest(
@@ -51,11 +60,15 @@ async def route_progress(
                 longitude=lon,
                 wheelchair=wheelchair,
                 time_of_day=time_of_day,
+                dest_location=dest_location,
+                dest_latitude=d_lat,
+                dest_longitude=d_lon,
             )
 
             yield {"event": "stage", "data": "Fetching POIs from maps_service"}
             pois = await call_pois_from_maps_service(request_data)
-            if not pois:
+            # A→B mode still produces a valid direct route with zero POIs.
+            if not pois and not request_data.is_point_to_point:
                 yield {
                     "event": "error",
                     "data": json.dumps(

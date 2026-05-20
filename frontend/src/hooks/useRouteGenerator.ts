@@ -21,6 +21,7 @@ export function useRouteGenerator() {
     const [stage, setStage] = useState(0);
     const [error, setError] = useState("");
     const [locationSelected, setLocationSelected] = useState(false);
+    const [destSelected, setDestSelected] = useState(false);
     const canceledRef = useRef(false);
     // Track the currently focused POI for map centering
     const [focusedPOI, setFocusedPOI] = useState<POI | null>(null);
@@ -60,22 +61,32 @@ export function useRouteGenerator() {
         "rendering": "Rendering results",
     };      
 
-    const isFormValid = () =>
-        locationSelected &&
-        form.interests.trim() !== "" &&
-        form.location.trim() !== "" &&
-        form.radius_km > 0 &&
-        form.num_routes > 0 &&
-        form.num_pois > 0;
+    const isFormValid = () => {
+        const base =
+            locationSelected &&
+            form.interests.trim() !== "" &&
+            form.location.trim() !== "" &&
+            form.radius_km > 0 &&
+            form.num_pois > 0;
+        if (form.mode === "trip") {
+            return base && destSelected && form.dest_location.trim() !== "";
+        }
+        return base && form.num_routes > 0;
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         if (name === "location") setLocationSelected(false);
+        if (name === "dest_location") setDestSelected(false);
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleLocationSelected = (lat: number, lon: number) => {
         setFormData(prev => ({ ...prev, latitude: lat, longitude: lon }));
+    };
+
+    const handleDestLocationSelected = (lat: number, lon: number) => {
+        setFormData(prev => ({ ...prev, dest_latitude: lat, dest_longitude: lon }));
     };
 
     const handleSubmit = (e?: FormEvent) => {
@@ -106,6 +117,13 @@ export function useRouteGenerator() {
             }),
             wheelchair: form.wheelchair,
             time_of_day: form.time_of_day || undefined,
+            ...(form.mode === "trip" && {
+                dest_location: form.dest_location,
+                ...(form.dest_latitude !== undefined && form.dest_longitude !== undefined && {
+                    dest_latitude: form.dest_latitude,
+                    dest_longitude: form.dest_longitude,
+                }),
+            }),
         });
 
         sseRef.current = source;
@@ -223,6 +241,7 @@ export function useRouteGenerator() {
         setSelectedIndex(0);
         setError("");
         setLocationSelected(false);
+        setDestSelected(false);
         localStorage.removeItem("travel-form-time");
     };
 
@@ -287,6 +306,9 @@ export function useRouteGenerator() {
         if (form.location && form.location.trim() !== "") {
             setLocationSelected(true);
         }
+        if (form.dest_location && form.dest_location.trim() !== "") {
+            setDestSelected(true);
+        }
     }, []);
 
     // Close any open SSE and clear generation flag on unmount
@@ -313,6 +335,7 @@ export function useRouteGenerator() {
         isFormValid,
         handleChange,
         handleLocationSelected,
+        handleDestLocationSelected,
         handleSubmit,
         handleCancel,
         handleReset,
@@ -323,6 +346,8 @@ export function useRouteGenerator() {
         savedRoutes,
         locationSelected,
         setLocationSelected,
+        destSelected,
+        setDestSelected,
     };
 
 }

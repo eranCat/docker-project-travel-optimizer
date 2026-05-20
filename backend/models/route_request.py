@@ -15,6 +15,16 @@ class RouteGenerationRequest(BaseModel):
     longitude: Optional[float] = Field(None, description="Pre-geocoded longitude (skips re-geocoding)")
     wheelchair: bool = Field(default=False, description="Filter for wheelchair-accessible POIs only")
     time_of_day: Optional[str] = Field(None, description="morning|afternoon|evening|night — biases tag selection")
+    # Point-to-point ("A → B trip") mode: when a destination is supplied, a single
+    # route runs from (latitude, longitude) to (dest_latitude, dest_longitude),
+    # picking POIs that lie within radius_km of the straight A→B corridor.
+    dest_location: Optional[str] = Field(None, description="Free-form destination text (A→B mode)")
+    dest_latitude: Optional[float] = Field(None, description="Pre-geocoded destination latitude")
+    dest_longitude: Optional[float] = Field(None, description="Pre-geocoded destination longitude")
+
+    @property
+    def is_point_to_point(self) -> bool:
+        return self.dest_latitude is not None and self.dest_longitude is not None
 
     def __hash__(self):
-        return hash((self.interests, self.location, self.radius_km, self.num_routes, self.num_pois, self.travel_mode, self.wheelchair, self.time_of_day))
+        return hash((self.interests, self.location, self.radius_km, self.num_routes, self.num_pois, self.travel_mode, self.wheelchair, self.time_of_day, self.dest_location, self.dest_latitude, self.dest_longitude))

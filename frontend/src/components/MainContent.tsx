@@ -26,6 +26,7 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
         isFormValid,
         handleChange,
         handleLocationSelected,
+        handleDestLocationSelected,
         handleSubmit,
         handleCancel,
         handleReset,
@@ -35,6 +36,7 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
         handleShareRoute,
         savedRoutes,
         setLocationSelected,
+        setDestSelected,
     } = useRouteGenerator();
 
     const theme = useTheme();
@@ -64,6 +66,8 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
         hasSavedRoutes: savedRoutes.length > 0,
         onValidLocationSelected: () => setLocationSelected(true),
         onLocationSelected: handleLocationSelected,
+        onValidDestSelected: () => setDestSelected(true),
+        onDestLocationSelected: handleDestLocationSelected,
         onSurpriseMe: handleSurpriseMe,
     };
 

@@ -1,13 +1,14 @@
 import asyncio
 import logging
 import json
+import math
 import re
 import time
 from pathlib import Path
 import requests
 from functools import lru_cache
 from itertools import groupby
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 
 from fastapi import HTTPException
 from geopy.distance import geodesic
@@ -30,7 +31,10 @@ NON_TOURIST_CATEGORIES = {
     "service", "footway", "cycleway", "path", "steps", "platform", "station",
     "halt", "tram_stop", "subway_entrance", "fence", "wall", "gate", "bollard",
     "generator", "power", "telecom", "mast", "drain", "ditch", "farmland",
-    "cemetery", "grave_yard", "place_of_worship", "kiosk", "butcher", "shoes",
+    # NOTE: "place_of_worship" intentionally NOT blocked — it's only ever fetched
+    # when the user's interests explicitly map to it (churches/mosques/temples),
+    # so blocking it would silently drop exactly what they asked for.
+    "cemetery", "grave_yard", "kiosk", "butcher", "shoes",
     "clothes", "alcohol", "cannabis", "beverages", "electrician", "carpenter",
     "shoemaker", "tailor",
 }
@@ -181,6 +185,46 @@ def quality_score(tags_el: dict) -> int:
     if tags_el.get("brand") and not tags_el.get("wikidata"):
         score -= 1
     return score
+
+
+def _corridor_bbox(
+    a: Tuple[float, float], b: Tuple[float, float], pad_m: float
+) -> Tuple[float, float, float, float]:
+    """Bounding box (south, west, north, east) spanning A and B, padded by
+    pad_m metres on every side so corridor POIs near the endpoints are included.
+    """
+    lat_pad = pad_m / 111_320.0
+    mean_lat = math.radians((a[0] + b[0]) / 2.0)
+    lon_pad = pad_m / (111_320.0 * max(math.cos(mean_lat), 0.01))
+    south = min(a[0], b[0]) - lat_pad
+    north = max(a[0], b[0]) + lat_pad
+    west = min(a[1], b[1]) - lon_pad
+    east = max(a[1], b[1]) + lon_pad
+    return (south, west, north, east)
+
+
+def _point_to_segment_dist_m(
+    p: Tuple[float, float], a: Tuple[float, float], b: Tuple[float, float]
+) -> float:
+    """Perpendicular distance (metres) from point p to segment a→b, via a local
+    equirectangular projection. Accurate enough for city/region corridor widths.
+    """
+    mean_lat = math.radians((a[0] + b[0]) / 2.0)
+    mx = 111_320.0 * math.cos(mean_lat)  # metres per degree lon
+    my = 111_320.0                       # metres per degree lat
+
+    ax, ay = a[1] * mx, a[0] * my
+    bx, by = b[1] * mx, b[0] * my
+    px, py = p[1] * mx, p[0] * my
+
+    dx, dy = bx - ax, by - ay
+    seg_len_sq = dx * dx + dy * dy
+    if seg_len_sq == 0:
+        return math.hypot(px - ax, py - ay)
+    t = ((px - ax) * dx + (py - ay) * dy) / seg_len_sq
+    t = max(0.0, min(1.0, t))
+    proj_x, proj_y = ax + t * dx, ay + t * dy
+    return math.hypot(px - proj_x, py - proj_y)
 
 
 def _normalize_name(name: str) -> str:
@@ -347,7 +391,10 @@ async def get_pois_from_overpass(
     Results are cached for POI_CACHE_TTL seconds. Empty results are not cached.
     """
     # TTL cache lookup
-    cache_key = (request.location, request.radius_km, request.num_pois, tags, request.wheelchair)
+    cache_key = (
+        request.location, request.radius_km, request.num_pois, tags, request.wheelchair,
+        request.dest_latitude, request.dest_longitude,
+    )
     now = time.time()
     cached = _poi_cache.get(cache_key)
     if cached and cached[0] > now:
@@ -365,8 +412,22 @@ async def get_pois_from_overpass(
         lat, lon = await geocode_location(request.location)
     # Calculate radius in meters
     radius_m = int(request.radius_km * 1000)
-    # Build Overpass query
-    qp = OverpassQueryParams(tags=list(tags), lat=lat, lon=lon, radius_m=radius_m, wheelchair=request.wheelchair)
+
+    # A→B mode: query the bounding box spanning both endpoints (padded by the
+    # corridor half-width). POIs are filtered to the corridor below.
+    if request.is_point_to_point:
+        if request.dest_latitude is not None and request.dest_longitude is not None:
+            dest_lat, dest_lon = request.dest_latitude, request.dest_longitude
+        else:
+            dest_lat, dest_lon = await geocode_location(request.dest_location or "")
+        bbox = _corridor_bbox((lat, lon), (dest_lat, dest_lon), pad_m=radius_m)
+        qp = OverpassQueryParams(
+            tags=list(tags), lat=lat, lon=lon, radius_m=radius_m,
+            wheelchair=request.wheelchair, bbox=bbox,
+        )
+    else:
+        dest_lat = dest_lon = None
+        qp = OverpassQueryParams(tags=list(tags), lat=lat, lon=lon, radius_m=radius_m, wheelchair=request.wheelchair)
     query = qp.to_query()
     logging.debug(f"Overpass query:\n{query}\n")
 
@@ -454,6 +515,17 @@ async def get_pois_from_overpass(
     # the highest-quality POI in any cluster wins de-duplication ties.
     scored.sort(key=lambda x: x[0], reverse=True)
     pois = [poi for _score, poi in scored]
+
+    # A→B mode: keep only POIs within radius_m of the straight A→B segment, so
+    # results lie "on the way" rather than anywhere in the bounding box.
+    if request.is_point_to_point and dest_lat is not None and dest_lon is not None:
+        a, b = (lat, lon), (dest_lat, dest_lon)
+        before_corridor = len(pois)
+        pois = [
+            p for p in pois
+            if _point_to_segment_dist_m((p.latitude, p.longitude), a, b) <= radius_m
+        ]
+        logging.info(f"Corridor filter ({radius_m}m): {before_corridor} -> {len(pois)} POIs")
 
     before_name = len(pois)
     pois = thin_pois_by_name(pois)

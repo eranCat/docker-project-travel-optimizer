@@ -1,7 +1,8 @@
 import logging
+import math
 import random
 from collections import Counter
-from typing import List
+from typing import List, Tuple
 
 from fastapi import HTTPException
 from services.maps.route_service import get_real_route
@@ -332,3 +333,111 @@ def generate_optimized_routes(
         r.pop("_start", None)
 
     return {"routes": routes}
+
+
+def _project_t(p: Tuple[float, float], a: Tuple[float, float], b: Tuple[float, float]) -> float:
+    """Position of point p projected onto segment a→b, as t in [0, 1]
+    (0 = at A, 1 = at B). Local equirectangular projection."""
+    mean_lat = math.radians((a[0] + b[0]) / 2.0)
+    mx = 111_320.0 * math.cos(mean_lat)
+    my = 111_320.0
+    ax, ay = a[1] * mx, a[0] * my
+    bx, by = b[1] * mx, b[0] * my
+    px, py = p[1] * mx, p[0] * my
+    dx, dy = bx - ax, by - ay
+    seg_len_sq = dx * dx + dy * dy
+    if seg_len_sq == 0:
+        return 0.0
+    t = ((px - ax) * dx + (py - ay) * dy) / seg_len_sq
+    return max(0.0, min(1.0, t))
+
+
+def _perp_dist_m(p: Tuple[float, float], a: Tuple[float, float], b: Tuple[float, float]) -> float:
+    """Perpendicular distance (metres) from p to its projection onto segment a→b —
+    i.e. how far off the direct route the POI sits."""
+    t = _project_t(p, a, b)
+    proj = (a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]))
+    return geodesic(p, proj).meters
+
+
+def generate_point_to_point_route(
+    request: RouteGenerationRequest, pois: List[LLMPOISuggestion]
+):
+    """A→B mode: a single route from start (latitude, longitude) to destination
+    (dest_latitude, dest_longitude), passing through up to num_pois POIs picked
+    one-per-category and ordered by their progress along the A→B corridor."""
+    a = (request.latitude, request.longitude)
+    b = (request.dest_latitude, request.dest_longitude)
+    if None in a or None in b:
+        raise HTTPException(status_code=400, detail="A→B mode requires start and destination coordinates.")
+
+    num_pois = request.num_pois
+    ors_profile = TRAVEL_MODE_MAPPING.get(request.travel_mode, "foot-walking")
+
+    # Spread stops ALONG the corridor: split t∈[0,1] into num_pois bins and pick
+    # one POI per bin. Without this, dense metro areas at one end (e.g. Tel Aviv)
+    # win every "nearest" pick and all stops cluster there instead of marching
+    # toward the destination.
+    cand = [(_project_t((p.latitude, p.longitude), a, b), p) for p in pois]
+    selected: List[LLMPOISuggestion] = []
+    used_cats: set = set()
+    for k in range(num_pois):
+        lo, hi = k / num_pois, (k + 1) / num_pois
+        bin_c = [
+            (t, p) for (t, p) in cand
+            if (lo <= t < hi) or (k == num_pois - 1 and t == 1.0)
+        ]
+        if not bin_c:
+            continue
+        # Within the bin prefer a fresh category, then the POI closest to the
+        # direct line (smallest detour).
+        def _key(tp):
+            _t, p = tp
+            fresh = 0 if used_cats.isdisjoint(p.categories) else 1
+            return (fresh, _perp_dist_m((p.latitude, p.longitude), a, b))
+        _t, pick = min(bin_c, key=_key)
+        selected.append(pick)
+        used_cats.update(pick.categories)
+        cand = [(t, p) for (t, p) in cand if p is not pick]
+
+    # Backfill any empty bins from the closest remaining POIs so we still hit
+    # num_pois stops when some corridor segments are sparse.
+    if len(selected) < num_pois and cand:
+        cand.sort(key=lambda tp: _perp_dist_m((tp[1].latitude, tp[1].longitude), a, b))
+        for _t, p in cand:
+            if len(selected) >= num_pois:
+                break
+            selected.append(p)
+
+    # Final corridor order (start → destination).
+    selected.sort(key=lambda p: _project_t((p.latitude, p.longitude), a, b))
+
+    logging.info(
+        f"A→B route: {len(selected)}/{len(pois)} POIs selected between "
+        f"{a} and {b} (requested {num_pois})"
+    )
+    logging.debug(f"  Order: {[(p.name, p.categories) for p in selected]}")
+
+    # Waypoints: start anchor → POIs (corridor order) → destination anchor.
+    # (lon, lat) for ORS.
+    coords = [(a[1], a[0])] + [(p.longitude, p.latitude) for p in selected] + [(b[1], b[0])]
+    try:
+        path, duration_seconds = get_real_route(coords, profile=ors_profile)
+        if not path or len(path) < 2:
+            raise HTTPException(status_code=400, detail="Could not build a route between the two locations.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"A→B routing error for {len(coords)} waypoints: {e}")
+        raise HTTPException(status_code=503, detail="Route service unavailable. Please try again.")
+
+    route = {
+        "feature": {
+            "type": "Feature",
+            "geometry": {"type": "LineString", "coordinates": path},
+        },
+        "pois": [p.model_dump() for p in selected],
+        "duration_seconds": duration_seconds,
+        "vibe": compute_route_vibe(selected) if selected else "Direct route",
+    }
+    return {"routes": [route]}
