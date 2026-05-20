@@ -10,3 +10,4 @@ class LLMPOISuggestion(BaseModel):
     longitude: float
     address: Optional[str] = None
     categories: List[str]
+    opening_hours: Optional[str] = None

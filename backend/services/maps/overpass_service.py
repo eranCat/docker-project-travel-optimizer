@@ -382,6 +382,8 @@ async def get_pois_from_overpass(
             drop_counts["non_tourist"] += 1
             continue
 
+        opening_hours = tags_el.get("opening_hours") or None
+
         scored.append((
             quality_score(tags_el),
             LLMPOISuggestion(
@@ -392,6 +394,7 @@ async def get_pois_from_overpass(
                 longitude=lon_el,
                 address=address,
                 categories=[category],
+                opening_hours=opening_hours,
             ),
         ))
 

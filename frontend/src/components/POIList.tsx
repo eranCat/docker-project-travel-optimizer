@@ -10,6 +10,7 @@ import {
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import PlaceIcon from "@mui/icons-material/Place";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { CATEGORY_ICONS, CATEGORY_COLORS, DARK_CATEGORY_COLORS } from "../styles/icons";
 import { useTheme } from "@mui/material";
 import { detectDirectionFromText } from "../utils/detectDirectionFromText";
@@ -148,8 +149,8 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                             </Tooltip>
                         </Box>
 
-                        {/* Address + chips in one row */}
-                        {(poi.address || (Array.isArray(poi.categories) && poi.categories.length > 0)) && (
+                        {/* Address + opening hours + chips */}
+                        {(poi.address || poi.opening_hours || (Array.isArray(poi.categories) && poi.categories.length > 0)) && (
                             <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5, pl: "26px" }}>
                                 {poi.address && (
                                     <>
@@ -162,6 +163,14 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                                             {poi.address}
                                         </Typography>
                                     </>
+                                )}
+                                {poi.opening_hours && (
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.25, width: "100%" }}>
+                                        <AccessTimeIcon sx={{ fontSize: 10, color: "text.disabled", flexShrink: 0 }} />
+                                        <Typography variant="caption" color="text.disabled" sx={{ lineHeight: 1.4, fontStyle: "italic" }}>
+                                            {poi.opening_hours}
+                                        </Typography>
+                                    </Box>
                                 )}
                                 {Array.isArray(poi.categories) && poi.categories.map((cat, i) => {
                                     const iconClass = CATEGORY_ICONS[cat.toLowerCase()] || CATEGORY_ICONS.default;

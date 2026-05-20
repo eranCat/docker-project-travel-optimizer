@@ -5,6 +5,7 @@ export interface POI {
     latitude: number;
     longitude: number;
     categories?: string[];
+    opening_hours?: string;
 }
 
 export interface Props {
