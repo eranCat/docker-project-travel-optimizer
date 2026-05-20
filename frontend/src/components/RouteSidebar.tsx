@@ -1,4 +1,4 @@
-import { Box, Typography, Fade, Chip } from "@mui/material";
+import { Box, Typography, Fade, Chip, IconButton, Tooltip } from "@mui/material";
 import RouteSelector from "./RouteSelector";
 import POIList from "./POIList";
 import POISkeleton from "./POISkeleton";
@@ -7,6 +7,8 @@ import { RouteData } from "../models/RouteData";
 import PlaceIcon from "@mui/icons-material/Place";
 import LoopIcon from "@mui/icons-material/Loop";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import MapIcon from "@mui/icons-material/Map";
+import { buildGoogleMapsUrl } from "../utils/googleMapsUrl";
 
 interface RouteSidebarProps {
     routesCount: number;
@@ -41,6 +43,7 @@ export default function RouteSidebar({
     const showSkeleton = loading && pois.length === 0;
     const hasDuration = currentRoute?.duration_seconds != null && currentRoute.duration_seconds > 0;
     const vibe = currentRoute?.vibe;
+    const gmapsUrl = pois.length > 0 ? buildGoogleMapsUrl(pois) : null;
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
@@ -76,12 +79,27 @@ export default function RouteSidebar({
                         variant="subtitle2"
                         fontWeight={700}
                         color={loading ? "text.secondary" : "text.primary"}
-                        sx={{ fontFamily: '"Space Grotesk", "Inter", sans-serif', fontSize: "0.875rem" }}
+                        sx={{ fontFamily: '"Space Grotesk", "Inter", sans-serif', fontSize: "0.875rem", flexGrow: 1 }}
                     >
                         {loading
                             ? "Generating route…"
                             : `${pois.length} stop${pois.length !== 1 ? "s" : ""} found`}
                     </Typography>
+
+                    {!loading && gmapsUrl && (
+                        <Tooltip title="Open in Google Maps">
+                            <IconButton
+                                size="small"
+                                component="a"
+                                href={gmapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{ color: "text.disabled", "&:hover": { color: "primary.main" } }}
+                            >
+                                <MapIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                 </Box>
 
                 {!loading && (vibe || hasDuration) && (
