@@ -16,6 +16,7 @@ import {
     Switch,
     MenuItem,
     Select,
+    Slider,
 } from "@mui/material";
 import DirectionsWalkIcon from "@mui/icons-material/DirectionsWalk";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
@@ -42,6 +43,7 @@ interface FormData {
     longitude?: number;
     wheelchair: boolean;
     time_of_day: string;
+    num_days: number;
 }
 
 interface Props {
@@ -331,6 +333,21 @@ const RouteForm: React.FC<Props> = ({
                                 <MenuItem value="evening">Evening</MenuItem>
                                 <MenuItem value="night">Night</MenuItem>
                             </Select>
+                        </Box>
+
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                Days: {form.num_days}
+                            </Typography>
+                            <Slider
+                                size="small"
+                                min={1} max={5} step={1}
+                                value={form.num_days}
+                                onChange={(_, v) => onChange({ target: { name: "num_days", value: String(v) } } as any)}
+                                marks
+                                valueLabelDisplay="auto"
+                                sx={{ mt: 0.5 }}
+                            />
                         </Box>
 
                         <FormControlLabel

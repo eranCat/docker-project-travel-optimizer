@@ -1,4 +1,4 @@
-import { Box, Typography, Fade, Chip, IconButton, Tooltip } from "@mui/material";
+import { Box, Typography, Fade, Chip, IconButton, Tooltip, Tabs, Tab } from "@mui/material";
 import RouteSelector from "./RouteSelector";
 import POIList from "./POIList";
 import POISkeleton from "./POISkeleton";
@@ -21,6 +21,7 @@ interface RouteSidebarProps {
     loading: boolean;
     currentRoute?: RouteData | null;
     onShareRoute?: () => void;
+    numDays?: number;
 }
 
 function formatDuration(seconds: number): string {
@@ -42,8 +43,16 @@ export default function RouteSidebar({
     loading,
     currentRoute,
     onShareRoute,
+    numDays = 1,
 }: RouteSidebarProps) {
     const showSkeleton = loading && pois.length === 0;
+    const routesPerDay = numDays > 1 ? Math.ceil(routesCount / numDays) : routesCount;
+    const currentDay = numDays > 1 ? Math.floor(selectedIndex / routesPerDay) : 0;
+    const dayRouteOffset = currentDay * routesPerDay;
+    const dayRouteCount = Math.min(routesPerDay, routesCount - dayRouteOffset);
+    const handleDayChange = (_: React.SyntheticEvent, day: number) => { onSelectRoute(day * routesPerDay); };
+    const handleRouteInDay = (idxInDay: number) => { onSelectRoute(dayRouteOffset + idxInDay); };
+    const selectedInDay = selectedIndex - dayRouteOffset;
     const hasDuration = currentRoute?.duration_seconds != null && currentRoute.duration_seconds > 0;
     const vibe = currentRoute?.vibe;
     const gmapsUrl = pois.length > 0 ? buildGoogleMapsUrl(pois) : null;
@@ -141,11 +150,26 @@ export default function RouteSidebar({
                     </Box>
                 )}
 
+                {!loading && numDays > 1 && routesCount > 0 && (
+                    <Tabs
+                        value={currentDay}
+                        onChange={handleDayChange}
+                        variant="scrollable"
+                        scrollButtons="auto"
+                        sx={{ minHeight: 32, mb: 0.5, "& .MuiTab-root": { minHeight: 32, py: 0, fontSize: "0.75rem" } }}
+                    >
+                        {Array.from({ length: numDays }, (_, i) => (
+                            <Tab key={i} label={`Day ${i + 1}`} value={i}
+                                disabled={i * routesPerDay >= routesCount} />
+                        ))}
+                    </Tabs>
+                )}
+
                 {!loading && (
                     <RouteSelector
-                        selectedIndex={selectedIndex}
-                        routeCount={routesCount}
-                        onSelect={onSelectRoute}
+                        selectedIndex={selectedInDay}
+                        routeCount={dayRouteCount}
+                        onSelect={handleRouteInDay}
                     />
                 )}
             </Box>

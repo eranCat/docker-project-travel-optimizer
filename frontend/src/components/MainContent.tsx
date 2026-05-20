@@ -98,6 +98,7 @@ export default function MainContent() {
                             loading={loading}
                             currentRoute={currentRoute}
                             onShareRoute={handleShareRoute}
+                            numDays={form.num_days}
                         />
                     </Box>
                 )}

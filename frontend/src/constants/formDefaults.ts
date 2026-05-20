@@ -11,4 +11,5 @@ export const DEFAULT_FORM = {
     longitude: undefined as number | undefined,
     wheelchair: false,
     time_of_day: "" as string,
+    num_days: 1,
 };
