@@ -290,6 +290,43 @@ class TestQualityScore(unittest.TestCase):
         self.assertGreaterEqual(self.fn(tags), 10)
 
 
+# ─── overpass_service: thin_pois_by_name ─────────────────────────────────────
+
+class TestThinPoisByName(unittest.TestCase):
+
+    def _make_poi(self, name: str, cat: str = "attraction") -> "LLMPOISuggestion":
+        from models.llm_suggestion import LLMPOISuggestion
+        return LLMPOISuggestion(id="1", name=name, latitude=32.0, longitude=34.0, categories=[cat])
+
+    def setUp(self):
+        from services.maps.overpass_service import thin_pois_by_name
+        self.fn = thin_pois_by_name
+
+    def test_exact_duplicate_dropped(self):
+        pois = [self._make_poi("Park"), self._make_poi("Park")]
+        self.assertEqual(len(self.fn(pois)), 1)
+
+    def test_hyphen_vs_space_same_name_deduped(self):
+        pois = [self._make_poi("אקו-פארק גלילות"), self._make_poi("אקו פארק גלילות")]
+        self.assertEqual(len(self.fn(pois)), 1)
+
+    def test_case_insensitive(self):
+        pois = [self._make_poi("Eiffel Tower"), self._make_poi("eiffel tower")]
+        self.assertEqual(len(self.fn(pois)), 1)
+
+    def test_first_kept_wins(self):
+        pois = [self._make_poi("Park", "attraction"), self._make_poi("Park", "park")]
+        kept = self.fn(pois)
+        self.assertEqual(kept[0].categories[0], "attraction")
+
+    def test_distinct_names_both_kept(self):
+        pois = [self._make_poi("Park A"), self._make_poi("Park B")]
+        self.assertEqual(len(self.fn(pois)), 2)
+
+    def test_empty_list(self):
+        self.assertEqual(self.fn([]), [])
+
+
 # ─── overpass_service: thin_pois_by_min_distance ─────────────────────────────
 
 class TestThinPoisByMinDistance(unittest.TestCase):

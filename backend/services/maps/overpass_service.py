@@ -157,6 +157,25 @@ def quality_score(tags_el: dict) -> int:
     return score
 
 
+def _normalize_name(name: str) -> str:
+    return re.sub(r'[\s\-_]+', ' ', name.strip().lower())
+
+
+def thin_pois_by_name(pois: List[LLMPOISuggestion]) -> List[LLMPOISuggestion]:
+    """Drop duplicate POIs whose names match after normalization.
+    Input must be sorted by quality score (highest first) so the best
+    variant wins when two names collide.
+    """
+    seen: set[str] = set()
+    kept: List[LLMPOISuggestion] = []
+    for poi in pois:
+        key = _normalize_name(poi.name)
+        if key not in seen:
+            seen.add(key)
+            kept.append(poi)
+    return kept
+
+
 def thin_pois_by_min_distance(
     pois: List[LLMPOISuggestion], min_dist_m: float
 ) -> List[LLMPOISuggestion]:
@@ -385,6 +404,11 @@ async def get_pois_from_overpass(
     # the highest-quality POI in any cluster wins de-duplication ties.
     scored.sort(key=lambda x: x[0], reverse=True)
     pois = [poi for _score, poi in scored]
+
+    before_name = len(pois)
+    pois = thin_pois_by_name(pois)
+    if len(pois) < before_name:
+        logging.debug(f"Name dedup: {before_name} -> {len(pois)} POIs")
 
     # Step 2: Light de-duplication only — keep a big candidate pool so the
     # route builder has real choices. Spacing along routes is the route
