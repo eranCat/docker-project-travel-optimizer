@@ -14,7 +14,7 @@ from utils.error_handlers import (
     http_exception_handler,
     unhandled_exception_handler,
 )
-from utils.log_cleanup import import clear_log
+from utils.log_cleanup import clear_log
 from fastapi.middleware.cors import CORSMiddleware
 
 _ip_requests: dict[str, list[float]] = defaultdict(list)
