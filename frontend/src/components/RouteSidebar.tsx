@@ -8,6 +8,7 @@ import PlaceIcon from "@mui/icons-material/Place";
 import LoopIcon from "@mui/icons-material/Loop";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import MapIcon from "@mui/icons-material/Map";
+import ShareIcon from "@mui/icons-material/Share";
 import { buildGoogleMapsUrl } from "../utils/googleMapsUrl";
 
 interface RouteSidebarProps {
@@ -19,6 +20,7 @@ interface RouteSidebarProps {
     onFocusPOI: (poi: POI) => void;
     loading: boolean;
     currentRoute?: RouteData | null;
+    onShareRoute?: () => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -39,6 +41,7 @@ export default function RouteSidebar({
     onFocusPOI,
     loading,
     currentRoute,
+    onShareRoute,
 }: RouteSidebarProps) {
     const showSkeleton = loading && pois.length === 0;
     const hasDuration = currentRoute?.duration_seconds != null && currentRoute.duration_seconds > 0;
@@ -86,19 +89,34 @@ export default function RouteSidebar({
                             : `${pois.length} stop${pois.length !== 1 ? "s" : ""} found`}
                     </Typography>
 
-                    {!loading && gmapsUrl && (
-                        <Tooltip title="Open in Google Maps">
-                            <IconButton
-                                size="small"
-                                component="a"
-                                href={gmapsUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                sx={{ color: "text.disabled", "&:hover": { color: "primary.main" } }}
-                            >
-                                <MapIcon sx={{ fontSize: 16 }} />
-                            </IconButton>
-                        </Tooltip>
+                    {!loading && (gmapsUrl || onShareRoute) && (
+                        <Box sx={{ display: "flex", gap: 0.25 }}>
+                            {gmapsUrl && (
+                                <Tooltip title="Open in Google Maps">
+                                    <IconButton
+                                        size="small"
+                                        component="a"
+                                        href={gmapsUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        sx={{ color: "text.disabled", "&:hover": { color: "primary.main" } }}
+                                    >
+                                        <MapIcon sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                            {onShareRoute && (
+                                <Tooltip title="Copy share link">
+                                    <IconButton
+                                        size="small"
+                                        onClick={onShareRoute}
+                                        sx={{ color: "text.disabled", "&:hover": { color: "primary.main" } }}
+                                    >
+                                        <ShareIcon sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                        </Box>
                     )}
                 </Box>
 

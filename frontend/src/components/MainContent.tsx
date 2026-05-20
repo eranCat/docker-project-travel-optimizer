@@ -29,6 +29,7 @@ export default function MainContent() {
         handleEdit,
         handleBackToRoutes,
         handleSurpriseMe,
+        handleShareRoute,
         savedRoutes,
         setLocationSelected,
     } = useRouteGenerator();
@@ -96,6 +97,7 @@ export default function MainContent() {
                             onFocusPOI={setFocusedPOI}
                             loading={loading}
                             currentRoute={currentRoute}
+                            onShareRoute={handleShareRoute}
                         />
                     </Box>
                 )}

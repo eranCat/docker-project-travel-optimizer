@@ -237,6 +237,44 @@ export function useRouteGenerator() {
         setFormData(prev => ({ ...prev, interests: pick }));
     }, [setFormData]);
 
+    const handleShareRoute = useCallback(() => {
+        const params = new URLSearchParams({
+            interests: form.interests,
+            location: form.location,
+            radius_km: String(form.radius_km),
+            num_routes: String(form.num_routes),
+            num_pois: String(form.num_pois),
+            travel_mode: form.travel_mode,
+        });
+        if (form.latitude !== undefined) params.set("lat", String(form.latitude));
+        if (form.longitude !== undefined) params.set("lon", String(form.longitude));
+        if (form.wheelchair) params.set("wheelchair", "true");
+        if (form.time_of_day) params.set("time_of_day", form.time_of_day);
+        const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+        navigator.clipboard.writeText(url).catch(() => {});
+    }, [form]);
+
+    // Restore form from URL params on first load
+    useEffect(() => {
+        const p = new URLSearchParams(window.location.search);
+        if (!p.get("location")) return;
+        setFormData(prev => ({
+            ...prev,
+            interests: p.get("interests") ?? prev.interests,
+            location: p.get("location") ?? prev.location,
+            radius_km: Number(p.get("radius_km") ?? prev.radius_km),
+            num_routes: Number(p.get("num_routes") ?? prev.num_routes),
+            num_pois: Number(p.get("num_pois") ?? prev.num_pois),
+            travel_mode: p.get("travel_mode") ?? prev.travel_mode,
+            latitude: p.get("lat") ? Number(p.get("lat")) : prev.latitude,
+            longitude: p.get("lon") ? Number(p.get("lon")) : prev.longitude,
+            wheelchair: p.get("wheelchair") === "true",
+            time_of_day: p.get("time_of_day") ?? prev.time_of_day,
+        }));
+        if (p.get("location")) setLocationSelected(true);
+        window.history.replaceState({}, "", window.location.pathname);
+    }, []);
+
     // Initialize locationSelected if there is an existing location
     useEffect(() => {
         if (form.location && form.location.trim() !== "") {
@@ -268,6 +306,7 @@ export function useRouteGenerator() {
         handleEdit,
         handleBackToRoutes,
         handleSurpriseMe,
+        handleShareRoute,
         savedRoutes,
         locationSelected,
         setLocationSelected,
