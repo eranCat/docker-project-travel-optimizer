@@ -59,15 +59,33 @@ function MapFlyToBounds({ pois }: { pois: POI[] }) {
   const sig = pois
     .map(p => `${p.latitude.toFixed(5)},${p.longitude.toFixed(5)}`)
     .join("|");
+
   useEffect(() => {
-    if (pois.length === 0 || sig === prevSig.current) return;
-    prevSig.current = sig;
+    if (pois.length === 0) return;
     const bounds = pois
       .filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
       .map(p => [p.latitude, p.longitude]) as [number, number][];
-    if (bounds.length > 0) {
-      map.flyToBounds(bounds, { padding: [40, 40], duration: 1.2, maxZoom: 16 });
+    if (bounds.length === 0) return;
+
+    // Skip while the map is hidden (container 0×0) — flyToBounds would compute NaN
+    const fit = (animate: boolean): boolean => {
+      const size = map.getSize();
+      if (size.x === 0 || size.y === 0) return false;
+      map.flyToBounds(bounds, { padding: [40, 40], duration: animate ? 1.2 : 0, maxZoom: 16 });
+      return true;
+    };
+
+    if (sig !== prevSig.current && fit(true)) {
+      prevSig.current = sig;
     }
+
+    // Re-fit when the container becomes visible/resizes (e.g. mobile tab switch)
+    const ro = new ResizeObserver(() => {
+      map.invalidateSize();
+      if (sig !== prevSig.current && fit(false)) prevSig.current = sig;
+    });
+    ro.observe(map.getContainer());
+    return () => ro.disconnect();
   }, [sig, map, pois]);
   return null;
 }
@@ -75,7 +93,8 @@ function MapFlyToBounds({ pois }: { pois: POI[] }) {
 function FlyToMarker({ lat, lon }: { lat: number; lon: number }) {
   const map = useMap();
   useEffect(() => {
-    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+    const size = map.getSize();
+    if (Number.isFinite(lat) && Number.isFinite(lon) && size.x > 0 && size.y > 0) {
       map.flyTo([lat, lon], 17, { duration: 0.8 });
     }
   }, [lat, lon, map]);

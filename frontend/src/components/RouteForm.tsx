@@ -163,7 +163,7 @@ const RouteForm: React.FC<Props> = ({
                 </Tooltip>
             </Box>
 
-            <Stack spacing={1.75} sx={{ flexGrow: 1 }}>
+            <Stack spacing={1.75} sx={{ flexGrow: 1, overflowY: "auto", minHeight: 0, pr: 0.5 }}>
                 {/* Location */}
                 <LocationAutocomplete
                     value={form.location}
