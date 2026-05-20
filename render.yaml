@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: travel-optimizer
+    runtime: docker
+    branch: monolith
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: ORS_API_KEY
+        sync: false
+      - key: VITE_API_BASE_URL
+        sync: false

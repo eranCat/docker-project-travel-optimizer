@@ -14,10 +14,9 @@ from utils.error_handlers import (
     http_exception_handler,
     unhandled_exception_handler,
 )
-from utils.log_cleanup import clear_log
+from utils.log_cleanup import import clear_log
 from fastapi.middleware.cors import CORSMiddleware
 
-# Per-IP rate limit: max 5 route-progress requests per 60 seconds
 _ip_requests: dict[str, list[float]] = defaultdict(list)
 RATE_WINDOW_SEC = 60
 RATE_MAX = 5
@@ -32,7 +31,6 @@ file_handler = logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8")
 file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s | %(message)s"))
 if not any(isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", None) == str(LOG_FILE) for h in root_logger.handlers):
     root_logger.addHandler(file_handler)
-# Quiet down noisy libs in the file log
 for noisy in ("httpcore", "httpx", "urllib3", "openai._base_client"):
     logging.getLogger(noisy).setLevel(logging.INFO)
 
@@ -62,13 +60,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register custom handlers
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
 
 app.include_router(autocomplete_location.router)
 app.include_router(route_progress.router)
-
 app.include_router(health.router)
 
 
@@ -117,3 +113,17 @@ async def frontend_log(payload: dict):
         f"[frontend] {message}{' | ' + str(data) if data else ''}",
     )
     return {"ok": True}
+
+
+# ── Serve pre-built React frontend (monolith: single port 8000) ──
+from fastapi.staticfiles import StaticFiles as _StaticFiles
+from fastapi.responses import FileResponse as _FileResponse
+
+_DIST = Path(__file__).parent.parent / "frontend" / "dist"
+
+if _DIST.exists():
+    app.mount("/assets", _StaticFiles(directory=str(_DIST / "assets")), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_frontend(full_path: str):
+        return _FileResponse(str(_DIST / "index.html"))
