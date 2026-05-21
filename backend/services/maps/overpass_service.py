@@ -96,6 +96,8 @@ OVERPASS_MIRRORS = [
     settings.overpass_api_url,
     "https://overpass.kumi.systems/api/interpreter",
     "https://overpass-api.de/api/interpreter",
+    "https://lz4.overpass-api.de/api/interpreter",
+    "https://z.overpass-api.de/api/interpreter",
 ]
 MIN_TAGS = 2  # minimum tags required from LLM
 MAX_TAGS_PER_KEY = 4  # maximum values per key
