@@ -4,6 +4,12 @@
 # VSCode
 .vscode/
 
+# Claude Code
+.claude/
+
+# Local logs
+logs/
+
 # Python virtual environments
 env/
 venv/

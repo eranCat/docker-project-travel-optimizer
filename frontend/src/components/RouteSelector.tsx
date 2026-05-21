@@ -1,12 +1,7 @@
 import React from "react";
-import {
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    SelectChangeEvent,
-    Typography,
-} from "@mui/material";
+import { useTranslation } from "react-i18next";
+import { Tabs, Tab, Box } from "@mui/material";
+import RouteIcon from "@mui/icons-material/Route";
 
 interface Props {
     selectedIndex: number;
@@ -14,40 +9,42 @@ interface Props {
     onSelect: (index: number) => void;
 }
 
-const RouteSelector: React.FC<Props> = ({
-    selectedIndex,
-    routeCount,
-    onSelect,
-}) => {
+const RouteSelector: React.FC<Props> = ({ selectedIndex, routeCount, onSelect }) => {
+    const { t } = useTranslation();
     if (routeCount <= 1) return null;
 
-    const handleSelect = (event: SelectChangeEvent<number>) => {
-        const newIndex = Number(event.target.value);
-        if (newIndex >= 0 && newIndex < routeCount) {
-            onSelect(newIndex);
-        }
-    };
-    const label = "Select route";
     return (
-        <div style={{ marginBottom: "1rem", marginTop: "1rem" }}>
-            <FormControl fullWidth>
-                <InputLabel id="route-select-label">{label}</InputLabel>
-                <Select
-                    labelId="route-select-label"
-                    label={label}
-                    value={selectedIndex < routeCount ? selectedIndex : ""}
-                    onChange={handleSelect}
-                    variant="outlined"
-                    size="small"
-                >
-                    {Array.from({ length: routeCount }).map((_, i) => (
-                        <MenuItem key={i} value={i}>
-                            Route {i + 1}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-        </div>
+        <Box sx={{ borderBottom: "1px solid", borderColor: "divider" }}>
+            <Tabs
+                value={selectedIndex < routeCount ? selectedIndex : 0}
+                onChange={(_, val) => onSelect(val)}
+                variant="scrollable"
+                scrollButtons="auto"
+                textColor="primary"
+                indicatorColor="primary"
+                aria-label="Select route"
+                sx={{
+                    minHeight: 44,
+                    "& .MuiTab-root": {
+                        minHeight: 44,
+                        fontSize: "0.8125rem",
+                        fontWeight: 500,
+                        textTransform: "none",
+                        gap: 0.5,
+                    },
+                }}
+            >
+                {Array.from({ length: routeCount }).map((_, i) => (
+                    <Tab
+                        key={i}
+                        value={i}
+                        label={t("route.label", { n: i + 1 })}
+                        icon={<RouteIcon fontSize="small" />}
+                        iconPosition="start"
+                    />
+                ))}
+            </Tabs>
+        </Box>
     );
 };
 

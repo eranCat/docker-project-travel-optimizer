@@ -1,0 +1,120 @@
+{
+  "amenity": [
+    "bar",
+    "cafe",
+    "restaurant",
+    "pub",
+    "nightclub",
+    "theatre",
+    "theater",
+    "cinema",
+    "biergarten",
+    "ice_cream",
+    "food_court",
+    "marketplace",
+    "library",
+    "public_bookcase",
+    "arts_centre",
+    "community_centre",
+    "fountain",
+    "place_of_worship",
+    "spa"
+  ],
+  "shop": [
+    "chocolate",
+    "department_store",
+    "mall",
+    "jewelry",
+    "bakery",
+    "books",
+    "art",
+    "antiques",
+    "music",
+    "musical_instrument",
+    "gift",
+    "craft",
+    "second_hand"
+  ],
+  "leisure": [
+    "park",
+    "fitness_centre",
+    "sports_centre",
+    "stadium",
+    "water_park",
+    "beach_resort",
+    "dance",
+    "amusement_arcade",
+    "miniature_golf",
+    "escape_game",
+    "bowling_alley"
+  ],
+  "tourism": [
+    "museum",
+    "attraction",
+    "theme_park",
+    "zoo",
+    "aquarium",
+    "gallery",
+    "viewpoint",
+    "artwork"
+  ],
+  "historic": [
+    "castle",
+    "monument",
+    "memorial",
+    "ruins",
+    "archaeological_site",
+    "building",
+    "fort",
+    "palace",
+    "church",
+    "cathedral",
+    "abbey",
+    "city_gate",
+    "lighthouse",
+    "manor"
+  ],
+  "natural": [
+    "beach",
+    "wood",
+    "water",
+    "cliff",
+    "hot_spring",
+    "cave_entrance",
+    "waterfall"
+  ],
+  "man_made": [
+    "pier",
+    "lighthouse",
+    "windmill",
+    "tower"
+  ],
+  "sport": [
+    "soccer",
+    "basketball",
+    "tennis",
+    "swimming",
+    "climbing",
+    "skating",
+    "golf",
+    "surfing",
+    "diving",
+    "cycling",
+    "skiing"
+  ],
+  "craft": [
+    "brewery",
+    "winery",
+    "distillery"
+  ],
+  "aerialway": [
+    "cable_car",
+    "chair_lift",
+    "gondola"
+  ],
+  "lgbtq": [
+    "primary",
+    "welcome",
+    "only"
+  ]
+}

@@ -1,30 +1,51 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
     TextField,
     List,
     ListItemButton,
     ListItemText,
+    ListItemIcon,
     Paper,
     Fade,
     Box,
+    CircularProgress,
+    InputAdornment,
 } from "@mui/material";
-import axios from "axios";
+import PlaceIcon from "@mui/icons-material/Place";
+import SearchIcon from "@mui/icons-material/Search";
 import { fetchLocationSuggestions } from "../services/API";
 
 interface Props {
     value: string;
     onChange: (val: string) => void;
-    onSelect: (val: string) => void;
+    onSelect: (val: string, lat?: number, lon?: number) => void;
+    id?: string;
+    name?: string;
+    label?: string;
+    placeholder?: string;
 }
 
 interface Suggestion {
     display_name: string;
+    lat: string;
+    lon: string;
 }
 
-const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) => {
+const LocationAutocomplete: React.FC<Props> = ({
+    value,
+    onChange,
+    onSelect,
+    id = "location-input",
+    name = "location",
+    label = "Location",
+    placeholder = "e.g. Tel Aviv",
+}) => {
+    const { i18n } = useTranslation();
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    const [fetching, setFetching] = useState(false);
     const [disableFetch, setDisableFetch] = useState(false);
     const firstRenderRef = useRef(true);
 
@@ -42,61 +63,62 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
         if (!value || value.trim().length < 3) {
             setSuggestions([]);
             setShowDropdown(false);
+            setFetching(false);
             return;
         }
 
+        setFetching(true);
         const controller = new AbortController();
-        const delayDebounce = setTimeout(() => {
-            fetchLocationSuggestions(value, controller.signal)
+        const delay = setTimeout(() => {
+            fetchLocationSuggestions(value, controller.signal, i18n.language)
                 .then((res) => {
                     setSuggestions(res);
                     setShowDropdown(true);
                     setHighlightedIndex(-1);
                 })
-                .catch(() => { });
+                .catch(() => {})
+                .finally(() => setFetching(false));
         }, 300);
 
         return () => {
-            clearTimeout(delayDebounce);
+            clearTimeout(delay);
             controller.abort();
+            setFetching(false);
         };
     }, [value]);
 
-    const handleSelect = (name: string) => {
-        onSelect(name);
+    const handleSelect = (name: string, lat?: number, lon?: number) => {
+        onSelect(name, lat, lon);
         setDisableFetch(true);
         setShowDropdown(false);
         setSuggestions([]);
-
         requestAnimationFrame(() => {
-            document.getElementById("location")?.blur();
+            document.getElementById(id)?.blur();
         });
     };
 
     return (
         <Box sx={{ position: "relative" }}>
             <TextField
-                id="location"
-                name="location"
-                label="Location"
+                id={id}
+                name={name}
+                label={label}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 onKeyDown={(e) => {
                     if (!showDropdown || suggestions.length === 0) return;
-
                     if (e.key === "ArrowDown") {
                         e.preventDefault();
-                        setHighlightedIndex((prev) => (prev + 1) % suggestions.length);
+                        setHighlightedIndex((p) => (p + 1) % suggestions.length);
                     } else if (e.key === "ArrowUp") {
                         e.preventDefault();
-                        setHighlightedIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+                        setHighlightedIndex((p) => (p - 1 + suggestions.length) % suggestions.length);
                     } else if (e.key === "Enter" && highlightedIndex >= 0) {
                         e.preventDefault();
-                        handleSelect(suggestions[highlightedIndex].display_name);
-
-                        // Re-focus the field
+                        const s = suggestions[highlightedIndex];
+                        handleSelect(s.display_name, parseFloat(s.lat), parseFloat(s.lon));
                         requestAnimationFrame(() => {
-                            document.querySelector<HTMLInputElement>('#location')?.focus();
+                            document.getElementById(id)?.focus();
                         });
                     } else if (e.key === "Escape") {
                         setShowDropdown(false);
@@ -104,41 +126,68 @@ const LocationAutocomplete: React.FC<Props> = ({ value, onChange, onSelect }) =>
                 }}
                 onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                 fullWidth
-                placeholder="📍 e.g., Tel Aviv"
+                placeholder={placeholder}
                 autoComplete="off"
+                slotProps={{
+                    input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon fontSize="small" sx={{ color: "text.disabled" }} />
+                            </InputAdornment>
+                        ),
+                        endAdornment: fetching ? (
+                            <InputAdornment position="end">
+                                <CircularProgress size={16} />
+                            </InputAdornment>
+                        ) : undefined,
+                    },
+                }}
             />
 
             <Fade in={showDropdown && suggestions.length > 0} unmountOnExit>
                 <Paper
+                    elevation={4}
                     sx={{
                         position: "absolute",
-                        zIndex: 10,
+                        zIndex: 1300,
                         width: "100%",
                         top: "100%",
                         left: 0,
-                        mt: 1,
-                        borderRadius: 1,
-                        maxHeight: 250,
+                        mt: 0.5,
+                        borderRadius: 2,
+                        maxHeight: 260,
                         overflowY: "auto",
+                        border: "1px solid",
+                        borderColor: "divider",
                     }}
                 >
-                    <List dense disablePadding>
+                    <List dense disablePadding sx={{ p: 0.75 }}>
                         {suggestions.map((s, i) => (
                             <ListItemButton
                                 key={i}
-                                onClick={() => handleSelect(s.display_name)}
+                                onClick={() => handleSelect(s.display_name, parseFloat(s.lat), parseFloat(s.lon))}
                                 selected={i === highlightedIndex}
                                 sx={{
-                                    px: 2,
-                                    '&.Mui-selected': {
-                                        backgroundColor: 'action.selected',
+                                    borderRadius: 1.5,
+                                    minHeight: 44,
+                                    px: 1.25,
+                                    "&.Mui-selected": {
+                                        bgcolor: "primary.main",
+                                        color: "primary.contrastText",
+                                        "& .MuiListItemIcon-root": { color: "primary.contrastText" },
+                                        "&:hover": { bgcolor: "primary.dark" },
                                     },
-                                    '&.Mui-selected:hover': {
-                                        backgroundColor: 'action.hover',
-                                    }
                                 }}
                             >
-                                <ListItemText primary={s.display_name} />
+                                <ListItemIcon sx={{ minWidth: 30, color: "text.disabled" }}>
+                                    <PlaceIcon fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={s.display_name}
+                                    slotProps={{
+                                        primary: { variant: "body2", noWrap: true },
+                                    }}
+                                />
                             </ListItemButton>
                         ))}
                     </List>
