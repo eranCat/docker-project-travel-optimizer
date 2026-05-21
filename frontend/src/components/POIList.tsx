@@ -5,6 +5,7 @@ import {
     Box,
     Chip,
     IconButton,
+    Skeleton,
     Typography,
     Tooltip,
 } from "@mui/material";
@@ -40,7 +41,7 @@ interface POICardProps {
 
 function POICard({ poi, idx, isActive, activeRef, onFocusPOI, colorMap }: POICardProps) {
     const { t, i18n } = useTranslation();
-    const thumbnail = usePOIThumbnail(poi.wiki_title, poi.wikidata_id);
+    const { url: thumbnail, loading: thumbnailLoading } = usePOIThumbnail(poi.wiki_title, poi.wikidata_id);
     const canFocus = Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude);
     const isHe = i18n.language === "he";
     const displayName = (isHe && poi.name_he) ? poi.name_he : poi.name;
@@ -79,7 +80,10 @@ function POICard({ poi, idx, isActive, activeRef, onFocusPOI, colorMap }: POICar
             }}
             aria-pressed={isActive}
         >
-            {thumbnail && (
+            {thumbnailLoading && (
+                <Skeleton variant="rectangular" width="100%" height={110} sx={{ flexShrink: 0 }} />
+            )}
+            {!thumbnailLoading && thumbnail && (
                 <Box
                     component="img"
                     src={thumbnail}
