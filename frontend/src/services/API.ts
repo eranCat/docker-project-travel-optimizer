@@ -103,3 +103,20 @@ export const getLatestRoutes = async (routeId: string) => {
     throw new Error(error?.response?.data?.detail || "Failed to load routes");
   }
 };
+
+export async function replacePOI(
+  routeId: string,
+  routeIndex: number,
+  poiIndex: number,
+) {
+  try {
+    const res = await API.post("/replace-poi", {
+      route_id: routeId,
+      route_index: routeIndex,
+      poi_index: poiIndex,
+    });
+    return res.data;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.detail || "Failed to replace POI");
+  }
+}

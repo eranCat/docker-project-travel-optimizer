@@ -111,45 +111,55 @@ const RouteForm: React.FC<Props> = ({
     // Compact summary bar shown after search is initiated
     if (compact) {
         return (
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    px: 2,
-                    py: 1.25,
-                    bgcolor: "background.paper",
-                    flexShrink: 0,
-                }}
-            >
-                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography
-                        variant="caption"
-                        fontWeight={700}
-                        color="text.primary"
-                        noWrap
-                        sx={{ display: "block", lineHeight: 1.3, fontFamily: '"Space Grotesk", "Inter", sans-serif' }}
-                    >
-                        {form.mode === "trip"
-                            ? `${form.location || t("form.labelStart")} → ${form.dest_location || t("form.destination")}`
-                            : form.location || t("form.unknownLocation")}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", lineHeight: 1.4 }}>
-                        {form.interests || t("form.noInterests")} · {TRAVEL_MODES.find(m => m.value === form.travel_mode)?.label ?? form.travel_mode}
-                    </Typography>
+            <Box sx={{ flexShrink: 0 }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        px: 2,
+                        py: 1.25,
+                        bgcolor: "background.paper",
+                    }}
+                >
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Typography
+                            variant="caption"
+                            fontWeight={700}
+                            color="text.primary"
+                            noWrap
+                            sx={{ display: "block", lineHeight: 1.3, fontFamily: '"Space Grotesk", "Inter", sans-serif' }}
+                        >
+                            {form.mode === "trip"
+                                ? `${form.location || t("form.labelStart")} → ${form.dest_location || t("form.destination")}`
+                                : form.location || t("form.unknownLocation")}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", lineHeight: 1.4 }}>
+                            {form.interests || t("form.noInterests")} · {TRAVEL_MODES.find(m => m.value === form.travel_mode)?.label ?? form.travel_mode}
+                        </Typography>
+                    </Box>
+                    {loading ? (
+                        <Tooltip title={t("form.cancelTooltip")}>
+                            <IconButton size="small" onClick={onCancel} color="error" sx={{ flexShrink: 0 }}>
+                                <CancelIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    ) : (
+                        <Tooltip title={t("form.editTooltip")}>
+                            <IconButton size="small" onClick={onEdit} sx={{ color: "text.secondary", flexShrink: 0 }}>
+                                <EditIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                 </Box>
-                {loading ? (
-                    <Tooltip title={t("form.cancelTooltip")}>
-                        <IconButton size="small" onClick={onCancel} color="error" sx={{ flexShrink: 0 }}>
-                            <CancelIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                ) : (
-                    <Tooltip title={t("form.editTooltip")}>
-                        <IconButton size="small" onClick={onEdit} sx={{ color: "text.secondary", flexShrink: 0 }}>
-                            <EditIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
+                {error && (
+                    <Alert
+                        severity="error"
+                        variant="outlined"
+                        sx={{ mx: 1.5, mb: 1, borderRadius: 2, fontSize: "0.8125rem", whiteSpace: "pre-line" }}
+                    >
+                        {error}
+                    </Alert>
                 )}
             </Box>
         );

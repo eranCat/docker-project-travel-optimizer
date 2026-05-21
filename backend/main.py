@@ -7,7 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from routers import autocomplete_location, health, route_progress
+from routers import autocomplete_location, health, route_progress, replace_poi
 from services.maps.overpass_service import get_overpass_tags_from_interests, _poi_cache
 from fastapi.exceptions import HTTPException
 from utils.error_handlers import (
@@ -71,6 +71,7 @@ app.add_exception_handler(Exception, unhandled_exception_handler)
 
 app.include_router(autocomplete_location.router)
 app.include_router(route_progress.router)
+app.include_router(replace_poi.router)
 app.include_router(health.router)
 
 

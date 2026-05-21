@@ -124,7 +124,7 @@ async def route_progress(
             await asyncio.sleep(0.1)
 
             route_id = str(uuid.uuid4())
-            routes_cache[route_id] = result["routes"]
+            routes_cache[route_id] = (result["routes"], request_data, pois)
 
             global _generation_count
             _generation_count += 1

@@ -50,6 +50,7 @@
   "poi.showOnMap": "Show on map",
   "poi.noCoords": "No coordinates",
   "poi.wheelchair": "Wheelchair accessible",
+  "poi.replace": "Find replacement",
   "loading.step": "Step {{current}} of {{total}}",
   "loading.default": "Loading...",
   "loading.elapsed": "{{seconds}}s",

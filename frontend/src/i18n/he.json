@@ -50,6 +50,7 @@
   "poi.showOnMap": "הצג על המפה",
   "poi.noCoords": "אין קואורדינטות",
   "poi.wheelchair": "נגיש לכיסא גלגלים",
+  "poi.replace": "החלף מקום",
   "loading.step": "שלב {{current}} מתוך {{total}}",
   "loading.default": "טוען...",
   "loading.elapsed": "{{seconds}} ש׳",
