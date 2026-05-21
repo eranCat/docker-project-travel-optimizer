@@ -9,6 +9,7 @@ export interface POI {
     opening_hours?: string;
     wheelchair_accessible?: boolean;
     wiki_title?: string;
+    wikidata_id?: string;
 }
 
 export interface Props {

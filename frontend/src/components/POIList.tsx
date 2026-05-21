@@ -40,7 +40,7 @@ interface POICardProps {
 
 function POICard({ poi, idx, isActive, activeRef, onFocusPOI, colorMap }: POICardProps) {
     const { t, i18n } = useTranslation();
-    const thumbnail = usePOIThumbnail(poi.wiki_title);
+    const thumbnail = usePOIThumbnail(poi.wiki_title, poi.wikidata_id, poi.latitude, poi.longitude);
     const canFocus = Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude);
     const isHe = i18n.language === "he";
     const displayName = (isHe && poi.name_he) ? poi.name_he : poi.name;
@@ -55,10 +55,9 @@ function POICard({ poi, idx, isActive, activeRef, onFocusPOI, colorMap }: POICar
                 border: "1px solid",
                 borderColor: isActive ? "primary.main" : "divider",
                 borderRadius: 2,
-                p: 0.75,
+                overflow: "hidden",
                 display: "flex",
                 flexDirection: "column",
-                gap: 0.4,
                 cursor: canFocus ? "pointer" : "default",
                 boxShadow: isActive ? 4 : 1,
                 outline: isActive ? (t: any) => `2px solid ${t.palette.primary.main}` : "none",
@@ -80,149 +79,149 @@ function POICard({ poi, idx, isActive, activeRef, onFocusPOI, colorMap }: POICar
             }}
             aria-pressed={isActive}
         >
-            {/* Step number + name + thumbnail + map icon */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {thumbnail && (
                 <Box
+                    component="img"
+                    src={thumbnail}
+                    alt={displayName}
                     sx={{
+                        width: "100%",
+                        height: 110,
+                        objectFit: "cover",
+                        display: "block",
                         flexShrink: 0,
-                        width: 20,
-                        height: 20,
-                        borderRadius: "50%",
-                        bgcolor: isActive ? "primary.main" : accentColor,
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "0.65rem",
-                        fontWeight: 700,
-                        boxShadow: isActive ? `0 0 0 3px rgba(15,118,110,0.25)` : "none",
-                        transition: "background-color 200ms ease, box-shadow 200ms ease",
                     }}
-                >
-                    {idx + 1}
-                </Box>
+                />
+            )}
 
-                <Box sx={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
-                    <Typography
-                        component="a"
-                        href={createSearchQuery(poi)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="subtitle2"
-                        fontWeight={600}
-                        onClick={(e) => e.stopPropagation()}
-                        sx={{
-                            color: isActive ? "primary.main" : "text.primary",
-                            textDecoration: "none",
-                            lineHeight: 1.3,
-                            direction: detectDirectionFromText(displayName),
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 0.4,
-                            "&:hover": { color: "primary.main", textDecoration: "underline" },
-                            transition: "color 150ms ease",
-                        }}
-                    >
-                        {displayName}
-                        <OpenInNewIcon sx={{ fontSize: 11, opacity: 0.5, flexShrink: 0 }} />
-                    </Typography>
-                    {Array.isArray(poi.categories) && poi.categories.map((cat, i) => {
-                        const iconClass = CATEGORY_ICONS[cat.toLowerCase()] || CATEGORY_ICONS.default;
-                        const catLabel = t(`cat.${cat}`, { defaultValue: cat.replace(/_/g, " ") });
-                        return (
-                            <Chip
-                                key={i}
-                                size="small"
-                                label={
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                        <i className={`fas ${iconClass}`} style={{ fontSize: "0.75rem" }} />
-                                        {catLabel}
-                                    </Box>
-                                }
-                                sx={{
-                                    height: 22,
-                                    fontSize: "0.75rem",
-                                    bgcolor: isActive ? "primary.main" : accentColor,
-                                    color: "#fff",
-                                    opacity: 0.9,
-                                    transition: "background-color 200ms ease",
-                                    "& .MuiChip-label": { px: 1.25 },
-                                }}
-                            />
-                        );
-                    })}
-                </Box>
-
-                {thumbnail && (
+            <Box sx={{ p: 0.75, display: "flex", flexDirection: "column", gap: 0.4 }}>
+                {/* Step number + name + map icon */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Box
-                        component="img"
-                        src={thumbnail}
-                        alt={displayName}
                         sx={{
                             flexShrink: 0,
-                            width: 44,
-                            height: 44,
-                            borderRadius: 1,
-                            objectFit: "cover",
-                            border: "1px solid",
-                            borderColor: "divider",
+                            width: 20,
+                            height: 20,
+                            borderRadius: "50%",
+                            bgcolor: isActive ? "primary.main" : accentColor,
+                            color: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "0.65rem",
+                            fontWeight: 700,
+                            boxShadow: isActive ? `0 0 0 3px rgba(15,118,110,0.25)` : "none",
+                            transition: "background-color 200ms ease, box-shadow 200ms ease",
                         }}
-                    />
-                )}
+                    >
+                        {idx + 1}
+                    </Box>
 
-                <Tooltip title={canFocus ? t("poi.showOnMap") : t("poi.noCoords")}>
-                    <span>
-                        <IconButton
-                            size="small"
-                            color={isActive ? "primary" : "default"}
-                            disabled={!canFocus}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onFocusPOI(poi);
-                            }}
+                    <Box sx={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
+                        <Typography
+                            component="a"
+                            href={createSearchQuery(poi)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="subtitle2"
+                            fontWeight={600}
+                            onClick={(e) => e.stopPropagation()}
                             sx={{
-                                p: 0.5,
-                                color: isActive ? "primary.main" : "text.disabled",
+                                color: isActive ? "primary.main" : "text.primary",
+                                textDecoration: "none",
+                                lineHeight: 1.3,
+                                direction: detectDirectionFromText(displayName),
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 0.4,
+                                "&:hover": { color: "primary.main", textDecoration: "underline" },
                                 transition: "color 150ms ease",
-                                "&:hover": { color: "primary.main" },
                             }}
                         >
-                            <MyLocationIcon sx={{ fontSize: 14 }} />
-                        </IconButton>
-                    </span>
-                </Tooltip>
-            </Box>
+                            {displayName}
+                            <OpenInNewIcon sx={{ fontSize: 11, opacity: 0.5, flexShrink: 0 }} />
+                        </Typography>
+                        {Array.isArray(poi.categories) && poi.categories.map((cat, i) => {
+                            const iconClass = CATEGORY_ICONS[cat.toLowerCase()] || CATEGORY_ICONS.default;
+                            const catLabel = t(`cat.${cat}`, { defaultValue: cat.replace(/_/g, " ") });
+                            return (
+                                <Chip
+                                    key={i}
+                                    size="small"
+                                    label={
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                            <i className={`fas ${iconClass}`} style={{ fontSize: "0.75rem" }} />
+                                            {catLabel}
+                                        </Box>
+                                    }
+                                    sx={{
+                                        height: 22,
+                                        fontSize: "0.75rem",
+                                        bgcolor: isActive ? "primary.main" : accentColor,
+                                        color: "#fff",
+                                        opacity: 0.9,
+                                        transition: "background-color 200ms ease",
+                                        "& .MuiChip-label": { px: 1.25 },
+                                    }}
+                                />
+                            );
+                        })}
+                    </Box>
 
-            {/* Address + opening hours + wheelchair */}
-            {(poi.address || poi.opening_hours || poi.wheelchair_accessible) && (
-                <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5, pl: "26px" }}>
-                    {poi.address && (
-                        <>
-                            <PlaceIcon sx={{ fontSize: 10, color: "text.disabled", flexShrink: 0 }} />
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ direction: detectDirectionFromText(poi.address), lineHeight: 1.4, mr: 0.5 }}
+                    <Tooltip title={canFocus ? t("poi.showOnMap") : t("poi.noCoords")}>
+                        <span>
+                            <IconButton
+                                size="small"
+                                color={isActive ? "primary" : "default"}
+                                disabled={!canFocus}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onFocusPOI(poi);
+                                }}
+                                sx={{
+                                    p: 0.5,
+                                    color: isActive ? "primary.main" : "text.disabled",
+                                    transition: "color 150ms ease",
+                                    "&:hover": { color: "primary.main" },
+                                }}
                             >
-                                {poi.address}
-                            </Typography>
-                        </>
-                    )}
-                    {poi.opening_hours && (
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.25, width: "100%" }}>
-                            <AccessTimeIcon sx={{ fontSize: 10, color: "text.disabled", flexShrink: 0 }} />
-                            <Typography variant="caption" color="text.disabled" sx={{ lineHeight: 1.4, fontStyle: "italic" }}>
-                                {poi.opening_hours}
-                            </Typography>
-                        </Box>
-                    )}
-                    {poi.wheelchair_accessible && (
-                        <Tooltip title={t("poi.wheelchair")}>
-                            <AccessibleIcon sx={{ fontSize: 12, color: "success.main" }} />
-                        </Tooltip>
-                    )}
+                                <MyLocationIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
                 </Box>
-            )}
+
+                {/* Address + opening hours + wheelchair */}
+                {(poi.address || poi.opening_hours || poi.wheelchair_accessible) && (
+                    <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5, pl: "26px" }}>
+                        {poi.address && (
+                            <>
+                                <PlaceIcon sx={{ fontSize: 10, color: "text.disabled", flexShrink: 0 }} />
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ direction: detectDirectionFromText(poi.address), lineHeight: 1.4, mr: 0.5 }}
+                                >
+                                    {poi.address}
+                                </Typography>
+                            </>
+                        )}
+                        {poi.opening_hours && (
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.25, width: "100%" }}>
+                                <AccessTimeIcon sx={{ fontSize: 10, color: "text.disabled", flexShrink: 0 }} />
+                                <Typography variant="caption" color="text.disabled" sx={{ lineHeight: 1.4, fontStyle: "italic" }}>
+                                    {poi.opening_hours}
+                                </Typography>
+                            </Box>
+                        )}
+                        {poi.wheelchair_accessible && (
+                            <Tooltip title={t("poi.wheelchair")}>
+                                <AccessibleIcon sx={{ fontSize: 12, color: "success.main" }} />
+                            </Tooltip>
+                        )}
+                    </Box>
+                )}
+            </Box>
         </Box>
     );
 }
