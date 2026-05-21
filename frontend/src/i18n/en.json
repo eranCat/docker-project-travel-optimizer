@@ -51,6 +51,7 @@
   "poi.noCoords": "No coordinates",
   "poi.wheelchair": "Wheelchair accessible",
   "poi.replace": "Find replacement",
+  "poi.replaceDisabled": "Regenerate routes to use replace",
   "loading.step": "Step {{current}} of {{total}}",
   "loading.default": "Loading...",
   "loading.elapsed": "{{seconds}}s",

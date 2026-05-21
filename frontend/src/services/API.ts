@@ -104,6 +104,12 @@ export const getLatestRoutes = async (routeId: string) => {
   }
 };
 
+export class ReplacePOIError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+  }
+}
+
 export async function replacePOI(
   routeId: string,
   routeIndex: number,
@@ -117,6 +123,8 @@ export async function replacePOI(
     });
     return res.data;
   } catch (error: any) {
-    throw new Error(error?.response?.data?.detail || "Failed to replace POI");
+    const status = error?.response?.status ?? 0;
+    const detail = error?.response?.data?.detail || "Failed to replace POI";
+    throw new ReplacePOIError(detail, status);
   }
 }

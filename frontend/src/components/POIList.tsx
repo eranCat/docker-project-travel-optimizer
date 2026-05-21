@@ -28,6 +28,7 @@ interface POIListProps {
     onFocusPOI: (poi: POI) => void;
     onReplacePOI: (idx: number) => void;
     replacingPoiIndex: number | null;
+    canReplace: boolean;
 }
 
 function isSamePOI(a: POI | null, b: POI): boolean {
@@ -42,10 +43,11 @@ interface POICardProps {
     onFocusPOI: (poi: POI) => void;
     onReplacePOI: (idx: number) => void;
     replacingPoiIndex: number | null;
+    canReplace: boolean;
     colorMap: Record<string, string>;
 }
 
-function POICard({ poi, idx, isActive, activeRef, onFocusPOI, onReplacePOI, replacingPoiIndex, colorMap }: POICardProps) {
+function POICard({ poi, idx, isActive, activeRef, onFocusPOI, onReplacePOI, replacingPoiIndex, canReplace, colorMap }: POICardProps) {
     const { t, i18n } = useTranslation();
     const { url: thumbnail, loading: thumbnailLoading } = usePOIThumbnail(poi.wiki_title, poi.wikidata_id);
     const canFocus = Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude);
@@ -178,11 +180,11 @@ function POICard({ poi, idx, isActive, activeRef, onFocusPOI, onReplacePOI, repl
                         })}
                     </Box>
 
-                    <Tooltip title={t("poi.replace")}>
+                    <Tooltip title={canReplace ? t("poi.replace") : t("poi.replaceDisabled")}>
                         <span>
                             <IconButton
                                 size="small"
-                                disabled={replacingPoiIndex !== null}
+                                disabled={!canReplace || replacingPoiIndex !== null}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onReplacePOI(idx);
@@ -259,7 +261,7 @@ function POICard({ poi, idx, isActive, activeRef, onFocusPOI, onReplacePOI, repl
     );
 }
 
-export default function POIList({ pois, focusedPOI, onFocusPOI, onReplacePOI, replacingPoiIndex }: POIListProps) {
+export default function POIList({ pois, focusedPOI, onFocusPOI, onReplacePOI, replacingPoiIndex, canReplace }: POIListProps) {
     const activeRef = useRef<HTMLDivElement | null>(null);
     const theme = useTheme();
     const colorMap = theme.palette.mode === "dark" ? CATEGORY_COLORS : DARK_CATEGORY_COLORS;
@@ -280,6 +282,7 @@ export default function POIList({ pois, focusedPOI, onFocusPOI, onReplacePOI, re
                     onFocusPOI={onFocusPOI}
                     onReplacePOI={onReplacePOI}
                     replacingPoiIndex={replacingPoiIndex}
+                    canReplace={canReplace}
                     colorMap={colorMap}
                 />
             ))}

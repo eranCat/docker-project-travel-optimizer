@@ -4,7 +4,7 @@ import { usePersistedState } from "./usePersistedState";
 import { RouteData } from "../models/RouteData";
 import { POI } from "../models/POI";
 import { DEFAULT_FORM, FORM_VERSION } from "../constants/formDefaults";
-import { getLatestRoutes, routeProgress, logToServer, replacePOI as replacePOICall } from "../services/API";
+import { getLatestRoutes, routeProgress, logToServer, replacePOI as replacePOICall, ReplacePOIError } from "../services/API";
 import { setGenerationActive } from "../services/generationState";
 
 export function useRouteGenerator() {
@@ -349,9 +349,13 @@ export function useRouteGenerator() {
                 return updated;
             });
         } catch (err: any) {
-            const msg = err?.message || "Failed to replace POI";
-            setError(`❌ ${msg}`);
-            setTimeout(() => setError(""), 4000);
+            if (err instanceof ReplacePOIError && err.status === 404) {
+                setCurrentRouteId(null);
+                setError("❌ Route session expired — regenerate routes, then try again.");
+            } else {
+                setError(`❌ ${err?.message || "Failed to replace POI"}`);
+            }
+            setTimeout(() => setError(""), 5000);
         } finally {
             setReplacingPOI(null);
         }
@@ -392,6 +396,7 @@ export function useRouteGenerator() {
         handleShareRoute,
         handleReplacePOI,
         replacingPOI,
+        canReplace: !!currentRouteId,
         savedRoutes,
         locationSelected,
         setLocationSelected,

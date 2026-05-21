@@ -48,9 +48,13 @@ async def replace_poi(body: ReplacePOIRequest):
     ]
 
     if not candidates:
+        # No same-category alternative — fall back to any unused POI in the pool
+        candidates = [p for p in pois_pool if p.id not in current_ids]
+
+    if not candidates:
         raise HTTPException(
             status_code=422,
-            detail=f"No alternative POI available for: {', '.join(sorted(target_cats)) or 'this category'}."
+            detail="No alternative POI available — all nearby places are already in this route."
         )
 
     replacement = min(

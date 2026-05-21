@@ -39,6 +39,7 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
         handleShareRoute,
         handleReplacePOI,
         replacingPOI,
+        canReplace,
         savedRoutes,
         setLocationSelected,
         setDestSelected,
@@ -165,6 +166,7 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
                 onShareRoute={handleShareRoute}
                 onReplacePOI={handleReplacePOI}
                 replacingPoiIndex={replacingPOI}
+                canReplace={canReplace}
                 numDays={form.num_days}
                 stage={stage}
                 stages={stages}

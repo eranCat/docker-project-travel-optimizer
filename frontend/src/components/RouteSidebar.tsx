@@ -25,6 +25,7 @@ interface RouteSidebarProps {
     onShareRoute?: () => void;
     onReplacePOI?: (idx: number) => void;
     replacingPoiIndex?: number | null;
+    canReplace?: boolean;
     numDays?: number;
     stage?: number;
     stages?: string[];
@@ -52,6 +53,7 @@ export default function RouteSidebar({
     onShareRoute,
     onReplacePOI,
     replacingPoiIndex = null,
+    canReplace = false,
     numDays = 1,
     stage = 0,
     stages = [],
@@ -203,6 +205,7 @@ export default function RouteSidebar({
                                 onFocusPOI={onFocusPOI}
                                 onReplacePOI={onReplacePOI ?? (() => {})}
                                 replacingPoiIndex={replacingPoiIndex}
+                                canReplace={canReplace}
                             />
                         </div>
                     </Fade>
