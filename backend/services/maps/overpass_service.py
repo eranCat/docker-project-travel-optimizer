@@ -505,6 +505,11 @@ async def get_pois_from_overpass(
         if wiki_tag:
             wiki_title = wiki_tag if ":" in wiki_tag else f"en:{wiki_tag}"
 
+        wikidata_id: Optional[str] = None
+        wd_tag = tags_el.get("wikidata")
+        if wd_tag and wd_tag.startswith("Q"):
+            wikidata_id = wd_tag
+
         scored.append((
             quality_score(tags_el),
             LLMPOISuggestion(
@@ -519,6 +524,7 @@ async def get_pois_from_overpass(
                 opening_hours=opening_hours,
                 wheelchair_accessible=wheelchair_accessible,
                 wiki_title=wiki_title,
+                wikidata_id=wikidata_id,
             ),
         ))
 
