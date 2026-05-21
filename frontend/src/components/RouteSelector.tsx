@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Tabs, Tab, Box } from "@mui/material";
 import RouteIcon from "@mui/icons-material/Route";
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 const RouteSelector: React.FC<Props> = ({ selectedIndex, routeCount, onSelect }) => {
+    const { t } = useTranslation();
     if (routeCount <= 1) return null;
 
     return (
@@ -36,7 +38,7 @@ const RouteSelector: React.FC<Props> = ({ selectedIndex, routeCount, onSelect })
                     <Tab
                         key={i}
                         value={i}
-                        label={`Route ${i + 1}`}
+                        label={t("route.label", { n: i + 1 })}
                         icon={<RouteIcon fontSize="small" />}
                         iconPosition="start"
                     />

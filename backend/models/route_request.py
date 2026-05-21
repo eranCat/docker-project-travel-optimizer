@@ -21,10 +21,11 @@ class RouteGenerationRequest(BaseModel):
     dest_location: Optional[str] = Field(None, description="Free-form destination text (A→B mode)")
     dest_latitude: Optional[float] = Field(None, description="Pre-geocoded destination latitude")
     dest_longitude: Optional[float] = Field(None, description="Pre-geocoded destination longitude")
+    lang: str = Field(default="en", description="UI language — 'en' or 'he'. Controls POI name localisation.")
 
     @property
     def is_point_to_point(self) -> bool:
         return self.dest_latitude is not None and self.dest_longitude is not None
 
     def __hash__(self):
-        return hash((self.interests, self.location, self.radius_km, self.num_routes, self.num_pois, self.travel_mode, self.wheelchair, self.time_of_day, self.dest_location, self.dest_latitude, self.dest_longitude))
+        return hash((self.interests, self.location, self.radius_km, self.num_routes, self.num_pois, self.travel_mode, self.wheelchair, self.time_of_day, self.dest_location, self.dest_latitude, self.dest_longitude, self.lang))

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Box,
     Button,
@@ -74,12 +75,6 @@ interface Props {
     compact?: boolean;
 }
 
-const TRAVEL_MODES = [
-    { value: "walking", label: "Walk", icon: <DirectionsWalkIcon sx={{ fontSize: 18 }} /> },
-    { value: "driving", label: "Drive", icon: <DirectionsCarIcon sx={{ fontSize: 18 }} /> },
-    { value: "cycling", label: "Cycle", icon: <DirectionsBikeIcon sx={{ fontSize: 18 }} /> },
-];
-
 const RouteForm: React.FC<Props> = ({
     form,
     loading,
@@ -101,8 +96,15 @@ const RouteForm: React.FC<Props> = ({
     isFormValid,
     compact = false,
 }) => {
+    const { t } = useTranslation();
     const isTrip = form.mode === "trip";
     const [showAdvanced, setShowAdvanced] = useState(false);
+
+    const TRAVEL_MODES = [
+        { value: "walking", label: t("form.walk"), icon: <DirectionsWalkIcon sx={{ fontSize: 18 }} /> },
+        { value: "driving", label: t("form.drive"), icon: <DirectionsCarIcon sx={{ fontSize: 18 }} /> },
+        { value: "cycling", label: t("form.cycle"), icon: <DirectionsBikeIcon sx={{ fontSize: 18 }} /> },
+    ];
 
     // Compact summary bar shown after search is initiated
     if (compact) {
@@ -127,21 +129,21 @@ const RouteForm: React.FC<Props> = ({
                         sx={{ display: "block", lineHeight: 1.3, fontFamily: '"Space Grotesk", "Inter", sans-serif' }}
                     >
                         {form.mode === "trip"
-                            ? `${form.location || "Start"} → ${form.dest_location || "Destination"}`
-                            : form.location || "Unknown location"}
+                            ? `${form.location || t("form.labelStart")} → ${form.dest_location || t("form.destination")}`
+                            : form.location || t("form.unknownLocation")}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", lineHeight: 1.4 }}>
-                        {form.interests || "No interests"} · {TRAVEL_MODES.find(m => m.value === form.travel_mode)?.label ?? form.travel_mode}
+                        {form.interests || t("form.noInterests")} · {TRAVEL_MODES.find(m => m.value === form.travel_mode)?.label ?? form.travel_mode}
                     </Typography>
                 </Box>
                 {loading ? (
-                    <Tooltip title="Cancel generation">
+                    <Tooltip title={t("form.cancelTooltip")}>
                         <IconButton size="small" onClick={onCancel} color="error" sx={{ flexShrink: 0 }}>
                             <CancelIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
                 ) : (
-                    <Tooltip title="Edit search">
+                    <Tooltip title={t("form.editTooltip")}>
                         <IconButton size="small" onClick={onEdit} sx={{ color: "text.secondary", flexShrink: 0 }}>
                             <EditIcon fontSize="small" />
                         </IconButton>
@@ -167,9 +169,9 @@ const RouteForm: React.FC<Props> = ({
                         color: "text.primary",
                     }}
                 >
-                    Plan Your Route
+                    {t("form.title")}
                 </Typography>
-                <Tooltip title="Reset form">
+                <Tooltip title={t("form.reset")}>
                     <IconButton size="small" onClick={onReset} sx={{ color: "text.disabled" }}>
                         <RestartAltIcon fontSize="small" />
                     </IconButton>
@@ -212,11 +214,11 @@ const RouteForm: React.FC<Props> = ({
                 >
                     <ToggleButton value="explore" aria-label="Explore area">
                         <ExploreIcon sx={{ fontSize: 18 }} />
-                        Explore area
+                        {t("form.modeExplore")}
                     </ToggleButton>
                     <ToggleButton value="trip" aria-label="A to B trip">
                         <SwapHorizIcon sx={{ fontSize: 18 }} />
-                        A → B trip
+                        {t("form.modeTrip")}
                     </ToggleButton>
                 </ToggleButtonGroup>
 
@@ -224,7 +226,7 @@ const RouteForm: React.FC<Props> = ({
                 <LocationAutocomplete
                     id="location-input"
                     name="location"
-                    label={isTrip ? "Start" : "Location"}
+                    label={isTrip ? t("form.labelStart") : t("form.labelLocation")}
                     value={form.location}
                     onChange={(val) =>
                         onChange({ target: { name: "location", value: val } } as any)
@@ -243,8 +245,7 @@ const RouteForm: React.FC<Props> = ({
                     <LocationAutocomplete
                         id="dest-location-input"
                         name="dest_location"
-                        label="Destination"
-                        placeholder="e.g. Jerusalem"
+                        label={t("form.labelDestination")}
                         value={form.dest_location}
                         onChange={(val) =>
                             onChange({ target: { name: "dest_location", value: val } } as any)
@@ -261,18 +262,18 @@ const RouteForm: React.FC<Props> = ({
 
                 {/* Interests + Surprise Me */}
                 <TextField
-                    label="Interests"
+                    label={t("form.interestsLabel")}
                     name="interests"
                     fullWidth
                     size="small"
                     value={form.interests}
                     onChange={onChange}
-                    placeholder="food, art, hiking…"
-                    helperText="Separate with commas"
+                    placeholder={t("form.interestsPlaceholder")}
+                    helperText={t("form.interestsHelper")}
                     slotProps={{
                         input: {
                             endAdornment: (
-                                <Tooltip title="Surprise me — pick random interests">
+                                <Tooltip title={t("form.surpriseMe")}>
                                     <IconButton size="small" onClick={onSurpriseMe} tabIndex={-1}
                                         sx={{ color: "text.disabled", "&:hover": { color: "primary.main" } }}>
                                         <CasinoIcon sx={{ fontSize: 16 }} />
@@ -286,7 +287,7 @@ const RouteForm: React.FC<Props> = ({
                 {/* Travel mode */}
                 <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ mb: 0.75, display: "block", fontWeight: 500 }}>
-                        Travel Mode
+                        {t("form.travelMode")}
                     </Typography>
                     <ToggleButtonGroup
                         value={form.travel_mode}
@@ -348,14 +349,14 @@ const RouteForm: React.FC<Props> = ({
                         }}
                         disableRipple
                     >
-                        {showAdvanced ? "Hide advanced" : "Advanced settings"}
+                        {showAdvanced ? t("form.hideAdvanced") : t("form.advanced")}
                     </Button>
 
                     <Collapse in={showAdvanced} unmountOnExit>
                         <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
                             <TextField
                                 fullWidth
-                                label={isTrip ? "Corridor (km)" : "Radius (km)"}
+                                label={isTrip ? t("form.corridor") : t("form.radius")}
                                 name="radius_km"
                                 type="number"
                                 size="small"
@@ -369,7 +370,7 @@ const RouteForm: React.FC<Props> = ({
                             {!isTrip && (
                                 <TextField
                                     fullWidth
-                                    label="Routes"
+                                    label={t("form.routes")}
                                     name="num_routes"
                                     type="number"
                                     size="small"
@@ -383,7 +384,7 @@ const RouteForm: React.FC<Props> = ({
                             )}
                             <TextField
                                 fullWidth
-                                label="POIs"
+                                label={t("form.pois")}
                                 name="num_pois"
                                 type="number"
                                 size="small"
@@ -398,7 +399,7 @@ const RouteForm: React.FC<Props> = ({
 
                         <Box>
                             <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block", fontWeight: 500 }}>
-                                Time of day
+                                {t("form.timeOfDay")}
                             </Typography>
                             <Select
                                 name="time_of_day"
@@ -409,17 +410,17 @@ const RouteForm: React.FC<Props> = ({
                                 onChange={(e) => onChange({ target: { name: "time_of_day", value: e.target.value } } as any)}
                                 sx={{ fontSize: "0.85rem" }}
                             >
-                                <MenuItem value=""><em>Any time</em></MenuItem>
-                                <MenuItem value="morning">Morning</MenuItem>
-                                <MenuItem value="afternoon">Afternoon</MenuItem>
-                                <MenuItem value="evening">Evening</MenuItem>
-                                <MenuItem value="night">Night</MenuItem>
+                                <MenuItem value=""><em>{t("form.anyTime")}</em></MenuItem>
+                                <MenuItem value="morning">{t("form.morning")}</MenuItem>
+                                <MenuItem value="afternoon">{t("form.afternoon")}</MenuItem>
+                                <MenuItem value="evening">{t("form.evening")}</MenuItem>
+                                <MenuItem value="night">{t("form.night")}</MenuItem>
                             </Select>
                         </Box>
 
                         <Box>
                             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-                                Days: {form.num_days}
+                                {t("form.days", { count: form.num_days })}
                             </Typography>
                             <Slider
                                 size="small"
@@ -443,7 +444,7 @@ const RouteForm: React.FC<Props> = ({
                             label={
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                                     <AccessibleIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                                    <Typography variant="caption" color="text.secondary">Wheelchair accessible only</Typography>
+                                    <Typography variant="caption" color="text.secondary">{t("form.wheelchair")}</Typography>
                                 </Box>
                             }
                             sx={{ ml: 0, mt: 0.5 }}
@@ -477,7 +478,7 @@ const RouteForm: React.FC<Props> = ({
                         startIcon={<ArrowBackIcon fontSize="small" />}
                         sx={{ fontWeight: 600 }}
                     >
-                        Back to results
+                        {t("form.back")}
                     </Button>
                 )}
                 {loading ? (
@@ -489,7 +490,7 @@ const RouteForm: React.FC<Props> = ({
                         onClick={onCancel}
                         startIcon={<CancelIcon fontSize="small" />}
                     >
-                        Cancel
+                        {t("form.cancel")}
                     </Button>
                 ) : (
                     <Button
@@ -501,7 +502,7 @@ const RouteForm: React.FC<Props> = ({
                         startIcon={<RouteIcon fontSize="small" />}
                         sx={{ py: 1.1, fontWeight: 700 }}
                     >
-                        Generate Route
+                        {t("form.generate")}
                     </Button>
                 )}
             </Box>

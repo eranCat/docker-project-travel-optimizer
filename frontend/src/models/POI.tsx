@@ -1,5 +1,6 @@
 export interface POI {
     name: string;
+    name_he?: string;
     description?: string;
     address?: string;
     latitude: number;

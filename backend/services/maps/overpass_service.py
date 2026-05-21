@@ -395,7 +395,7 @@ async def get_pois_from_overpass(
     # TTL cache lookup
     cache_key = (
         request.location, request.radius_km, request.num_pois, tags, request.wheelchair,
-        request.dest_latitude, request.dest_longitude,
+        request.dest_latitude, request.dest_longitude, request.lang,
     )
     now = time.time()
     cached = _poi_cache.get(cache_key)
@@ -493,11 +493,14 @@ async def get_pois_from_overpass(
         wheelchair_val = tags_el.get("wheelchair")
         wheelchair_accessible = wheelchair_val in ("yes", "limited") if wheelchair_val else None
 
+        name_he = tags_el.get("name:he") or None
+
         scored.append((
             quality_score(tags_el),
             LLMPOISuggestion(
                 id=str(el.id),
                 name=name,
+                name_he=name_he,
                 description=desc,
                 latitude=lat_el,
                 longitude=lon_el,

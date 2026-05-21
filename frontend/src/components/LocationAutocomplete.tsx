@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
     TextField,
     List,
@@ -40,6 +41,7 @@ const LocationAutocomplete: React.FC<Props> = ({
     label = "Location",
     placeholder = "e.g. Tel Aviv",
 }) => {
+    const { i18n } = useTranslation();
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -68,7 +70,7 @@ const LocationAutocomplete: React.FC<Props> = ({
         setFetching(true);
         const controller = new AbortController();
         const delay = setTimeout(() => {
-            fetchLocationSuggestions(value, controller.signal)
+            fetchLocationSuggestions(value, controller.signal, i18n.language)
                 .then((res) => {
                     setSuggestions(res);
                     setShowDropdown(true);

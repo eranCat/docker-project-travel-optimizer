@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { POI } from "../models/POI";
 import {
     Box,
@@ -28,9 +29,11 @@ function isSamePOI(a: POI | null, b: POI): boolean {
 }
 
 export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) {
+    const { t, i18n } = useTranslation();
     const activeRef = useRef<HTMLDivElement | null>(null);
     const theme = useTheme();
     const colorMap = theme.palette.mode === "dark" ? CATEGORY_COLORS : DARK_CATEGORY_COLORS;
+    const isHe = i18n.language === "he";
 
     // Scroll active card into view when focusedPOI changes
     useEffect(() => {
@@ -42,6 +45,7 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
             {pois.map((poi, idx) => {
                 const canFocus = Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude);
                 const isActive = isSamePOI(focusedPOI, poi);
+                const displayName = (isHe && poi.name_he) ? poi.name_he : poi.name;
                 const catKey = poi.categories?.[0]?.toLowerCase() ?? "default";
                 const accentColor = colorMap[catKey] || colorMap["default"];
 
@@ -114,7 +118,7 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                                         color: isActive ? "primary.main" : "text.primary",
                                         textDecoration: "none",
                                         lineHeight: 1.3,
-                                        direction: detectDirectionFromText(poi.name),
+                                        direction: detectDirectionFromText(displayName),
                                         display: "inline-flex",
                                         alignItems: "center",
                                         gap: 0.4,
@@ -122,11 +126,12 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                                         transition: "color 150ms ease",
                                     }}
                                 >
-                                    {poi.name}
+                                    {displayName}
                                     <OpenInNewIcon sx={{ fontSize: 11, opacity: 0.5, flexShrink: 0 }} />
                                 </Typography>
                                 {Array.isArray(poi.categories) && poi.categories.map((cat, i) => {
                                     const iconClass = CATEGORY_ICONS[cat.toLowerCase()] || CATEGORY_ICONS.default;
+                                    const catLabel = t(`cat.${cat}`, { defaultValue: cat.replace(/_/g, " ") });
                                     return (
                                         <Chip
                                             key={i}
@@ -134,7 +139,7 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                                             label={
                                                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                                                     <i className={`fas ${iconClass}`} style={{ fontSize: "0.75rem" }} />
-                                                    {cat}
+                                                    {catLabel}
                                                 </Box>
                                             }
                                             sx={{
@@ -151,7 +156,7 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                                 })}
                             </Box>
 
-                            <Tooltip title={canFocus ? "Show on map" : "No coordinates"}>
+                            <Tooltip title={canFocus ? t("poi.showOnMap") : t("poi.noCoords")}>
                                 <span>
                                     <IconButton
                                         size="small"
@@ -198,7 +203,7 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                                     </Box>
                                 )}
                                 {poi.wheelchair_accessible && (
-                                    <Tooltip title="Wheelchair accessible">
+                                    <Tooltip title={t("poi.wheelchair")}>
                                         <AccessibleIcon sx={{ fontSize: 12, color: "success.main" }} />
                                     </Tooltip>
                                 )}

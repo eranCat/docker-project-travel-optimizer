@@ -31,8 +31,9 @@ const amber = {
   500: "#F59E0B",
 };
 
-export const getTheme = (mode: "light" | "dark") =>
+export const getTheme = (mode: "light" | "dark", direction: "ltr" | "rtl" = "ltr") =>
   createTheme({
+    direction,
     palette: {
       mode,
       primary: {

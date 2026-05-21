@@ -1,4 +1,5 @@
 import { Box, Typography, Fade, Chip, IconButton, Tooltip, Tabs, Tab } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import RouteSelector from "./RouteSelector";
 import POIList from "./POIList";
 import POISkeleton from "./POISkeleton";
@@ -45,6 +46,7 @@ export default function RouteSidebar({
     onShareRoute,
     numDays = 1,
 }: RouteSidebarProps) {
+    const { t } = useTranslation();
     const showSkeleton = loading && pois.length === 0;
     const routesPerDay = numDays > 1 ? Math.ceil(routesCount / numDays) : routesCount;
     const currentDay = numDays > 1 ? Math.floor(selectedIndex / routesPerDay) : 0;
@@ -94,14 +96,14 @@ export default function RouteSidebar({
                         sx={{ fontFamily: '"Space Grotesk", "Inter", sans-serif', fontSize: "0.875rem", flexGrow: 1 }}
                     >
                         {loading
-                            ? "Generating route…"
-                            : `${pois.length} stop${pois.length !== 1 ? "s" : ""} found`}
+                            ? t("sidebar.generating")
+                            : t("sidebar.stopsFound", { count: pois.length })}
                     </Typography>
 
                     {!loading && (gmapsUrl || onShareRoute) && (
                         <Box sx={{ display: "flex", gap: 0.25 }}>
                             {gmapsUrl && (
-                                <Tooltip title="Open in Google Maps">
+                                <Tooltip title={t("sidebar.googleMaps")}>
                                     <IconButton
                                         size="small"
                                         component="a"
@@ -115,7 +117,7 @@ export default function RouteSidebar({
                                 </Tooltip>
                             )}
                             {onShareRoute && (
-                                <Tooltip title="Copy share link">
+                                <Tooltip title={t("sidebar.share")}>
                                     <IconButton
                                         size="small"
                                         onClick={onShareRoute}
@@ -134,7 +136,7 @@ export default function RouteSidebar({
                         {vibe && (
                             <Chip
                                 size="small"
-                                label={vibe}
+                                label={t(`vibe.${vibe}`, { defaultValue: vibe })}
                                 sx={{ height: 18, fontSize: "0.65rem", bgcolor: "primary.main", color: "#fff", "& .MuiChip-label": { px: 0.75 } }}
                             />
                         )}
@@ -159,7 +161,7 @@ export default function RouteSidebar({
                         sx={{ minHeight: 32, mb: 0.5, "& .MuiTab-root": { minHeight: 32, py: 0, fontSize: "0.75rem" } }}
                     >
                         {Array.from({ length: numDays }, (_, i) => (
-                            <Tab key={i} label={`Day ${i + 1}`} value={i}
+                            <Tab key={i} label={t("sidebar.day", { n: i + 1 })} value={i}
                                 disabled={i * routesPerDay >= routesCount} />
                         ))}
                     </Tabs>

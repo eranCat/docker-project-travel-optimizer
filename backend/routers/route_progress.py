@@ -30,6 +30,7 @@ async def route_progress(
     dest_location: str | None = None,
     dest_latitude: float | None = None,
     dest_longitude: float | None = None,
+    lang: str = "en",
 ):
     async def event_generator():
         clear_log()
@@ -63,6 +64,7 @@ async def route_progress(
                 dest_location=dest_location,
                 dest_latitude=d_lat,
                 dest_longitude=d_lon,
+                lang=lang,
             )
 
             yield {"event": "stage", "data": "Fetching POIs from maps_service"}

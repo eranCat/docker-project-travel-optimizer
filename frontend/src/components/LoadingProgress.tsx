@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Box, Typography, LinearProgress, Fade } from "@mui/material";
 import LoopIcon from "@mui/icons-material/Loop";
 
@@ -8,10 +9,12 @@ interface LoadingProgressProps {
 }
 
 export default function LoadingProgress({ loading, stages, stage }: LoadingProgressProps) {
+    const { t } = useTranslation();
     if (!loading) return null;
 
     const progress = stages.length > 0 ? Math.min(((stage + 1) / stages.length) * 100, 100) : 0;
-    const label = stages[stage] ?? "Loading...";
+    const rawLabel = stages[stage] ?? "Loading...";
+    const label = t(`stage.${rawLabel}`, { defaultValue: rawLabel });
 
     return (
         <Fade in={loading}>
@@ -55,7 +58,7 @@ export default function LoadingProgress({ loading, stages, stage }: LoadingProgr
                     }}
                 />
                 <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: "block" }}>
-                    Step {stage + 1} of {stages.length}
+                    {t("loading.step", { current: stage + 1, total: stages.length })}
                 </Typography>
             </Box>
         </Fade>

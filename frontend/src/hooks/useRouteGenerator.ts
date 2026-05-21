@@ -1,13 +1,15 @@
 import { FormEvent, useRef, useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { usePersistedState } from "./usePersistedState";
 import { RouteData } from "../models/RouteData";
 import { POI } from "../models/POI";
 import { DEFAULT_FORM, FORM_VERSION } from "../constants/formDefaults";
-import { SURPRISE_INTERESTS } from "../constants/surpriseInterests";
 import { getLatestRoutes, routeProgress, logToServer } from "../services/API";
 import { setGenerationActive } from "../services/generationState";
 
 export function useRouteGenerator() {
+    const { t, i18n } = useTranslation();
+
     // Bust stale persisted form when defaults change
     if (Number(localStorage.getItem("travel-form-version") ?? 0) < FORM_VERSION) {
         localStorage.removeItem("travel-form");
@@ -124,6 +126,7 @@ export function useRouteGenerator() {
                     dest_longitude: form.dest_longitude,
                 }),
             }),
+            lang: i18n.language,
         });
 
         sseRef.current = source;
@@ -259,9 +262,11 @@ export function useRouteGenerator() {
     };
 
     const handleSurpriseMe = useCallback(() => {
-        const pick = SURPRISE_INTERESTS[Math.floor(Math.random() * SURPRISE_INTERESTS.length)];
+        const pool = t("surpriseInterests", { returnObjects: true }) as string[];
+        const list = Array.isArray(pool) && pool.length > 0 ? pool : [];
+        const pick = list[Math.floor(Math.random() * list.length)] ?? "";
         setFormData(prev => ({ ...prev, interests: pick }));
-    }, [setFormData]);
+    }, [setFormData, t]);
 
     const handleShareRoute = useCallback(() => {
         const params = new URLSearchParams({

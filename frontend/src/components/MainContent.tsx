@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Box, Typography, Tabs, Tab, useTheme, useMediaQuery } from "@mui/material";
 import ExploreIcon from "@mui/icons-material/Explore";
 import MapIcon from "@mui/icons-material/Map";
@@ -9,6 +10,7 @@ import { useRouteGenerator } from "../hooks/useRouteGenerator";
 import RouteSidebar from "./RouteSidebar";
 
 export default function MainContent({ backendHealthy }: { backendHealthy?: boolean | null }) {
+    const { t } = useTranslation();
     const {
         form,
         routes,
@@ -109,10 +111,10 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
                             fontWeight={700}
                             sx={{ fontFamily: '"Space Grotesk", "Inter", sans-serif' }}
                         >
-                            Plan your trip
+                            {t("map.planTitle")}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block", lineHeight: 1.5 }}>
-                            Add your destination and interests, then hit Generate.
+                            {t("map.planDesc")}
                         </Typography>
                     </Box>
                 </Box>
@@ -165,8 +167,8 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
                         "& .MuiTab-root": { minHeight: 44, py: 0, fontSize: "0.8rem", gap: 0.5 },
                     }}
                 >
-                    <Tab label="Plan" icon={<TuneIcon sx={{ fontSize: 16 }} />} iconPosition="start" />
-                    <Tab label="Map" icon={<MapIcon sx={{ fontSize: 16 }} />} iconPosition="start" />
+                    <Tab label={t("mobile.plan")} icon={<TuneIcon sx={{ fontSize: 16 }} />} iconPosition="start" />
+                    <Tab label={t("mobile.map")} icon={<MapIcon sx={{ fontSize: 16 }} />} iconPosition="start" />
                 </Tabs>
 
                 {/* Plan tab */}
@@ -198,7 +200,7 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
         );
     }
 
-    // Desktop — unchanged side-by-side layout
+    // Desktop — side-by-side layout
     return (
         <Box sx={{ display: "flex", height: "100%", width: "100%", overflow: "hidden" }}>
             <Box
