@@ -27,31 +27,11 @@ async function fetchWikidataThumbnail(qid: string, signal: AbortSignal): Promise
     return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=200`;
 }
 
-async function fetchGeoThumbnail(lat: number, lon: number, signal: AbortSignal): Promise<string | null> {
-    const url =
-        `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages` +
-        `&generator=geosearch&ggscoord=${lat}|${lon}&ggsradius=500&ggslimit=5` +
-        `&piprop=thumbnail&pithumbsize=200&format=json&origin=*`;
-    const r = await fetch(url, { signal });
-    const data = await r.json();
-    const pages: Record<string, any> = data?.query?.pages ?? {};
-    for (const page of Object.values(pages)) {
-        const src: string | undefined = page?.thumbnail?.source;
-        if (src) return src;
-    }
-    return null;
-}
-
 export function usePOIThumbnail(
     wikiTitle: string | undefined,
     wikidataId: string | undefined,
-    lat: number | undefined,
-    lon: number | undefined,
 ): string | null {
-    const geoKey = lat !== undefined && lon !== undefined
-        ? `geo:${lat.toFixed(3)},${lon.toFixed(3)}`
-        : null;
-    const cacheKey = wikiTitle ?? wikidataId ?? geoKey ?? "";
+    const cacheKey = wikiTitle ?? wikidataId ?? "";
 
     const [url, setUrl] = useState<string | null>(() => {
         if (!cacheKey) return null;
@@ -79,10 +59,6 @@ export function usePOIThumbnail(
                     imgUrl = await fetchWikidataThumbnail(wikidataId, controller.signal);
                 }
 
-                if (!imgUrl && lat !== undefined && lon !== undefined) {
-                    imgUrl = await fetchGeoThumbnail(lat, lon, controller.signal);
-                }
-
                 _cache.set(cacheKey, imgUrl);
                 setUrl(imgUrl);
             } catch {
@@ -91,7 +67,7 @@ export function usePOIThumbnail(
         })();
 
         return () => controller.abort();
-    }, [cacheKey, wikiTitle, wikidataId, lat, lon]);
+    }, [cacheKey, wikiTitle, wikidataId]);
 
     return url;
 }
