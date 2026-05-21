@@ -1,323 +1,232 @@
 :root {
-  /* Surface */
-  --bg:           #F8FAFC;
-  --bg-paper:     #FFFFFF;
-  --sidebar-bg:   #FFFFFF;
-  --map-bg:       #E2E8F0;
-
-  /* Text */
-  --fg:           #0F172A;
-  --fg-muted:     #475569;
-
-  /* Brand */
-  --accent:       #0F766E;
-  --accent-light: #CCFBF1;
-  --amber:        #F59E0B;
-
-  /* Borders & inputs */
-  --input-bg:     #FFFFFF;
-  --input-border: #E2E8F0;
-  --divider:      #E2E8F0;
-
-  /* Feedback */
-  --error:        #DC2626;
-  --success:      #16A34A;
-
-  /* POI marker */
-  --poi-color:    #0F766E;
-}
-
-[data-theme="dark"] {
-  --bg:           #0B1220;
-  --bg-paper:     #111A2E;
-  --sidebar-bg:   #111A2E;
-  --map-bg:       #0B1220;
-  --fg:           #E2E8F0;
-  --fg-muted:     #94A3B8;
-  --accent:       #2DD4BF;
-  --accent-light: #134E4A;
-  --amber:        #FBBF24;
-  --input-bg:     #111A2E;
-  --input-border: #1F2A44;
-  --divider:      #1F2A44;
-  --error:        #F87171;
-  --success:      #4ADE80;
-  --poi-color:    #2DD4BF;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  margin: 0;
-  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
-  background-color: var(--bg);
-  color: var(--fg);
-  transition: background-color 0.25s ease, color 0.25s ease;
+    --bg: #ffffff;
+    --fg: #222;
+    --accent: #2f80ed;
+    --input-bg: #fff;
+    --input-border: #ccc;
+    --sidebar-bg: #f9f9f9;
+    --map-bg: #eaeaea;
 }
 
 #root {
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+[data-theme="dark"] {
+    --bg: #181818;
+    --fg: #eee;
+    --accent: #6ea0ff;
+    --input-bg: #222;
+    --input-border: #444;
+    margin: 0;
+    font-family: "Inter", sans-serif;
 }
 
-/* ── Layout helpers ── */
-.app-sidebar {
-  background-color: var(--sidebar-bg);
-  border-right: 1px solid var(--divider);
-}
-
-.app-map {
-  background-color: var(--map-bg);
-  flex: 1;
-  height: 100%;
-}
-
-/* ── Form ── */
-.app-form {
-  display: grid;
-  gap: 1.25rem;
-  background: var(--bg-paper);
-  padding: 1.5rem;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07), 0 4px 12px rgba(0, 0, 0, 0.06);
-  margin-bottom: 1.5rem;
-  border: 1px solid var(--divider);
-}
-
-.app-form-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 0.75rem;
-}
-
-.app-form-row > div {
-  flex: 1;
-  min-width: 180px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.app-form-row label {
-  font-weight: 600;
-  font-size: 0.875rem;
-  color: var(--fg-muted);
-  margin-bottom: 0.2rem;
+body {
+    background-color: var(--bg);
+    color: var(--fg);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 input,
 select {
-  background-color: var(--input-bg);
-  border: 1px solid var(--input-border);
-  color: var(--fg);
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 0.9375rem;
-  min-height: 44px;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--fg);
+    transition: all 0.3s ease;
 }
 
-input:hover,
-select:hover {
-  border-color: var(--accent);
+.app-wrapper {
+    padding: 1rem;
+    max-width: 900px;
+    margin: auto;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
 }
 
-input:focus,
-select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+.app-sidebar {
+    background-color: var(--sidebar-bg);
+    padding: 1rem;
+    border-left: 1px solid #ddd;
 }
 
-input:invalid {
-  border-color: var(--error);
+.app-map {
+    background-color: var(--map-bg);
+    flex: 1;
+    height: 100%;
+}
+
+.app-title {
+    font-size: 2rem;
+    color: var(--accent);
+    margin-bottom: 1rem;
+}
+
+.app-form {
+    display: grid;
+    gap: 1.5rem;
+    background: var(--input-bg);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    margin-bottom: 2rem;
+    border: 1px solid var(--input-border);
+}
+
+.app-form input,
+.app-route-selector select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--input-border);
+    color: var(--fg);
+    font-size: 1rem;
+}
+
+.app-form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.app-form-row>div {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.app-form-row>div {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.app-form-row label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.app-submit-button {
+    padding: 12px 20px;
+    background-color: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.app-error {
+    color: #b00020;
+    margin-top: 1rem;
+}
+
+.app-route-selector {
+    margin-bottom: 1rem;
+}
+
+.app-reset-button {
+    margin-top: 0.5rem;
+    background: transparent;
+    color: var(--accent);
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: underline;
 }
 
 input[type="number"] {
-  appearance: number-input;
-  -moz-appearance: textfield;
+    appearance: number-input;
+    -moz-appearance: textfield;
+    /* fix for Firefox */
 }
 
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
-  appearance: auto;
+    appearance: auto;
 }
 
-/* ── Buttons ── */
-.app-submit-button {
-  padding: 11px 22px;
-  background-color: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 24px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  cursor: pointer;
-  min-height: 44px;
-  transition: background-color 150ms ease, transform 100ms ease;
+input:invalid {
+    border-color: #e63946;
 }
 
-.app-submit-button:hover {
-  filter: brightness(1.08);
+@media (max-width: 600px) {
+    .app-form {
+        padding: 1rem;
+    }
+
+    .app-form-row {
+        flex-direction: column;
+    }
 }
 
-.app-submit-button:active {
-  transform: scale(0.97);
-}
-
-.app-submit-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.app-reset-button {
-  background: transparent;
-  color: var(--accent);
-  border: none;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-decoration: underline;
-  padding: 6px 0;
-  min-height: 44px;
-}
-
-/* ── Feedback ── */
-.app-error {
-  color: var(--error);
-  font-size: 0.875rem;
-  margin-top: 0.75rem;
-}
-
-.app-title {
-  font-family: "Space Grotesk", "Inter", sans-serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-/* ── Route selector ── */
-.app-route-selector {
-  margin-bottom: 1rem;
-}
-
-.app-route-selector select {
-  width: 100%;
-}
-
-/* ── Location dropdown ── */
 .location-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: var(--bg-paper);
-  z-index: 1000;
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 6px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 8px 24px rgba(0, 0, 0, 0.08);
-  max-height: 220px;
-  overflow-y: auto;
-  border-radius: 12px;
-  border: 1px solid var(--divider);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--input-bg);
+    z-index: 1000;
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 0 0 6px 6px;
 
-  opacity: 0;
-  transform: translateY(-4px);
-  pointer-events: none;
-  transition: opacity 200ms ease, transform 200ms ease;
+    opacity: 0;
+    transform: translateY(-5px);
+    pointer-events: none;
+    transition: all 0.25s ease;
 }
 
 .location-dropdown.open {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 
 .location-dropdown li {
-  padding: 10px 12px;
-  cursor: pointer;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  transition: background-color 120ms ease;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.location-dropdown li:last-child {
+    border-bottom: none;
 }
 
 .location-dropdown li:hover {
-  background: var(--accent-light);
-  color: var(--accent);
+    background: rgba(0, 0, 0, 0.04);
 }
 
-/* ── Leaflet popup overrides ── */
-.leaflet-popup-content-wrapper {
-  border-radius: 12px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 1px 6px rgba(0, 0, 0, 0.1) !important;
-  padding: 0 !important;
-  overflow: hidden;
-}
-
-.leaflet-popup-content {
-  margin: 12px 14px !important;
-}
-
-.leaflet-popup-tip-container {
-  margin-top: -1px;
-}
-
-/* ── POI marker ── */
 .poi-marker {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 36px;
-  height: 36px;
-  background: var(--poi-color, #0F766E);
-  color: white;
-  font-size: 18px;
-  border: 2.5px solid white;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-  transition: transform 200ms ease-out, filter 200ms ease-out;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 36px;
+    height: 36px;
+    background: var(--poi-color, #3388ff);
+    color: white;
+    font-size: 18px;
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .leaflet-marker-icon:hover .poi-marker {
-  transform: scale(1.15);
-  filter: brightness(1.15);
-}
-
-/* ── Responsive ── */
-@media (max-width: 600px) {
-  .app-form {
-    padding: 1rem;
-    border-radius: 12px;
-  }
-
-  .app-form-row {
-    flex-direction: column;
-  }
+    transform: scale(1.15);
+    filter: brightness(1.2);
 }

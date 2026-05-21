@@ -7,52 +7,13 @@ const API = axios.create({
   },
 });
 
-export async function checkHealth(): Promise<boolean> {
-  try {
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/health`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
+export const fetchLocationSuggestions = async (query: string, signal?: AbortSignal) => {
+  const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/autocomplete`, {
+    params: { q: query },
+    signal,
+  });
 
-export function logToServer(level: "info" | "warning" | "error", message: string, data?: unknown) {
-  try {
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/frontend-log`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ level, message, data }),
-      credentials: "omit",
-      keepalive: true,
-    }).catch(() => {});
-  } catch {
-    // ignore — logging must never break the app
-  }
-}
-
-const isLatinScript = (s: string) => /^[ -ɏ\s\d\p{P}]+$/u.test(s);
-
-export const fetchLocationSuggestions = async (
-  query: string,
-  signal?: AbortSignal,
-  lang?: string
-): Promise<{ display_name: string; lat: string; lon: string }[]> => {
-  const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("q", query);
-  url.searchParams.set("format", "json");
-  url.searchParams.set("limit", "5");
-  url.searchParams.set("addressdetails", "1");
-  if (lang === "he") {
-    url.searchParams.set("accept-language", "he,en");
-  } else if (isLatinScript(query)) {
-    url.searchParams.set("accept-language", "en");
-  }
-
-  const res = await fetch(url.toString(), { signal });
-  if (!res.ok) return [];
-  return res.json();
+  return res.data || [];
 };
 
 export function routeProgress(params: {
@@ -61,36 +22,18 @@ export function routeProgress(params: {
   radius_km: number;
   num_routes: number;
   num_pois: number;
-  travel_mode: string;
-  latitude?: number;
-  longitude?: number;
-  wheelchair?: boolean;
-  time_of_day?: string;
-  dest_location?: string;
-  dest_latitude?: number;
-  dest_longitude?: number;
-  lang?: string;
+  travel_mode:string;
 }): EventSource {
   const url = new URL("/route-progress", import.meta.env.VITE_API_BASE_URL);
-  const searchParams: Record<string, string> = {
+  url.search = new URLSearchParams({
     interests: params.interests,
     location: params.location,
     radius_km: String(params.radius_km),
     num_routes: String(params.num_routes),
     num_pois: String(params.num_pois),
-    travel_mode: String(params.travel_mode),
-  };
+    travel_mode : String(params.travel_mode)
+  }).toString();
 
-  if (params.latitude !== undefined) searchParams.latitude = String(params.latitude);
-  if (params.longitude !== undefined) searchParams.longitude = String(params.longitude);
-  if (params.wheelchair) searchParams.wheelchair = "true";
-  if (params.time_of_day) searchParams.time_of_day = params.time_of_day;
-  if (params.dest_location) searchParams.dest_location = params.dest_location;
-  if (params.dest_latitude !== undefined) searchParams.dest_latitude = String(params.dest_latitude);
-  if (params.dest_longitude !== undefined) searchParams.dest_longitude = String(params.dest_longitude);
-  if (params.lang) searchParams.lang = params.lang;
-
-  url.search = new URLSearchParams(searchParams).toString();
   return new EventSource(url.toString());
 }
 
