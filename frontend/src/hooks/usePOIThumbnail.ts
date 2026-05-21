@@ -30,21 +30,25 @@ async function fetchWikidataThumbnail(qid: string, signal: AbortSignal): Promise
 export function usePOIThumbnail(
     wikiTitle: string | undefined,
     wikidataId: string | undefined,
-): string | null {
+): { url: string | null; loading: boolean } {
     const cacheKey = wikiTitle ?? wikidataId ?? "";
+    const hasSources = !!cacheKey;
 
-    const [url, setUrl] = useState<string | null>(() => {
-        if (!cacheKey) return null;
-        return _cache.has(cacheKey) ? (_cache.get(cacheKey) ?? null) : null;
-    });
+    const cached = hasSources && _cache.has(cacheKey) ? _cache.get(cacheKey) ?? null : null;
+    const alreadyCached = hasSources && _cache.has(cacheKey);
+
+    const [url, setUrl] = useState<string | null>(cached);
+    const [loading, setLoading] = useState<boolean>(hasSources && !alreadyCached);
 
     useEffect(() => {
         if (!cacheKey) return;
         if (_cache.has(cacheKey)) {
             setUrl(_cache.get(cacheKey) ?? null);
+            setLoading(false);
             return;
         }
 
+        setLoading(true);
         const controller = new AbortController();
 
         (async () => {
@@ -63,11 +67,13 @@ export function usePOIThumbnail(
                 setUrl(imgUrl);
             } catch {
                 _cache.set(cacheKey, null);
+            } finally {
+                setLoading(false);
             }
         })();
 
         return () => controller.abort();
     }, [cacheKey, wikiTitle, wikidataId]);
 
-    return url;
+    return { url, loading };
 }
