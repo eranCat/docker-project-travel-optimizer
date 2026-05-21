@@ -40,7 +40,7 @@ interface POICardProps {
 
 function POICard({ poi, idx, isActive, activeRef, onFocusPOI, colorMap }: POICardProps) {
     const { t, i18n } = useTranslation();
-    const thumbnail = usePOIThumbnail(poi.wiki_title, poi.wikidata_id, poi.latitude, poi.longitude);
+    const thumbnail = usePOIThumbnail(poi.wiki_title, poi.wikidata_id);
     const canFocus = Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude);
     const isHe = i18n.language === "he";
     const displayName = (isHe && poi.name_he) ? poi.name_he : poi.name;
