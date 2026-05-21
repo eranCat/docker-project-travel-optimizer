@@ -500,6 +500,11 @@ async def get_pois_from_overpass(
 
         name_he = tags_el.get("name:he") or None
 
+        wiki_tag = tags_el.get("wikipedia")
+        wiki_title: Optional[str] = None
+        if wiki_tag:
+            wiki_title = wiki_tag if ":" in wiki_tag else f"en:{wiki_tag}"
+
         scored.append((
             quality_score(tags_el),
             LLMPOISuggestion(
@@ -513,6 +518,7 @@ async def get_pois_from_overpass(
                 categories=[category],
                 opening_hours=opening_hours,
                 wheelchair_accessible=wheelchair_accessible,
+                wiki_title=wiki_title,
             ),
         ))
 

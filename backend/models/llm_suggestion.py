@@ -13,3 +13,4 @@ class LLMPOISuggestion(BaseModel):
     categories: List[str]
     opening_hours: Optional[str] = None
     wheelchair_accessible: Optional[bool] = None
+    wiki_title: Optional[str] = None
