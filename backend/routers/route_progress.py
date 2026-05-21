@@ -3,7 +3,11 @@ import json
 import logging
 import traceback
 from fastapi import APIRouter, HTTPException
-from services.maps.maps_client import call_optimized_routes_from_maps_service, call_pois_from_maps_service
+from services.maps.maps_client import (
+    call_optimized_routes_from_maps_service,
+    fetch_overpass_tags,
+    fetch_pois_with_tags,
+)
 from services.maps.geocoding import geocode_location
 from models.route_request import RouteGenerationRequest
 from sse_starlette.sse import EventSourceResponse
@@ -34,20 +38,41 @@ async def route_progress(
 ):
     async def event_generator():
         clear_log()
+        tags_task: asyncio.Task | None = None
         try:
-            # Use pre-geocoded coordinates if provided, otherwise geocode
-            if latitude is not None and longitude is not None:
+            # Kick off Groq tag generation immediately — it only needs interests +
+            # time_of_day, so it runs concurrently with geocoding below.
+            tags_task = asyncio.create_task(fetch_overpass_tags(interests, time_of_day))
+
+            need_origin_geocode = latitude is None or longitude is None
+            need_dest_geocode = bool(dest_location) and (
+                dest_latitude is None or dest_longitude is None
+            )
+            if need_origin_geocode or need_dest_geocode:
+                yield {"event": "stage", "data": "Geocoding location"}
+
+            # Geocode origin and destination concurrently when both are needed.
+            geocode_jobs = []
+            if need_origin_geocode:
+                geocode_jobs.append(("origin", geocode_location(location)))
+            if need_dest_geocode:
+                geocode_jobs.append(("dest", geocode_location(dest_location)))
+
+            geocoded = {}
+            if geocode_jobs:
+                results = await asyncio.gather(*(coro for _, coro in geocode_jobs))
+                geocoded = {label: res for (label, _), res in zip(geocode_jobs, results)}
+
+            if need_origin_geocode:
+                lat, lon = geocoded["origin"]
+            else:
                 lat, lon = latitude, longitude
                 logging.debug(f"Using pre-geocoded coords: ({lat}, {lon})")
-            else:
-                yield {"event": "stage", "data": "Geocoding location"}
-                lat, lon = await geocode_location(location)
 
-            # A→B mode: resolve destination coordinates (geocode if not supplied)
-            d_lat, d_lon = dest_latitude, dest_longitude
-            if dest_location and (d_lat is None or d_lon is None):
-                yield {"event": "stage", "data": "Geocoding location"}
-                d_lat, d_lon = await geocode_location(dest_location)
+            if need_dest_geocode:
+                d_lat, d_lon = geocoded["dest"]
+            else:
+                d_lat, d_lon = dest_latitude, dest_longitude
 
             # Build request with geocoded coordinates
             request_data = RouteGenerationRequest(
@@ -68,7 +93,10 @@ async def route_progress(
             )
 
             yield {"event": "stage", "data": "Fetching POIs from maps_service"}
-            pois = await call_pois_from_maps_service(request_data)
+            tags = await tags_task
+            yield {"event": "detail", "data": json.dumps({"tags": len(tags)})}
+            pois = await fetch_pois_with_tags(request_data, tags)
+            yield {"event": "detail", "data": json.dumps({"pois": len(pois)})}
             # A→B mode still produces a valid direct route with zero POIs.
             if not pois and not request_data.is_point_to_point:
                 yield {
@@ -91,6 +119,7 @@ async def route_progress(
             yield {"event": "stage", "data": "Generating optimized routes"}
             loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(None, call_optimized_routes_from_maps_service, request_data, pois)
+            yield {"event": "detail", "data": json.dumps({"routes": len(result["routes"])})}
 
             await asyncio.sleep(0.1)
 
@@ -115,6 +144,12 @@ async def route_progress(
             message = str(e) or traceback.format_exc(limit=1).splitlines()[-1]
             yield {"event": "error", "data": json.dumps({"message": message})}
             return
+
+        finally:
+            # If we bailed before awaiting the tags task, cancel it so it doesn't
+            # leak or surface an unretrieved-exception warning.
+            if tags_task is not None and not tags_task.done():
+                tags_task.cancel()
 
     return EventSourceResponse(event_generator())
 

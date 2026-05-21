@@ -2,6 +2,7 @@ import logging
 import math
 import random
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Tuple
 
 from fastapi import HTTPException
@@ -242,9 +243,11 @@ def generate_optimized_routes(
         "driving": 1500.0,
     }.get(request.travel_mode, 300.0)
 
-    # POIs used by earlier routes — later routes must not reuse them.
+    # ── Phase 1: select POIs for each route (sequential — each route depends on
+    # the previous ones via used_pois and farthest-point start spreading). This
+    # is pure in-memory work, no network. ──
     used_pois: set = set()
-    routes = []
+    plans: List[dict] = []  # {"start_poi", "selected"}
 
     for route_idx in range(num_routes):
         # Each route draws from POIs not yet used by an earlier route
@@ -262,7 +265,7 @@ def generate_optimized_routes(
 
         # Pick a starting POI for this route — spread out from previous routes'
         # start points so each route explores a different part of the area.
-        prior_starts = [r["_start"] for r in routes if "_start" in r]
+        prior_starts = [pl["start_poi"] for pl in plans]
         if prior_starts:
             start_poi = max(
                 available,
@@ -293,6 +296,16 @@ def generate_optimized_routes(
         if len(selected) < 2:
             continue
 
+        # Reserve these POIs so the next route doesn't reuse them.
+        for p in selected:
+            used_pois.add(id(p))
+        plans.append({"start_poi": start_poi, "selected": selected})
+
+    # ── Phase 2: fetch real route geometry for each plan in parallel. get_real_route
+    # is blocking HTTP (ORS), so a thread pool overlaps the N calls instead of
+    # running them back-to-back. ex.map preserves plan order. ──
+    def _build_route(plan: dict):
+        selected = plan["selected"]
         coords = [(p.longitude, p.latitude) for p in selected]
         try:
             path, duration_seconds = get_real_route(coords, profile=ors_profile)
@@ -300,37 +313,37 @@ def generate_optimized_routes(
                 logging.warning(
                     f"Invalid path returned: {len(path) if path else 0} points"
                 )
-                continue
+                return None
             logging.debug(f"Successfully got route with {len(path)} points, duration {duration_seconds:.0f}s")
+            return path, duration_seconds
         except Exception as e:
             logging.error(f"Routing error for {len(coords)} waypoints: {str(e)}")
-            continue
+            return None
 
-        # Mark this route's POIs as used so subsequent routes don't reuse them.
-        for p in selected:
-            used_pois.add(id(p))
-
-        routes.append(
-            {
-                "feature": {
-                    "type": "Feature",
-                    "geometry": {"type": "LineString", "coordinates": path},
-                },
-                "pois": [p.model_dump() for p in selected],
-                "duration_seconds": duration_seconds,
-                "vibe": compute_route_vibe(selected),
-                "_start": start_poi,  # internal — used for next route's farthest-point pick
-            }
-        )
+    routes = []
+    if plans:
+        with ThreadPoolExecutor(max_workers=min(len(plans), 5)) as executor:
+            for plan, built in zip(plans, executor.map(_build_route, plans)):
+                if built is None:
+                    continue
+                path, duration_seconds = built
+                selected = plan["selected"]
+                routes.append(
+                    {
+                        "feature": {
+                            "type": "Feature",
+                            "geometry": {"type": "LineString", "coordinates": path},
+                        },
+                        "pois": [p.model_dump() for p in selected],
+                        "duration_seconds": duration_seconds,
+                        "vibe": compute_route_vibe(selected),
+                    }
+                )
 
     if not routes:
         raise HTTPException(
             status_code=400, detail="Could not generate any valid routes."
         )
-
-    # Strip internal fields before returning
-    for r in routes:
-        r.pop("_start", None)
 
     return {"routes": routes}
 

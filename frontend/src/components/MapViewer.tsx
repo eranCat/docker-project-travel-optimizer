@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, Polygon, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Feature } from 'geojson';
@@ -52,26 +52,24 @@ function getNumberedIcon(index: number, categories?: string[], focused = false, 
   });
 }
 
-function MapFlyToBounds({ pois }: { pois: POI[] }) {
+function MapFitBounds({ points }: { points: [number, number][] }) {
   const map = useMap();
   const prevSig = useRef<string>("");
-  // Fingerprint of the POI set — changes when switching routes even if length is identical
-  const sig = pois
-    .map(p => `${p.latitude.toFixed(5)},${p.longitude.toFixed(5)}`)
-    .join("|");
+  // Fingerprint of the point set — changes when switching routes / picking locations
+  const sig = points.map(([la, lo]) => `${la.toFixed(5)},${lo.toFixed(5)}`).join("|");
 
   useEffect(() => {
-    if (pois.length === 0) return;
-    const bounds = pois
-      .filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
-      .map(p => [p.latitude, p.longitude]) as [number, number][];
-    if (bounds.length === 0) return;
+    if (points.length === 0) return;
 
-    // Skip while the map is hidden (container 0×0) — flyToBounds would compute NaN
+    // Skip while the map is hidden (container 0×0) — fit would compute NaN
     const fit = (animate: boolean): boolean => {
       const size = map.getSize();
       if (size.x === 0 || size.y === 0) return false;
-      map.flyToBounds(bounds, { padding: [40, 40], duration: animate ? 1.2 : 0, maxZoom: 16 });
+      if (points.length === 1) {
+        map.flyTo(points[0], Math.max(map.getZoom(), 14), { duration: animate ? 1.2 : 0 });
+      } else {
+        map.flyToBounds(points, { padding: [40, 40], duration: animate ? 1.2 : 0, maxZoom: 16 });
+      }
       return true;
     };
 
@@ -86,8 +84,80 @@ function MapFlyToBounds({ pois }: { pois: POI[] }) {
     });
     ro.observe(map.getContainer());
     return () => ro.disconnect();
-  }, [sig, map, pois]);
+  }, [sig, map, points]);
   return null;
+}
+
+/** Teardrop pin for a selected start/destination location. */
+function getEndpointIcon(label: string, color: string): L.DivIcon {
+  const html = `
+    <div style="
+      position:relative; width:30px; height:42px;
+      filter:drop-shadow(0 3px 4px rgba(0,0,0,0.4));
+    ">
+      <div style="
+        width:30px; height:30px;
+        background:${color};
+        border:2.5px solid #fff;
+        border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);
+        position:absolute; top:0; left:0;
+      "></div>
+      <div style="
+        position:absolute; top:0; left:0; width:30px; height:30px;
+        display:flex; align-items:center; justify-content:center;
+        color:#fff; font-weight:800; font-size:14px;
+        font-family:'Inter','Helvetica Neue',sans-serif;
+      ">${label}</div>
+    </div>`;
+  return L.divIcon({
+    html,
+    className: '',
+    iconSize: [30, 42],
+    iconAnchor: [15, 38],
+    popupAnchor: [0, -36],
+  });
+}
+
+const M_PER_DEG_LAT = 111320;
+
+/** Capsule (stadium) polygon outlining the A→B corridor: every point within
+ *  rMeters of the straight segment a→b. Used to visualise the trip corridor. */
+function corridorCapsule(a: LatLon, b: LatLon, rMeters: number): [number, number][] {
+  const toRad = Math.PI / 180;
+  const midLat = (a.lat + b.lat) / 2;
+  const mPerDegLon = M_PER_DEG_LAT * Math.cos(midLat * toRad);
+  const toLatLon = (x: number, y: number): [number, number] => [
+    a.lat + y / M_PER_DEG_LAT,
+    a.lon + x / mPerDegLon,
+  ];
+
+  const bx = (b.lon - a.lon) * mPerDegLon;
+  const by = (b.lat - a.lat) * M_PER_DEG_LAT;
+  const len = Math.hypot(bx, by) || 1;
+  const ux = bx / len, uy = by / len;   // unit vector along A→B
+  const nx = -uy, ny = ux;              // unit perpendicular
+  const r = rMeters;
+  const steps = 16;
+  const pts: [number, number][] = [];
+
+  pts.push(toLatLon(nx * r, ny * r));            // A + n·r
+  pts.push(toLatLon(bx + nx * r, by + ny * r));  // B + n·r
+  for (let i = 1; i < steps; i++) {              // arc cap at B (+n → −n via +u)
+    const t = (i / steps) * Math.PI;
+    const vx = nx * Math.cos(t) + ux * Math.sin(t);
+    const vy = ny * Math.cos(t) + uy * Math.sin(t);
+    pts.push(toLatLon(bx + vx * r, by + vy * r));
+  }
+  pts.push(toLatLon(bx - nx * r, by - ny * r));  // B − n·r
+  pts.push(toLatLon(-nx * r, -ny * r));          // A − n·r
+  for (let i = 1; i < steps; i++) {              // arc cap at A (−n → +n via −u)
+    const t = (i / steps) * Math.PI;
+    const vx = -nx * Math.cos(t) - ux * Math.sin(t);
+    const vy = -ny * Math.cos(t) - uy * Math.sin(t);
+    pts.push(toLatLon(vx * r, vy * r));
+  }
+  return pts;
 }
 
 function FlyToMarker({ lat, lon }: { lat: number; lon: number }) {
@@ -128,20 +198,63 @@ function RouteLine({ routeFeature, color }: { routeFeature: Feature; color: stri
   );
 }
 
+export interface LatLon { lat: number; lon: number; }
+
 export interface Props {
   pois?: POI[] | null;
   focusedPOI: POI | null;
   routeFeature: Feature | null;
+  startPoint?: LatLon | null;
+  destPoint?: LatLon | null;
+  startLabel?: string;
+  destLabel?: string;
+  radiusKm?: number;
+  mode?: 'explore' | 'trip';
 }
 
-export default function MapViewer({ pois, focusedPOI, routeFeature }: Props) {
+const isValidPoint = (p?: LatLon | null): p is LatLon =>
+  !!p && Number.isFinite(p.lat) && Number.isFinite(p.lon);
+
+export default function MapViewer({ pois, focusedPOI, routeFeature, startPoint, destPoint, startLabel, destLabel, radiusKm = 0, mode = 'explore' }: Props) {
   const theme = useTheme();
   const validPois = Array.isArray(pois) ? pois.filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude)) : [];
   const hasPois = validPois.length > 0;
 
+  const start = isValidPoint(startPoint) ? startPoint : null;
+  const dest = isValidPoint(destPoint) ? destPoint : null;
+  const radiusM = radiusKm > 0 ? radiusKm * 1000 : 0;
+  // Show the radius/corridor overlay only before a route exists, so it doesn't
+  // clutter the generated result.
+  const showRadius = radiusM > 0 && !hasPois;
+  const showCircle = showRadius && mode === 'explore' && !!start;
+  const showCorridor = showRadius && mode === 'trip' && !!start && !!dest;
+
+  // Frame the radius overlay: add the lat/lon extremes of the circle/corridor so
+  // fitBounds zooms out to show the whole area, not just the centre pin.
+  const radiusExtremes = (p: LatLon): [number, number][] => {
+    const dLat = radiusM / 111320;
+    const dLon = radiusM / (111320 * Math.cos(p.lat * Math.PI / 180));
+    return [
+      [p.lat + dLat, p.lon], [p.lat - dLat, p.lon],
+      [p.lat, p.lon + dLon], [p.lat, p.lon - dLon],
+    ];
+  };
+
+  // All points the map should keep in view: POIs + selected endpoints (+ radius extremes).
+  const fitPoints: [number, number][] = [
+    ...validPois.map(p => [p.latitude, p.longitude] as [number, number]),
+    ...(start ? [[start.lat, start.lon] as [number, number]] : []),
+    ...(dest ? [[dest.lat, dest.lon] as [number, number]] : []),
+    ...(showCircle && start ? radiusExtremes(start) : []),
+    ...(showCorridor && start ? radiusExtremes(start) : []),
+    ...(showCorridor && dest ? radiusExtremes(dest) : []),
+  ];
+
   const center: [number, number] = hasPois
     ? [validPois[0].latitude, validPois[0].longitude]
-    : [32.0853, 34.7818];
+    : start
+      ? [start.lat, start.lon]
+      : [32.0853, 34.7818];
 
   const darkMode = theme.palette.mode === 'dark';
   const colorMap = darkMode ? CATEGORY_COLORS : DARK_CATEGORY_COLORS;
@@ -156,9 +269,41 @@ export default function MapViewer({ pois, focusedPOI, routeFeature }: Props) {
     <MapContainer center={center} zoom={13} style={{ width: '100%', height: '100%' }}>
       <TileLayer url={tileUrl} attribution={attribution} />
 
+      <MapFitBounds points={fitPoints} />
+
+      {/* Search radius (explore) / corridor (trip) overlay */}
+      {showCircle && start && (
+        <Circle
+          center={[start.lat, start.lon]}
+          radius={radiusM}
+          pathOptions={{ color: theme.palette.primary.main, weight: 1.5, fillColor: theme.palette.primary.main, fillOpacity: 0.08, dashArray: '6 6' }}
+        />
+      )}
+      {showCorridor && start && dest && (
+        <Polygon
+          positions={corridorCapsule(start, dest, radiusM)}
+          pathOptions={{ color: theme.palette.primary.main, weight: 1.5, fillColor: theme.palette.primary.main, fillOpacity: 0.08, dashArray: '6 6' }}
+        />
+      )}
+
+      {/* Selected start / destination pins — shown even before a route is generated */}
+      {start && (
+        <Marker position={[start.lat, start.lon]} icon={getEndpointIcon('A', theme.palette.success.main)} zIndexOffset={500}>
+          {startLabel && (
+            <Tooltip permanent direction="top" offset={[0, -38]} className={`endpoint-label${darkMode ? ' endpoint-label-dark' : ''}`}>{startLabel}</Tooltip>
+          )}
+        </Marker>
+      )}
+      {dest && (
+        <Marker position={[dest.lat, dest.lon]} icon={getEndpointIcon('B', theme.palette.error.main)} zIndexOffset={500}>
+          {destLabel && (
+            <Tooltip permanent direction="top" offset={[0, -38]} className={`endpoint-label${darkMode ? ' endpoint-label-dark' : ''}`}>{destLabel}</Tooltip>
+          )}
+        </Marker>
+      )}
+
       {hasPois && (
         <>
-          <MapFlyToBounds pois={validPois} />
           {focusedPOI &&
             Number.isFinite(focusedPOI.latitude) &&
             Number.isFinite(focusedPOI.longitude) && (

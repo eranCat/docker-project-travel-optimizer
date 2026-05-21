@@ -354,7 +354,7 @@ def _fetch_overpass_elements(query: str) -> List[OverpassElement]:
                     "Content-Type": "application/x-www-form-urlencoded",
                     "User-Agent": "TravelOptimizer/1.0",
                 },
-                timeout=(10, 45),
+                timeout=(5, 45),
             )
             if resp.status_code == 429:
                 logging.warning(f"Rate limited by {mirror_url}, trying next mirror")
@@ -459,6 +459,11 @@ async def get_pois_from_overpass(
         lat_el = el.lat if el.type == "node" else (el.center or {}).get("lat")
         lon_el = el.lon if el.type == "node" else (el.center or {}).get("lon")
         if lat_el is None or lon_el is None:
+            drop_counts["no_coords"] += 1
+            continue
+        # Overpass `around:` matches if any node of a way/relation is within the
+        # radius — the extracted center can lie outside. Drop those.
+        if qp.bbox is None and geodesic((lat, lon), (lat_el, lon_el)).meters > radius_m:
             drop_counts["no_coords"] += 1
             continue
         # Address is optional — many tourist POIs (parks, viewpoints, castles,

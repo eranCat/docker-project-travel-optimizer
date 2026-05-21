@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import RouteSelector from "./RouteSelector";
 import POIList from "./POIList";
 import POISkeleton from "./POISkeleton";
+import LoadingProgress from "./LoadingProgress";
 import { POI } from "../models/POI";
 import { RouteData } from "../models/RouteData";
 import PlaceIcon from "@mui/icons-material/Place";
@@ -23,6 +24,9 @@ interface RouteSidebarProps {
     currentRoute?: RouteData | null;
     onShareRoute?: () => void;
     numDays?: number;
+    stage?: number;
+    stages?: string[];
+    detail?: { tags?: number; pois?: number; routes?: number };
 }
 
 function formatDuration(seconds: number): string {
@@ -45,6 +49,9 @@ export default function RouteSidebar({
     currentRoute,
     onShareRoute,
     numDays = 1,
+    stage = 0,
+    stages = [],
+    detail,
 }: RouteSidebarProps) {
     const { t } = useTranslation();
     const showSkeleton = loading && pois.length === 0;
@@ -179,7 +186,10 @@ export default function RouteSidebar({
             {/* Content */}
             <Box sx={{ flexGrow: 1, overflowY: "auto", px: 1.5, py: 1.5, minHeight: 0 }}>
                 {showSkeleton ? (
-                    <POISkeleton count={4} />
+                    <>
+                        <LoadingProgress loading={loading} stages={stages} stage={stage} detail={detail} />
+                        <POISkeleton count={3} />
+                    </>
                 ) : (
                     <Fade in={pois.length > 0} timeout={400}>
                         <div>

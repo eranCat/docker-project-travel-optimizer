@@ -58,6 +58,7 @@ interface Props {
     loading: boolean;
     stage: number;
     stages: string[];
+    detail?: { tags?: number; pois?: number; routes?: number };
     error: string | null;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSubmit: (e: React.FormEvent) => void;
@@ -80,6 +81,7 @@ const RouteForm: React.FC<Props> = ({
     loading,
     stage,
     stages,
+    detail,
     error,
     onChange,
     onSubmit,
@@ -353,48 +355,52 @@ const RouteForm: React.FC<Props> = ({
                     </Button>
 
                     <Collapse in={showAdvanced} unmountOnExit>
-                        <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
-                            <TextField
-                                fullWidth
-                                label={isTrip ? t("form.corridor") : t("form.radius")}
-                                name="radius_km"
-                                type="number"
-                                size="small"
-                                value={form.radius_km}
-                                onChange={onChange}
-                                slotProps={{
-                                    input: { inputMode: "numeric" },
-                                    inputLabel: { shrink: true },
-                                }}
-                            />
-                            {!isTrip && (
-                                <TextField
-                                    fullWidth
-                                    label={t("form.routes")}
-                                    name="num_routes"
-                                    type="number"
+                        <Stack spacing={1.5} sx={{ mt: 1.25 }}>
+                            <Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                    {(isTrip ? t("form.corridor") : t("form.radius"))}: {form.radius_km}
+                                </Typography>
+                                <Slider
                                     size="small"
-                                    value={form.num_routes}
-                                    onChange={onChange}
-                                    slotProps={{
-                                        input: { inputMode: "numeric" },
-                                        inputLabel: { shrink: true },
-                                    }}
+                                    name="radius_km"
+                                    min={1} max={20} step={1}
+                                    value={Number(form.radius_km)}
+                                    onChange={(_, v) => onChange({ target: { name: "radius_km", value: String(v) } } as any)}
+                                    valueLabelDisplay="auto"
+                                    sx={{ mt: 0.5 }}
                                 />
+                            </Box>
+                            {!isTrip && (
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                        {t("form.routes")}: {form.num_routes}
+                                    </Typography>
+                                    <Slider
+                                        size="small"
+                                        name="num_routes"
+                                        min={1} max={5} step={1}
+                                        value={Number(form.num_routes)}
+                                        onChange={(_, v) => onChange({ target: { name: "num_routes", value: String(v) } } as any)}
+                                        marks
+                                        valueLabelDisplay="auto"
+                                        sx={{ mt: 0.5 }}
+                                    />
+                                </Box>
                             )}
-                            <TextField
-                                fullWidth
-                                label={t("form.pois")}
-                                name="num_pois"
-                                type="number"
-                                size="small"
-                                value={form.num_pois}
-                                onChange={onChange}
-                                slotProps={{
-                                    input: { inputMode: "numeric" },
-                                    inputLabel: { shrink: true },
-                                }}
-                            />
+                            <Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                    {t("form.pois")}: {form.num_pois}
+                                </Typography>
+                                <Slider
+                                    size="small"
+                                    name="num_pois"
+                                    min={2} max={12} step={1}
+                                    value={Number(form.num_pois)}
+                                    onChange={(_, v) => onChange({ target: { name: "num_pois", value: String(v) } } as any)}
+                                    valueLabelDisplay="auto"
+                                    sx={{ mt: 0.5 }}
+                                />
+                            </Box>
                         </Stack>
 
                         <Box>
@@ -455,7 +461,7 @@ const RouteForm: React.FC<Props> = ({
 
             {/* Loading + error */}
             <Box sx={{ mt: 2 }}>
-                <LoadingProgress loading={loading} stages={stages} stage={stage} />
+                <LoadingProgress loading={loading} stages={stages} stage={stage} detail={detail} />
                 {error && (
                     <Alert
                         severity="error"

@@ -21,6 +21,7 @@ export function useRouteGenerator() {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [loading, setLoading] = useState(false);
     const [stage, setStage] = useState(0);
+    const [detail, setDetail] = useState<{ tags?: number; pois?: number; routes?: number }>({});
     const [error, setError] = useState("");
     const [locationSelected, setLocationSelected] = useState(false);
     const [destSelected, setDestSelected] = useState(false);
@@ -45,6 +46,7 @@ export function useRouteGenerator() {
     ];
 
     const stageMap: Record<string, string> = {
+        "geocoding location": "Converting interests to tags",
         "fetching pois from maps_service": "Fetching POIs",
         "generating optimized routes": "Building routes",
 
@@ -105,6 +107,7 @@ export function useRouteGenerator() {
         setGenerationActive(true);
         setError("");
         setStage(0);
+        setDetail({});
 
         const source = routeProgress({
             interests: form.interests,
@@ -144,7 +147,16 @@ export function useRouteGenerator() {
             } else {
                 console.warn("⚠️ Unrecognized stage:", raw);
             }
-        });                             
+        });
+
+        source.addEventListener("detail", (event: MessageEvent) => {
+            try {
+                const d = JSON.parse(event.data as string);
+                setDetail(prev => ({ ...prev, ...d }));
+            } catch {
+                // ignore malformed detail payloads
+            }
+        });
 
         source.addEventListener("complete", async (event: MessageEvent) => {
             const routeId = event.data;
@@ -336,6 +348,7 @@ export function useRouteGenerator() {
         loading,
         stage,
         stages,
+        detail,
         error,
         isFormValid,
         handleChange,

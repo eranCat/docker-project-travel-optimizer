@@ -24,6 +24,7 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
         loading,
         stage,
         stages,
+        detail,
         error,
         isFormValid,
         handleChange,
@@ -57,6 +58,7 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
         loading,
         stage,
         stages,
+        detail,
         error,
         isFormValid: isFormValid() && backendHealthy !== false,
         onChange: handleChange,
@@ -79,6 +81,20 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
                 pois={pois}
                 focusedPOI={focusedPOI}
                 routeFeature={currentRouteFeature}
+                startPoint={
+                    form.latitude !== undefined && form.longitude !== undefined
+                        ? { lat: form.latitude, lon: form.longitude }
+                        : null
+                }
+                destPoint={
+                    form.mode === "trip" && form.dest_latitude !== undefined && form.dest_longitude !== undefined
+                        ? { lat: form.dest_latitude, lon: form.dest_longitude }
+                        : null
+                }
+                startLabel={form.location?.split(",")[0].trim()}
+                destLabel={form.dest_location?.split(",")[0].trim()}
+                radiusKm={form.radius_km}
+                mode={form.mode}
             />
             {!hasResults && (
                 <Box
@@ -146,6 +162,9 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
                 currentRoute={currentRoute}
                 onShareRoute={handleShareRoute}
                 numDays={form.num_days}
+                stage={stage}
+                stages={stages}
+                detail={detail}
             />
         </Box>
     );
