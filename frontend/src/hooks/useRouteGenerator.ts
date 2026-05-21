@@ -4,7 +4,7 @@ import { usePersistedState } from "./usePersistedState";
 import { RouteData } from "../models/RouteData";
 import { POI } from "../models/POI";
 import { DEFAULT_FORM, FORM_VERSION } from "../constants/formDefaults";
-import { getLatestRoutes, routeProgress, logToServer } from "../services/API";
+import { getLatestRoutes, routeProgress, logToServer, replacePOI as replacePOICall, ReplacePOIError } from "../services/API";
 import { setGenerationActive } from "../services/generationState";
 
 export function useRouteGenerator() {
@@ -28,6 +28,8 @@ export function useRouteGenerator() {
     const canceledRef = useRef(false);
     // Track the currently focused POI for map centering
     const [focusedPOI, setFocusedPOI] = useState<POI | null>(null);
+    const [currentRouteId, setCurrentRouteId] = usePersistedState<string | null>("travel-route-id", null);
+    const [replacingPOI, setReplacingPOI] = useState<number | null>(null);
 
     const normalizedRoutes = Array.isArray(routes) ? routes : [];
     const validSelectedIndex = selectedIndex >= 0 && selectedIndex < normalizedRoutes.length ? selectedIndex : 0;
@@ -160,6 +162,7 @@ export function useRouteGenerator() {
 
         source.addEventListener("complete", async (event: MessageEvent) => {
             const routeId = event.data;
+            setCurrentRouteId(routeId);
             logToServer("info", "SSE complete received", { routeId });
 
             try {
@@ -257,6 +260,7 @@ export function useRouteGenerator() {
         setError("");
         setLocationSelected(false);
         setDestSelected(false);
+        setCurrentRouteId(null);
         localStorage.removeItem("travel-form-time");
     };
 
@@ -265,6 +269,7 @@ export function useRouteGenerator() {
         setRoutes([]);
         setSelectedIndex(0);
         setError("");
+        setCurrentRouteId(null);
     };
 
     const handleBackToRoutes = () => {
@@ -328,6 +333,34 @@ export function useRouteGenerator() {
         }
     }, []);
 
+    const handleReplacePOI = useCallback(async (poiIndex: number) => {
+        if (replacingPOI !== null) return;
+        if (!currentRouteId) {
+            setError("❌ Route session expired — regenerate to use replace.");
+            setTimeout(() => setError(""), 4000);
+            return;
+        }
+        setReplacingPOI(poiIndex);
+        try {
+            const updatedRoute = await replacePOICall(currentRouteId, validSelectedIndex, poiIndex);
+            setRoutes(prev => {
+                const updated = Array.isArray(prev) ? [...prev] : [];
+                updated[validSelectedIndex] = updatedRoute;
+                return updated;
+            });
+        } catch (err: any) {
+            if (err instanceof ReplacePOIError && err.status === 404) {
+                setCurrentRouteId(null);
+                setError("❌ Route session expired — regenerate routes, then try again.");
+            } else {
+                setError(`❌ ${err?.message || "Failed to replace POI"}`);
+            }
+            setTimeout(() => setError(""), 5000);
+        } finally {
+            setReplacingPOI(null);
+        }
+    }, [currentRouteId, validSelectedIndex, replacingPOI]);
+
     // Close any open SSE and clear generation flag on unmount
     useEffect(() => () => {
         sseRef.current?.close();
@@ -361,6 +394,9 @@ export function useRouteGenerator() {
         handleBackToRoutes,
         handleSurpriseMe,
         handleShareRoute,
+        handleReplacePOI,
+        replacingPOI,
+        canReplace: !!currentRouteId,
         savedRoutes,
         locationSelected,
         setLocationSelected,

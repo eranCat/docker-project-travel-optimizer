@@ -4,6 +4,7 @@ import { POI } from "../models/POI";
 import {
     Box,
     Chip,
+    CircularProgress,
     IconButton,
     Skeleton,
     Typography,
@@ -11,6 +12,7 @@ import {
 } from "@mui/material";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
+import AutorenewIcon from "@mui/icons-material/Autorenew";
 import PlaceIcon from "@mui/icons-material/Place";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import AccessibleIcon from "@mui/icons-material/Accessible";
@@ -24,6 +26,9 @@ interface POIListProps {
     pois: POI[];
     focusedPOI: POI | null;
     onFocusPOI: (poi: POI) => void;
+    onReplacePOI: (idx: number) => void;
+    replacingPoiIndex: number | null;
+    canReplace: boolean;
 }
 
 function isSamePOI(a: POI | null, b: POI): boolean {
@@ -36,10 +41,13 @@ interface POICardProps {
     isActive: boolean;
     activeRef: React.MutableRefObject<HTMLDivElement | null>;
     onFocusPOI: (poi: POI) => void;
+    onReplacePOI: (idx: number) => void;
+    replacingPoiIndex: number | null;
+    canReplace: boolean;
     colorMap: Record<string, string>;
 }
 
-function POICard({ poi, idx, isActive, activeRef, onFocusPOI, colorMap }: POICardProps) {
+function POICard({ poi, idx, isActive, activeRef, onFocusPOI, onReplacePOI, replacingPoiIndex, canReplace, colorMap }: POICardProps) {
     const { t, i18n } = useTranslation();
     const { url: thumbnail, loading: thumbnailLoading } = usePOIThumbnail(poi.wiki_title, poi.wikidata_id);
     const canFocus = Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude);
@@ -172,6 +180,29 @@ function POICard({ poi, idx, isActive, activeRef, onFocusPOI, colorMap }: POICar
                         })}
                     </Box>
 
+                    <Tooltip title={canReplace ? t("poi.replace") : t("poi.replaceDisabled")}>
+                        <span>
+                            <IconButton
+                                size="small"
+                                disabled={!canReplace || replacingPoiIndex !== null}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onReplacePOI(idx);
+                                }}
+                                sx={{
+                                    p: 0.5,
+                                    color: "text.disabled",
+                                    transition: "color 150ms ease",
+                                    "&:hover": { color: "warning.main" },
+                                }}
+                            >
+                                {replacingPoiIndex === idx
+                                    ? <CircularProgress size={14} color="warning" />
+                                    : <AutorenewIcon sx={{ fontSize: 14 }} />
+                                }
+                            </IconButton>
+                        </span>
+                    </Tooltip>
                     <Tooltip title={canFocus ? t("poi.showOnMap") : t("poi.noCoords")}>
                         <span>
                             <IconButton
@@ -230,7 +261,7 @@ function POICard({ poi, idx, isActive, activeRef, onFocusPOI, colorMap }: POICar
     );
 }
 
-export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) {
+export default function POIList({ pois, focusedPOI, onFocusPOI, onReplacePOI, replacingPoiIndex, canReplace }: POIListProps) {
     const activeRef = useRef<HTMLDivElement | null>(null);
     const theme = useTheme();
     const colorMap = theme.palette.mode === "dark" ? CATEGORY_COLORS : DARK_CATEGORY_COLORS;
@@ -249,6 +280,9 @@ export default function POIList({ pois, focusedPOI, onFocusPOI }: POIListProps) 
                     isActive={isSamePOI(focusedPOI, poi)}
                     activeRef={activeRef}
                     onFocusPOI={onFocusPOI}
+                    onReplacePOI={onReplacePOI}
+                    replacingPoiIndex={replacingPoiIndex}
+                    canReplace={canReplace}
                     colorMap={colorMap}
                 />
             ))}

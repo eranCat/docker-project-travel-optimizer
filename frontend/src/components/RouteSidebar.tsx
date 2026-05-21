@@ -23,6 +23,9 @@ interface RouteSidebarProps {
     loading: boolean;
     currentRoute?: RouteData | null;
     onShareRoute?: () => void;
+    onReplacePOI?: (idx: number) => void;
+    replacingPoiIndex?: number | null;
+    canReplace?: boolean;
     numDays?: number;
     stage?: number;
     stages?: string[];
@@ -48,6 +51,9 @@ export default function RouteSidebar({
     loading,
     currentRoute,
     onShareRoute,
+    onReplacePOI,
+    replacingPoiIndex = null,
+    canReplace = false,
     numDays = 1,
     stage = 0,
     stages = [],
@@ -193,7 +199,14 @@ export default function RouteSidebar({
                 ) : (
                     <Fade in={pois.length > 0} timeout={400}>
                         <div>
-                            <POIList pois={pois} focusedPOI={focusedPOI} onFocusPOI={onFocusPOI} />
+                            <POIList
+                                pois={pois}
+                                focusedPOI={focusedPOI}
+                                onFocusPOI={onFocusPOI}
+                                onReplacePOI={onReplacePOI ?? (() => {})}
+                                replacingPoiIndex={replacingPoiIndex}
+                                canReplace={canReplace}
+                            />
                         </div>
                     </Fade>
                 )}

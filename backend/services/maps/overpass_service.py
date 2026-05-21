@@ -464,7 +464,7 @@ async def get_pois_from_overpass(
         # Overpass `around:` matches if any node of a way/relation is within the
         # radius — the extracted center can lie outside. Drop those.
         if qp.bbox is None and geodesic((lat, lon), (lat_el, lon_el)).meters > radius_m:
-            drop_counts["no_coords"] += 1
+            drop_counts["out_of_radius"] = drop_counts.get("out_of_radius", 0) + 1
             continue
         # Address is optional — many tourist POIs (parks, viewpoints, castles,
         # natural landmarks) have no street address. Keep them if they have a

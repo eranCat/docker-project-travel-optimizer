@@ -223,11 +223,12 @@ export default function MapViewer({ pois, focusedPOI, routeFeature, startPoint, 
   const start = isValidPoint(startPoint) ? startPoint : null;
   const dest = isValidPoint(destPoint) ? destPoint : null;
   const radiusM = radiusKm > 0 ? radiusKm * 1000 : 0;
-  // Show the radius/corridor overlay only before a route exists, so it doesn't
-  // clutter the generated result.
-  const showRadius = radiusM > 0 && !hasPois;
-  const showCircle = showRadius && mode === 'explore' && !!start;
-  const showCorridor = showRadius && mode === 'trip' && !!start && !!dest;
+  const showRadius = radiusM > 0 && !!start;
+  const showCircle = showRadius && mode === 'explore';
+  const showCorridor = showRadius && mode === 'trip' && !!dest;
+  // Dim the overlay once routes are visible so it doesn't compete with the route line.
+  const overlayOpacity = hasPois ? 0.03 : 0.08;
+  const overlayStrokeOpacity = hasPois ? 0.25 : 1;
 
   // Frame the radius overlay: add the lat/lon extremes of the circle/corridor so
   // fitBounds zooms out to show the whole area, not just the centre pin.
@@ -276,13 +277,13 @@ export default function MapViewer({ pois, focusedPOI, routeFeature, startPoint, 
         <Circle
           center={[start.lat, start.lon]}
           radius={radiusM}
-          pathOptions={{ color: theme.palette.primary.main, weight: 1.5, fillColor: theme.palette.primary.main, fillOpacity: 0.08, dashArray: '6 6' }}
+          pathOptions={{ color: theme.palette.primary.main, weight: 1.5, opacity: overlayStrokeOpacity, fillColor: theme.palette.primary.main, fillOpacity: overlayOpacity, dashArray: '6 6' }}
         />
       )}
       {showCorridor && start && dest && (
         <Polygon
           positions={corridorCapsule(start, dest, radiusM)}
-          pathOptions={{ color: theme.palette.primary.main, weight: 1.5, fillColor: theme.palette.primary.main, fillOpacity: 0.08, dashArray: '6 6' }}
+          pathOptions={{ color: theme.palette.primary.main, weight: 1.5, opacity: overlayStrokeOpacity, fillColor: theme.palette.primary.main, fillOpacity: overlayOpacity, dashArray: '6 6' }}
         />
       )}
 
