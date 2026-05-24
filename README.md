@@ -133,6 +133,28 @@ uvicorn main:app --port 8000   # terminal 1
 pytest                          # terminal 2
 ```
 
+## Deployment
+
+Deployed on [Render](https://render.com) as a **single web service** — the FastAPI backend serves the pre-built React app, so one URL covers both frontend and backend (port 8000). Config lives in `render.yaml`.
+
+Live: `https://docker-project-travel-optimizer.onrender.com`
+
+### Keepalive
+
+Render's free tier **spins a service down after 15 minutes of inactivity**, adding a cold-start delay (~30–60 s) to the next request. The GitHub Actions workflow `.github/workflows/keepalive.yml` pings `/health` every 10 minutes to keep the single service (and therefore both frontend and backend) warm:
+
+```yaml
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # 5-min margin under the 15-min idle limit
+  workflow_dispatch:          # manual trigger for testing
+```
+
+Notes:
+- One `/health` ping keeps the whole service alive — there is no separate frontend service to ping.
+- GitHub-scheduled crons are **best-effort**: ticks can be delayed several minutes or dropped entirely under load, so this is not a hard uptime guarantee. For reliable warming use an external pinger (e.g. UptimeRobot, cron-job.org) hitting `/health` every 5 minutes.
+- Keepalive only prevents idle-sleep; it does not affect Render's monthly free instance-hour cap or cold restarts on deploy.
+
 ## Author
 
 **Eran Karaso** — [Portfolio](https://erancat.github.io/portfolio-site) · [GitHub](https://github.com/eranCat)
