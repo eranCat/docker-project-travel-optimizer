@@ -4,6 +4,7 @@ import json
 import math
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import requests
 from functools import lru_cache
@@ -62,9 +63,29 @@ _NON_TOURIST_NAME_SUBSTRINGS = frozenset({
     "sewage", "wastewater", "power station", "transformer",
 })
 
+# Global fast-food / retail chains that slip through OSM's amenity=restaurant tag
+# (because they're sit-down, not fast_food). Never tourist destinations.
+_CHAIN_BRANDS = frozenset({
+    "pizza hut", "mcdonald's", "mcdonalds", "kfc", "burger king", "subway",
+    "domino's", "dominos", "papa john's", "little caesars",
+    "taco bell", "wendy's", "wendys", "popeyes", "chick-fil-a",
+    "five guys", "shake shack", "chipotle", "hardee's", "carl's jr",
+    "starbucks", "dunkin", "dunkin' donuts", "tim hortons", "costa coffee",
+    "cafe nero", "pret a manger", "greggs",
+    "ikea", "h&m", "zara", "uniqlo", "gap", "old navy",
+    "walmart", "target", "costco", "home depot",
+    "7-eleven", "am pm",
+})
+
 def _name_is_blocked(name: str) -> bool:
     lower = name.lower()
     return any(sub in lower for sub in _NON_TOURIST_NAME_SUBSTRINGS)
+
+def _is_chain_brand(tags_el: dict) -> bool:
+    """Return True if the element is a well-known non-tourist chain brand."""
+    brand = (tags_el.get("brand") or "").lower()
+    name  = (tags_el.get("name")  or "").lower()
+    return brand in _CHAIN_BRANDS or name in _CHAIN_BRANDS
 
 
 _CLOSED_TAG_PREFIXES = ("disused:", "abandoned:", "demolished:", "removed:", "was:")
@@ -91,6 +112,16 @@ def _is_permanently_closed(tags_el: dict) -> bool:
         return True
     return False
 
+# Broad fallback tags added when main query yields < 3 distinct categories.
+# Generic tourist POIs that complement almost any route interest.
+_SUPPLEMENTARY_TAGS = [
+    OverpassTag(key="tourism", value="attraction"),
+    OverpassTag(key="tourism", value="museum"),
+    OverpassTag(key="leisure", value="park"),
+    OverpassTag(key="historic", value="monument"),
+    OverpassTag(key="amenity", value="cafe"),
+]
+
 # Configuration
 OVERPASS_MIRRORS = [
     settings.overpass_api_url,
@@ -102,6 +133,7 @@ OVERPASS_MIRRORS = [
 MIN_TAGS = 2  # minimum tags required from LLM
 MAX_TAGS_PER_KEY = 4  # maximum values per key
 OSM_TAGS_CACHE_FILE = Path(__file__).parent / "osm_tags_cache.json"
+POI_CACHE_FILE = Path(__file__).parent.parent.parent / "cache" / "poi_cache.json"
 
 # Rate limiting
 _last_overpass_request_time = 0
@@ -324,65 +356,79 @@ def get_overpass_tags_from_interests(interests: str, time_of_day: Optional[str] 
     return pruned
 
 
-def _fetch_overpass_elements(query: str) -> List[OverpassElement]:
-    """Blocking Overpass fetch with rate limiting and mirror fallback.
+def _fetch_from_mirror(mirror_url: str, query: str) -> List[OverpassElement]:
+    """Try one Overpass mirror. Raises on any failure."""
+    resp = requests.post(
+        mirror_url,
+        data=query.encode("utf-8"),
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "TravelOptimizer/1.0",
+        },
+        timeout=(5, 20),
+    )
+    if resp.status_code == 429:
+        time.sleep(2)
+        raise RuntimeError(f"rate limited (429)")
+    resp.raise_for_status()
+    return [OverpassElement(**e) for e in resp.json().get("elements", [])]
 
+
+def _fetch_overpass_elements(query: str) -> List[OverpassElement]:
+    """Blocking Overpass fetch with rate limiting and parallel mirror racing.
+
+    Fires first 2 mirrors concurrently; takes whichever responds first.
+    Falls back to remaining mirrors sequentially if both fail.
     Runs in a thread (via run_in_executor) — uses synchronous requests/sleep.
     """
     global _last_overpass_request_time
 
-    # Rate limiting: ensure minimum time between requests
     current_time = time.time()
-    time_since_last_request = current_time - _last_overpass_request_time
-    if time_since_last_request < MIN_REQUEST_INTERVAL:
-        sleep_time = MIN_REQUEST_INTERVAL - time_since_last_request
+    time_since_last = current_time - _last_overpass_request_time
+    if time_since_last < MIN_REQUEST_INTERVAL:
+        sleep_time = MIN_REQUEST_INTERVAL - time_since_last
         logging.debug(f"Rate limiting: sleeping {sleep_time:.2f}s before Overpass request")
         time.sleep(sleep_time)
 
-    # Try each mirror in order; fall through to next on failure
     seen_urls: set = set()
-    mirrors = [u for u in OVERPASS_MIRRORS if u not in seen_urls and not seen_urls.add(u)]  # type: ignore[func-returns-value]
-    elements = None
-    last_error: str = "Unknown error"
+    mirrors = [u for u in OVERPASS_MIRRORS if not (u in seen_urls or seen_urls.add(u))]  # type: ignore[func-returns-value]
+    last_error = "Unknown error"
 
-    for mirror_url in mirrors:
+    # Race first 2 mirrors in parallel — take whichever responds first.
+    # The loser thread completes in the background (HTTP can't be cancelled).
+    parallel, sequential = mirrors[:2], mirrors[2:]
+    ex = ThreadPoolExecutor(max_workers=len(parallel))
+    try:
+        futures = {ex.submit(_fetch_from_mirror, url, query): url for url in parallel}
+        for fut in as_completed(futures):
+            url = futures[fut]
+            try:
+                elements = fut.result()
+                _last_overpass_request_time = time.time()
+                logging.info(f"Overpass success via {url} (parallel race)")
+                return elements
+            except Exception as e:
+                logging.warning(f"Overpass {url} failed: {e}, trying next")
+                last_error = str(e)
+    finally:
+        ex.shutdown(wait=False)
+
+    # Both parallel mirrors failed — try remaining mirrors sequentially
+    for url in sequential:
         try:
-            resp = requests.post(
-                mirror_url,
-                data=query.encode("utf-8"),
-                headers={
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "User-Agent": "TravelOptimizer/1.0",
-                },
-                timeout=(5, 45),
-            )
-            if resp.status_code == 429:
-                logging.warning(f"Rate limited by {mirror_url}, trying next mirror")
-                last_error = "rate limited"
-                time.sleep(2)
-                continue
-            resp.raise_for_status()
-            elements = [OverpassElement(**e) for e in resp.json().get("elements", [])]
+            elements = _fetch_from_mirror(url, query)
             _last_overpass_request_time = time.time()
-            logging.info(f"Overpass success via {mirror_url}")
-            break
-        except requests.exceptions.Timeout:
-            logging.warning(f"Overpass timeout on {mirror_url}, trying next mirror")
-            last_error = "timeout"
-        except requests.exceptions.HTTPError as e:
-            logging.warning(f"Overpass HTTP {e.response.status_code} on {mirror_url}, trying next mirror")
-            last_error = f"HTTP {e.response.status_code}"
+            logging.info(f"Overpass success via {url} (sequential fallback)")
+            return elements
         except Exception as e:
-            logging.warning(f"Overpass error on {mirror_url}: {e}, trying next mirror")
+            logging.warning(f"Overpass {url} failed: {e}, trying next")
             last_error = str(e)
 
-    if elements is None:
-        logging.error(f"All Overpass mirrors failed. Last error: {last_error}")
-        raise HTTPException(
-            status_code=503,
-            detail="POI lookup is temporarily unavailable (all Overpass mirrors failed). Please try again in a minute.",
-        )
-    return elements
+    logging.error(f"All Overpass mirrors failed. Last error: {last_error}")
+    raise HTTPException(
+        status_code=503,
+        detail="POI lookup is temporarily unavailable (all Overpass mirrors failed). Please try again in a minute.",
+    )
 
 
 async def get_pois_from_overpass(
@@ -484,6 +530,12 @@ async def get_pois_from_overpass(
             drop_counts["closed"] += 1
             continue
 
+        # Drop well-known non-tourist chain brands (e.g. Pizza Hut, McDonald's)
+        # that OSM tags as amenity=restaurant, bypassing the fast_food block.
+        if _is_chain_brand(tags_el):
+            drop_counts["non_tourist"] += 1
+            continue
+
         # Check if tags match
         if not any(tag.key in tags_el and tags_el[tag.key] == tag.value for tag in tags):
             drop_counts["no_tag_match"] += 1
@@ -566,6 +618,68 @@ async def get_pois_from_overpass(
             f"De-duplication ({min_dist:.0f}m): {before} -> {len(pois)} POIs"
         )
 
+    # Category starvation fallback: if < 3 distinct categories found, supplement
+    # with broad tourist POIs so the route builder has more categories to work
+    # with. Supplementary POIs are appended after main results (lower priority).
+    distinct_cats = {cat for p in pois for cat in p.categories}
+    if len(distinct_cats) < 3 and not request.is_point_to_point:
+        logging.info(
+            f"Category starvation ({len(distinct_cats)} distinct cats) — "
+            "running supplementary broad-tag query"
+        )
+        supp_qp = OverpassQueryParams(
+            tags=_SUPPLEMENTARY_TAGS, lat=lat, lon=lon, radius_m=radius_m,
+            wheelchair=request.wheelchair,
+        )
+        try:
+            supp_elements = await asyncio.get_running_loop().run_in_executor(
+                None, _fetch_overpass_elements, supp_qp.to_query()
+            )
+            existing_names = {_normalize_name(p.name) for p in pois}
+            supp_scored: List[tuple[int, LLMPOISuggestion]] = []
+            for el in supp_elements:
+                tags_el = el.tags or {}
+                name = tags_el.get("name")
+                if not name or _normalize_name(name) in existing_names:
+                    continue
+                category = extract_primary_category(tags_el, _SUPPLEMENTARY_TAGS)
+                if not category or category in NON_TOURIST_CATEGORIES:
+                    continue
+                lat_el = el.lat if el.type == "node" else (el.center or {}).get("lat")
+                lon_el = el.lon if el.type == "node" else (el.center or {}).get("lon")
+                if lat_el is None or lon_el is None:
+                    continue
+                if any(tags_el.get(k) == v for k, v in NON_TOURIST_TAG_PAIRS) or _name_is_blocked(name):
+                    continue
+                if _is_permanently_closed(tags_el) or _is_chain_brand(tags_el):
+                    continue
+                wiki_tag = tags_el.get("wikipedia")
+                wiki_title = (wiki_tag if ":" in wiki_tag else f"en:{wiki_tag}") if wiki_tag else None
+                wd_tag = tags_el.get("wikidata")
+                wikidata_id = wd_tag if (wd_tag and wd_tag.startswith("Q")) else None
+                supp_scored.append((
+                    quality_score(tags_el),
+                    LLMPOISuggestion(
+                        id=str(el.id), name=name,
+                        name_he=tags_el.get("name:he") or None,
+                        description=tags_el.get("description") or tags_el.get("note") or None,
+                        latitude=lat_el, longitude=lon_el,
+                        address=extract_address(tags_el) or None,
+                        categories=[category],
+                        opening_hours=tags_el.get("opening_hours") or None,
+                        wheelchair_accessible=(lambda w: w in ("yes", "limited") if w else None)(tags_el.get("wheelchair")),
+                        wiki_title=wiki_title, wikidata_id=wikidata_id,
+                    ),
+                ))
+            supp_scored.sort(key=lambda x: x[0], reverse=True)
+            supp_pois = [p for _, p in supp_scored]
+            supp_pois = thin_pois_by_name(supp_pois)
+            if supp_pois:
+                pois = pois + supp_pois
+                logging.info(f"Supplementary query added {len(supp_pois)} POIs → {len(pois)} total")
+        except Exception as e:
+            logging.warning(f"Supplementary fallback query failed: {e}")
+
     # Cache non-empty results
     if pois:
         if len(_poi_cache) >= POI_CACHE_MAX:
@@ -576,3 +690,58 @@ async def get_pois_from_overpass(
         logging.debug(f"POI cache STORE for {cache_key[:3]} ({len(pois)} POIs)")
 
     return pois
+
+
+def save_poi_cache() -> None:
+    """Persist the in-memory POI cache to disk so it survives restarts."""
+    try:
+        POI_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        now = time.time()
+        entries = []
+        for key, (expires_at, pois) in _poi_cache.items():
+            if expires_at <= now:
+                continue  # skip already-expired entries
+            location, radius_km, num_pois, tags, wheelchair, dest_lat, dest_lon, lang = key
+            entries.append({
+                "location": location,
+                "radius_km": radius_km,
+                "num_pois": num_pois,
+                "tags": [{"key": t.key, "value": t.value} for t in tags],
+                "wheelchair": wheelchair,
+                "dest_lat": dest_lat,
+                "dest_lon": dest_lon,
+                "lang": lang,
+                "expires_at": expires_at,
+                "pois": [p.model_dump() for p in pois],
+            })
+        with open(POI_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(entries, f)
+        logging.info(f"POI cache saved: {len(entries)} entries → {POI_CACHE_FILE}")
+    except Exception as e:
+        logging.warning(f"POI cache save failed: {e}")
+
+
+def load_poi_cache() -> None:
+    """Load the persisted POI cache from disk on startup."""
+    if not POI_CACHE_FILE.exists():
+        return
+    try:
+        now = time.time()
+        with open(POI_CACHE_FILE, "r", encoding="utf-8") as f:
+            entries = json.load(f)
+        loaded = 0
+        for entry in entries:
+            expires_at = entry["expires_at"]
+            if expires_at <= now:
+                continue  # skip expired
+            key = (
+                entry["location"], entry["radius_km"], entry["num_pois"],
+                tuple(OverpassTag(key=t["key"], value=t["value"]) for t in entry["tags"]),
+                entry["wheelchair"], entry["dest_lat"], entry["dest_lon"], entry["lang"],
+            )
+            pois = [LLMPOISuggestion(**p) for p in entry["pois"]]
+            _poi_cache[key] = (expires_at, pois)
+            loaded += 1
+        logging.info(f"POI cache loaded: {loaded} valid entries from {POI_CACHE_FILE}")
+    except Exception as e:
+        logging.warning(f"POI cache load failed: {e}")

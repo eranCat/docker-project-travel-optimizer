@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from routers import autocomplete_location, health, route_progress, replace_poi
-from services.maps.overpass_service import get_overpass_tags_from_interests, _poi_cache
+from services.maps.overpass_service import get_overpass_tags_from_interests, _poi_cache, load_poi_cache, save_poi_cache
 from fastapi.exceptions import HTTPException
 from utils.error_handlers import (
     http_exception_handler,
@@ -48,7 +48,9 @@ async def lifespan(app: FastAPI):
     load_dotenv()
     get_overpass_tags_from_interests.cache_clear()
     _poi_cache.clear()
+    load_poi_cache()
     yield
+    save_poi_cache()
     logging.info("=== Backend shutdown ===")
 
 app = FastAPI(

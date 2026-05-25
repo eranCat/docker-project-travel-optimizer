@@ -1,6 +1,7 @@
 import logging
 import math
 import random
+import time
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Tuple
@@ -246,6 +247,7 @@ def generate_optimized_routes(
     # ── Phase 1: select POIs for each route (sequential — each route depends on
     # the previous ones via used_pois and farthest-point start spreading). This
     # is pure in-memory work, no network. ──
+    _t_select = time.perf_counter()
     used_pois: set = set()
     plans: List[dict] = []  # {"start_poi", "selected"}
 
@@ -301,9 +303,12 @@ def generate_optimized_routes(
             used_pois.add(id(p))
         plans.append({"start_poi": start_poi, "selected": selected})
 
+    logging.info(f"[PERF] route selection + 2-opt: {time.perf_counter() - _t_select:.2f}s ({len(plans)} plans)")
+
     # ── Phase 2: fetch real route geometry for each plan in parallel. get_real_route
     # is blocking HTTP (ORS), so a thread pool overlaps the N calls instead of
     # running them back-to-back. ex.map preserves plan order. ──
+    _t_ors = time.perf_counter()
     def _build_route(plan: dict):
         selected = plan["selected"]
         coords = [(p.longitude, p.latitude) for p in selected]
@@ -339,6 +344,7 @@ def generate_optimized_routes(
                         "vibe": compute_route_vibe(selected),
                     }
                 )
+    logging.info(f"[PERF] ORS routing (parallel): {time.perf_counter() - _t_ors:.2f}s ({len(routes)} routes built)")
 
     if not routes:
         raise HTTPException(

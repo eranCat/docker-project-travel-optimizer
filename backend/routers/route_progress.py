@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import time
 import traceback
 from fastapi import APIRouter, HTTPException
 from services.maps.maps_client import (
@@ -39,9 +40,11 @@ async def route_progress(
     async def event_generator():
         clear_log()
         tags_task: asyncio.Task | None = None
+        _t_start = time.perf_counter()
         try:
             # Kick off Groq tag generation immediately — it only needs interests +
             # time_of_day, so it runs concurrently with geocoding below.
+            _t_groq_start = time.perf_counter()
             tags_task = asyncio.create_task(fetch_overpass_tags(interests, time_of_day))
 
             need_origin_geocode = latitude is None or longitude is None
@@ -52,6 +55,7 @@ async def route_progress(
                 yield {"event": "stage", "data": "Geocoding location"}
 
             # Geocode origin and destination concurrently when both are needed.
+            _t_geo_start = time.perf_counter()
             geocode_jobs = []
             if need_origin_geocode:
                 geocode_jobs.append(("origin", geocode_location(location)))
@@ -62,6 +66,9 @@ async def route_progress(
             if geocode_jobs:
                 results = await asyncio.gather(*(coro for _, coro in geocode_jobs))
                 geocoded = {label: res for (label, _), res in zip(geocode_jobs, results)}
+                logging.info(f"[PERF] geocoding: {time.perf_counter() - _t_geo_start:.2f}s")
+            else:
+                logging.info("[PERF] geocoding: skipped (coords provided)")
 
             if need_origin_geocode:
                 lat, lon = geocoded["origin"]
@@ -94,8 +101,11 @@ async def route_progress(
 
             yield {"event": "stage", "data": "Fetching POIs from maps_service"}
             tags = await tags_task
+            logging.info(f"[PERF] groq tag generation: {time.perf_counter() - _t_groq_start:.2f}s (concurrent with geocoding)")
             yield {"event": "detail", "data": json.dumps({"tags": len(tags)})}
+            _t_overpass = time.perf_counter()
             pois = await fetch_pois_with_tags(request_data, tags)
+            logging.info(f"[PERF] overpass POI fetch: {time.perf_counter() - _t_overpass:.2f}s ({len(pois)} POIs)")
             yield {"event": "detail", "data": json.dumps({"pois": len(pois)})}
             # A→B mode still produces a valid direct route with zero POIs.
             if not pois and not request_data.is_point_to_point:
@@ -114,17 +124,16 @@ async def route_progress(
                 }
                 return
 
-            await asyncio.sleep(0.1)
-
             yield {"event": "stage", "data": "Generating optimized routes"}
             loop = asyncio.get_running_loop()
+            _t_routes = time.perf_counter()
             result = await loop.run_in_executor(None, call_optimized_routes_from_maps_service, request_data, pois)
+            logging.info(f"[PERF] route build + ORS: {time.perf_counter() - _t_routes:.2f}s ({len(result['routes'])} routes)")
             yield {"event": "detail", "data": json.dumps({"routes": len(result["routes"])})}
-
-            await asyncio.sleep(0.1)
 
             route_id = str(uuid.uuid4())
             routes_cache[route_id] = (result["routes"], request_data, pois)
+            logging.info(f"[PERF] total: {time.perf_counter() - _t_start:.2f}s")
 
             global _generation_count
             _generation_count += 1

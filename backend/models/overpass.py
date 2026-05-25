@@ -45,16 +45,17 @@ class OverpassQueryParams(BaseModel):
             spatial = f"(around:{self.radius_m},{self.lat},{self.lon})"
 
         # Anchored alternation: "^(v1|v2|v3)$" — avoid accidental substring matches
+        # Relations omitted — they are almost never tourist POIs (admin boundaries, routes).
         filters = [
             f'{element}["{key}"~"^({"|".join(sorted(values))})$"]{wheelchair_filter}{spatial};'
             for key, values in grouped_tags.items()
-            for element in ("node", "way", "relation")
+            for element in ("node", "way")
         ]
 
         filter_block = "\n  ".join(filters)
 
-        return f"""[out:json][timeout:40];
+        return f"""[out:json][timeout:18];
             (
             {filter_block}
             );
-            out center tags;""".strip()
+            out center qt tags;""".strip()

@@ -1,6 +1,6 @@
 import json
 import logging
-import re
+import time
 from typing import Optional
 from fastapi import HTTPException
 from openai import OpenAI
@@ -13,19 +13,21 @@ client = OpenAI(
 )
 
 # --- Constants ---
-SYSTEM_PROMPT = "You are a travel assistant AI. Only respond with a JSON array."
+SYSTEM_PROMPT = "You are a travel assistant AI. Only respond with a JSON object."
 
 USER_PROMPT_TEMPLATE = """
 You are a travel assistant AI helping tourists discover fun and interesting places to visit.
 
 The user will provide their interests (e.g., "music, yoga, art, fashion").
 
-Your task is to return a JSON array of OpenStreetMap tag objects that map to places tourists would enjoy visiting, exploring, or hanging out at.
+Your task is to return a JSON object with a "tags" key containing an array of OpenStreetMap tag objects that map to places tourists would enjoy visiting, exploring, or hanging out at.
 
 RULE 1 — SPECIFICITY (most important):
 If the user mentions specific venue types (bar, pub, nightclub, restaurant, cafe, gym, yoga, cycling, museum, park, etc.), generate tags ONLY for those specific types.
 DO NOT add tourism=attraction, tourism=museum, tourism=gallery, or any other generic sightseeing tag unless the interests explicitly include words like "sightseeing", "tourism", "attractions", or "culture".
-Example: interests="bar, nightclub" → ONLY amenity=bar, amenity=nightclub, amenity=pub. NOT tourism=attraction.
+DO NOT add amenity=cafe unless the interests explicitly include "cafe", "coffee", or "brunch". Cafes are NOT wine venues, NOT tapas venues, NOT nightlife venues, NOT sports venues.
+Example: interests="bar, nightclub" → ONLY amenity=bar, amenity=nightclub, amenity=pub. NOT amenity=cafe.
+Example: interests="wine, tapas" → amenity=bar, amenity=restaurant, craft=winery. NOT amenity=cafe.
 Example: interests="art, culture" → amenity=arts_centre, tourism=gallery, tourism=museum. tourism=attraction is OK here.
 
 RULE 2 — EXCLUDE non-destinations:
@@ -45,7 +47,9 @@ Each tag object must include:
 Only include tags from this list:
 {valid_tags}
 
-Return ONLY a JSON array of objects. Include 3–8 tags that directly match the user's interests — quality over quantity.
+Return ONLY a JSON object in this exact format:
+{{"tags": [{{"key": "...", "value": "..."}}, ...]}}
+Include 3–8 tags that directly match the user's interests — quality over quantity.
 
 {time_of_day_context}User interests: {user_interests}
 """.strip()
@@ -75,37 +79,38 @@ def call_groq_for_tags(user_interests: str, valid_tags: dict, time_of_day: Optio
         time_of_day_context=time_of_day_context,
     )
 
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.2,
-            max_tokens=512,
-        )
-
-        raw_output = response.choices[0].message.content
-        # logging.debug(f"📥 Groq raw output:\n{raw_output}")
-
+    last_exc: Exception | None = None
+    for attempt in range(2):
         try:
-            parsed = json.loads(raw_output)
-        except json.JSONDecodeError:
-            logging.warning("Direct JSON decoding failed. Trying regex fallback.")
-            match = re.search(r"\[\s*.*?\s*\]", raw_output, re.DOTALL)
-            if not match:
-                raise ValueError("No JSON array found in LLM response.")
-            parsed = json.loads(match.group(0))
-            logging.debug("Groq parsed tags from LLM response:\n{parsed}")
-        return [
-            tag
-            for tag in parsed
-            if isinstance(tag, dict) and tag.get("key") and tag.get("value")
-        ]
+            response = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.2,
+                max_tokens=200,
+                response_format={"type": "json_object"},
+            )
 
-    except Exception as e:
-        logging.error("❌ Error in Groq call", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail=f"Groq tag parsing failed: {str(e)}"
-        )
+            raw_output = response.choices[0].message.content
+            parsed = json.loads(raw_output)
+            tags = parsed.get("tags", [])
+            if not isinstance(tags, list):
+                raise ValueError(f"Expected 'tags' list, got {type(tags)}")
+            return [
+                tag
+                for tag in tags
+                if isinstance(tag, dict) and tag.get("key") and tag.get("value")
+            ]
+
+        except Exception as e:
+            last_exc = e
+            if attempt == 0:
+                logging.warning(f"Groq attempt 1 failed ({e}), retrying")
+                time.sleep(0.5)
+
+    logging.error("❌ Groq call failed after 2 attempts", exc_info=True)
+    raise HTTPException(
+        status_code=500, detail=f"Groq tag parsing failed: {str(last_exc)}"
+    )

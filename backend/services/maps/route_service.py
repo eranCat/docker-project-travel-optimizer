@@ -18,6 +18,8 @@ def get_real_route(
     until the route succeeds or only the two endpoints remain (direct A→B).
     """
     coords = list(waypoints)
+    max_drops = max(0, len(coords) - 2)  # never drop endpoints; cap total drops
+    drops = 0
     while True:
         try:
             response = ors_client.directions(
@@ -32,13 +34,14 @@ def get_real_route(
             msg = str(e)
             m = re.search(r"coordinate (\d+)", msg)
             # Only drop an intermediate waypoint — never touch endpoints (index 0 or last).
-            if m and len(coords) > 2:
+            if m and len(coords) > 2 and drops < max_drops:
                 bad = int(m.group(1))
                 if 0 < bad < len(coords) - 1:
                     logging.warning(
-                        f"ORS: dropping unroutable waypoint [{bad}] {coords[bad]} — retrying"
+                        f"ORS: dropping unroutable waypoint [{bad}] {coords[bad]} — retrying ({drops + 1}/{max_drops})"
                     )
                     coords.pop(bad)
+                    drops += 1
                     continue
             logging.error(f"❌ ORS routing failed: {type(e).__name__}: {msg}")
             raise HTTPException(
