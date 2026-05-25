@@ -85,7 +85,7 @@ export default function DevToolbar() {
             }}
         >
             {/* Collapsed bar */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.5, py: 0.5, flexWrap: "wrap" }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1, px: 1.5, py: 0.5 }}>
                 <BugReportIcon sx={{ fontSize: 16, color: "warning.main" }} />
                 <Typography variant="caption" fontWeight={700} sx={{ color: "warning.main", mr: 0.5 }}>
                     DEV
