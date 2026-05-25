@@ -35,6 +35,7 @@ import ExploreIcon from "@mui/icons-material/Explore";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import LocationAutocomplete from "./LocationAutocomplete";
 import LoadingProgress from "./LoadingProgress";
+import { estimateTravelTime } from "../utils/estimateTravelTime";
 
 interface FormData {
     interests: string;
@@ -348,6 +349,9 @@ const RouteForm: React.FC<Props> = ({
                             </ToggleButton>
                         ))}
                     </ToggleButtonGroup>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: "block", fontStyle: "italic" }}>
+                        {t("form.estimatedTime")}: {estimateTravelTime(form.travel_mode, form.radius_km)}
+                    </Typography>
                 </Box>
 
                 <Divider />

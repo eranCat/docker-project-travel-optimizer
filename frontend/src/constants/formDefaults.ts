@@ -6,6 +6,12 @@ export const RADIUS_BY_MODE: Record<string, number> = {
     driving: 15,
 };
 
+export const SPEED_BY_MODE: Record<string, number> = {
+    walking: 5,      // km/h
+    cycling: 18,     // km/h
+    driving: 50,     // km/h
+};
+
 export const DEFAULT_FORM = {
     interests: "",
     location: "",

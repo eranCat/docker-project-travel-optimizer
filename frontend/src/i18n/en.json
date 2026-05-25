@@ -19,6 +19,7 @@
   "form.walk": "Walk",
   "form.drive": "Drive",
   "form.cycle": "Cycle",
+  "form.estimatedTime": "Estimated time",
   "form.advanced": "Advanced settings",
   "form.hideAdvanced": "Hide advanced",
   "form.corridor": "Corridor (km)",
