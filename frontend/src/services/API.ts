@@ -104,6 +104,45 @@ export const getLatestRoutes = async (routeId: string) => {
   }
 };
 
+// --- Dev test endpoints ---
+
+const BASE = import.meta.env.VITE_API_BASE_URL as string;
+
+export interface TestResult {
+    ok: boolean;
+    latency_s?: number;
+    error?: string;
+    [key: string]: unknown;
+}
+
+export async function testGroq(interests = "bars, parks, museums"): Promise<TestResult> {
+    const r = await fetch(`${BASE}/test/groq?interests=${encodeURIComponent(interests)}`, { signal: AbortSignal.timeout(15000) });
+    return r.json();
+}
+
+export async function testOverpass(lat = 32.0853, lon = 34.7818): Promise<TestResult> {
+    const r = await fetch(`${BASE}/test/overpass?lat=${lat}&lon=${lon}&radius_km=1`, { signal: AbortSignal.timeout(30000) });
+    return r.json();
+}
+
+export async function testORS(lat = 32.0853, lon = 34.7818): Promise<TestResult> {
+    const r = await fetch(`${BASE}/test/ors?lat=${lat}&lon=${lon}`, { signal: AbortSignal.timeout(15000) });
+    return r.json();
+}
+
+export async function testCache(): Promise<TestResult> {
+    const r = await fetch(`${BASE}/test/cache`, { signal: AbortSignal.timeout(5000) });
+    return r.json();
+}
+
+export async function testRoute(interests: string, location: string): Promise<TestResult> {
+    const r = await fetch(
+        `${BASE}/test/route?interests=${encodeURIComponent(interests)}&location=${encodeURIComponent(location)}&num_routes=1&num_pois=3`,
+        { signal: AbortSignal.timeout(60000) }
+    );
+    return r.json();
+}
+
 export class ReplacePOIError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);

@@ -3,6 +3,7 @@ import MainLayout from "./components/MainLayout";
 import MainContent from "./components/MainContent";
 import { useBackendHealth } from "./hooks/useBackendHealth";
 import "./styles/theme.css";
+import DevToolbar from "./components/DevToolbar";
 
 export default function App({
   toggleTheme,
@@ -25,6 +26,7 @@ export default function App({
       backendHealthy={backendHealthy}
     >
       <MainContent backendHealthy={backendHealthy} />
+      {import.meta.env.DEV && <DevToolbar />}
     </MainLayout>
   );
 }
