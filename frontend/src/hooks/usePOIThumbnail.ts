@@ -41,7 +41,11 @@ export function usePOIThumbnail(
     const [loading, setLoading] = useState<boolean>(hasSources && !alreadyCached);
 
     useEffect(() => {
-        if (!cacheKey) return;
+        if (!cacheKey) {
+            setUrl(null);
+            setLoading(false);
+            return;
+        }
         if (_cache.has(cacheKey)) {
             setUrl(_cache.get(cacheKey) ?? null);
             setLoading(false);
@@ -67,6 +71,7 @@ export function usePOIThumbnail(
                 setUrl(imgUrl);
             } catch {
                 _cache.set(cacheKey, null);
+                setUrl(null);
             } finally {
                 setLoading(false);
             }

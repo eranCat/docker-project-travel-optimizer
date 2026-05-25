@@ -274,7 +274,7 @@ export default function POIList({ pois, focusedPOI, onFocusPOI, onReplacePOI, re
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
             {pois.map((poi, idx) => (
                 <POICard
-                    key={idx}
+                    key={`${poi.latitude},${poi.longitude}-${poi.name}`}
                     poi={poi}
                     idx={idx}
                     isActive={isSamePOI(focusedPOI, poi)}
