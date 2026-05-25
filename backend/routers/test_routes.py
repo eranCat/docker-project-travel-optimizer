@@ -13,7 +13,7 @@ from services.maps.maps_client import (
     fetch_overpass_tags,
     fetch_pois_with_tags,
 )
-from services.maps.overpass_service import _poi_cache, POI_CACHE_TTL, _fetch_from_mirror, OVERPASS_MIRRORS
+from services.maps.overpass_service import _poi_cache, POI_CACHE_TTL, _fetch_overpass_elements
 from services.maps.route_service import ors_client
 
 router = APIRouter(prefix="/test", tags=["test"])
@@ -47,30 +47,25 @@ def test_overpass(
     lon: float = Query(default=_DEFAULT_LON),
     radius_km: float = Query(default=1.0),
 ):
-    """Fire a minimal Overpass query (amenity=cafe within radius) using production mirror logic."""
+    """Fire a minimal Overpass query (amenity=cafe within radius) using production parallel mirror logic."""
     query = f"[out:json][timeout:18];(node[\"amenity\"=\"cafe\"](around:{int(radius_km * 1000)},{lat},{lon});way[\"amenity\"=\"cafe\"](around:{int(radius_km * 1000)},{lat},{lon}););out center qt tags;"
 
     t0 = time.perf_counter()
-    last_error = None
-    for mirror in OVERPASS_MIRRORS:
-        try:
-            elements = _fetch_from_mirror(mirror, query)
-            latency = round(time.perf_counter() - t0, 3)
-            return {
-                "ok": True,
-                "mirror_used": mirror,
-                "latency_s": latency,
-                "element_count": len(elements),
-                "lat": lat,
-                "lon": lon,
-                "radius_km": radius_km,
-            }
-        except Exception as e:
-            last_error = str(e)
-            logging.warning(f"test/overpass: mirror {mirror} failed: {e}")
-
-    latency = round(time.perf_counter() - t0, 3)
-    return {"ok": False, "latency_s": latency, "error": last_error}
+    try:
+        elements = _fetch_overpass_elements(query)
+        latency = round(time.perf_counter() - t0, 3)
+        return {
+            "ok": True,
+            "latency_s": latency,
+            "element_count": len(elements),
+            "mirror_used": "parallel race",
+            "lat": lat,
+            "lon": lon,
+            "radius_km": radius_km,
+        }
+    except Exception as e:
+        latency = round(time.perf_counter() - t0, 3)
+        return {"ok": False, "latency_s": latency, "error": str(e)}
 
 
 @router.get("/ors")

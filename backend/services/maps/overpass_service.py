@@ -371,7 +371,11 @@ def _fetch_from_mirror(mirror_url: str, query: str) -> List[OverpassElement]:
         time.sleep(2)
         raise RuntimeError(f"rate limited (429)")
     resp.raise_for_status()
-    return [OverpassElement(**e) for e in resp.json().get("elements", [])]
+    body = resp.json()
+    remark = body.get("remark", "")
+    if remark and ("error" in remark.lower() or "timeout" in remark.lower()):
+        raise RuntimeError(f"Overpass server error: {remark}")
+    return [OverpassElement(**e) for e in body.get("elements", [])]
 
 
 def _fetch_overpass_elements(query: str) -> List[OverpassElement]:
