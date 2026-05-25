@@ -90,6 +90,143 @@ _REQUIRE_KEYWORDS: dict[tuple[str, str | None], set[str]] = {
     ("tourism", "attraction"): {"sightseeing", "tourism", "tourist", "attraction", "attractions", "culture", "cultural", "landmark", "landmarks", "sight", "sights"},
 }
 
+# Deterministic keyword→tag mapping. Runs before LLM; results merged with LLM output.
+# Keys are lowercased substrings to match against user interests.
+_KEYWORD_TAGS: dict[str, list[tuple[str, str]]] = {
+    # Food & drink
+    "restaurant":    [("amenity", "restaurant")],
+    "food":          [("amenity", "restaurant"), ("amenity", "food_court")],
+    "street food":   [("amenity", "restaurant"), ("amenity", "fast_food"), ("amenity", "food_court")],
+    "fast food":     [("amenity", "fast_food")],
+    "cafe":          [("amenity", "cafe")],
+    "coffee":        [("amenity", "cafe")],
+    "brunch":        [("amenity", "cafe"), ("amenity", "restaurant")],
+    "bakery":        [("shop", "bakery"), ("amenity", "cafe")],
+    "ice cream":     [("amenity", "ice_cream")],
+    "market":        [("amenity", "marketplace")],
+    "food court":    [("amenity", "food_court")],
+    # Drinks / nightlife
+    "bar":           [("amenity", "bar")],
+    "bars":          [("amenity", "bar")],
+    "pub":           [("amenity", "pub")],
+    "pubs":          [("amenity", "pub")],
+    "beer":          [("amenity", "bar"), ("amenity", "pub"), ("amenity", "biergarten"), ("craft", "brewery")],
+    "biergarten":    [("amenity", "biergarten")],
+    "beer garden":   [("amenity", "biergarten")],
+    "wine":          [("amenity", "bar"), ("craft", "winery")],
+    "winery":        [("craft", "winery")],
+    "brewery":       [("craft", "brewery")],
+    "distillery":    [("craft", "distillery")],
+    "cocktail":      [("amenity", "bar")],
+    "nightlife":     [("amenity", "bar"), ("amenity", "pub"), ("amenity", "nightclub")],
+    "nightclub":     [("amenity", "nightclub")],
+    "club":          [("amenity", "nightclub")],
+    "clubs":         [("amenity", "nightclub")],
+    # Music / live entertainment
+    "live music":    [("amenity", "music_venue"), ("amenity", "bar"), ("amenity", "nightclub")],
+    "jazz":          [("amenity", "music_venue"), ("amenity", "bar")],
+    "jazz bar":      [("amenity", "music_venue"), ("amenity", "bar")],
+    "jazz bars":     [("amenity", "music_venue"), ("amenity", "bar")],
+    "concert":       [("amenity", "music_venue"), ("amenity", "nightclub")],
+    "concerts":      [("amenity", "music_venue")],
+    "music venue":   [("amenity", "music_venue")],
+    "music venues":  [("amenity", "music_venue")],
+    "music":         [("amenity", "music_venue"), ("shop", "music")],
+    "gig":           [("amenity", "music_venue"), ("amenity", "bar")],
+    # Culture / arts
+    "museum":        [("tourism", "museum")],
+    "museums":       [("tourism", "museum")],
+    "gallery":       [("tourism", "gallery")],
+    "art":           [("tourism", "gallery"), ("amenity", "arts_centre"), ("shop", "art")],
+    "arts":          [("amenity", "arts_centre"), ("tourism", "gallery")],
+    "theatre":       [("amenity", "theatre")],
+    "theater":       [("amenity", "theatre")],
+    "opera":         [("amenity", "theatre")],
+    "cinema":        [("amenity", "cinema")],
+    "movie":         [("amenity", "cinema")],
+    "film":          [("amenity", "cinema")],
+    "culture":       [("tourism", "museum"), ("tourism", "gallery"), ("amenity", "arts_centre"), ("tourism", "attraction")],
+    "cultural":      [("tourism", "museum"), ("tourism", "gallery"), ("amenity", "arts_centre")],
+    "sightseeing":   [("tourism", "attraction"), ("tourism", "museum"), ("tourism", "viewpoint")],
+    "attraction":    [("tourism", "attraction")],
+    "landmark":      [("tourism", "attraction"), ("tourism", "viewpoint")],
+    "viewpoint":     [("tourism", "viewpoint")],
+    "aquarium":      [("tourism", "aquarium")],
+    "zoo":           [("tourism", "zoo")],
+    "theme park":    [("tourism", "theme_park")],
+    # History
+    "history":       [("historic", "monument"), ("historic", "castle"), ("historic", "ruins"), ("historic", "archaeological_site"), ("tourism", "attraction")],
+    "historic":      [("historic", "monument"), ("historic", "castle"), ("historic", "ruins")],
+    "castle":        [("historic", "castle")],
+    "ruins":         [("historic", "ruins")],
+    "monument":      [("historic", "monument")],
+    "heritage":      [("historic", "monument"), ("historic", "castle"), ("historic", "archaeological_site")],
+    "archaeology":   [("historic", "archaeological_site")],
+    # Nature / outdoor
+    "park":          [("leisure", "park")],
+    "nature":        [("leisure", "park"), ("leisure", "nature_reserve"), ("natural", "wood")],
+    "hiking":        [("leisure", "nature_reserve"), ("natural", "wood"), ("natural", "cliff")],
+    "outdoor":       [("leisure", "park"), ("leisure", "nature_reserve"), ("natural", "wood")],
+    "beach":         [("natural", "beach"), ("leisure", "beach_resort")],
+    "forest":        [("natural", "wood")],
+    "waterfall":     [("natural", "waterfall")],
+    "cave":          [("natural", "cave_entrance")],
+    "cliff":         [("natural", "cliff")],
+    "hot spring":    [("natural", "hot_spring")],
+    # Sport
+    "sport":         [("leisure", "sports_centre")],
+    "sports":        [("leisure", "sports_centre")],
+    "gym":           [("leisure", "fitness_centre")],
+    "fitness":       [("leisure", "fitness_centre")],
+    "swimming":      [("leisure", "sports_centre")],
+    "cycling":       [("leisure", "sports_centre")],
+    "climbing":      [("leisure", "sports_centre")],
+    "golf":          [("leisure", "sports_centre")],
+    "tennis":        [("leisure", "sports_centre")],
+    "football":      [("leisure", "stadium"), ("leisure", "sports_centre")],
+    "soccer":        [("leisure", "stadium"), ("leisure", "sports_centre")],
+    "basketball":    [("leisure", "sports_centre")],
+    "yoga":          [("leisure", "fitness_centre")],
+    "surfing":       [("natural", "beach"), ("leisure", "sports_centre")],
+    "diving":        [("natural", "beach"), ("leisure", "sports_centre")],
+    "skating":       [("leisure", "sports_centre")],
+    # Leisure / entertainment
+    "spa":           [("amenity", "spa")],
+    "dance":         [("leisure", "dance")],
+    "bowling":       [("leisure", "bowling_alley")],
+    "escape room":   [("leisure", "escape_game")],
+    "arcade":        [("leisure", "amusement_arcade")],
+    # Shopping
+    "shopping":      [("shop", "department_store"), ("shop", "mall")],
+    "antiques":      [("shop", "antiques")],
+    "vintage":       [("shop", "antiques"), ("shop", "second_hand")],
+    "books":         [("shop", "books")],
+    "bookshop":      [("shop", "books")],
+    "jewelry":       [("shop", "jewelry")],
+    "craft":         [("shop", "craft")],
+    "gift":          [("shop", "gift")],
+    # Aerial
+    "cable car":     [("aerialway", "cable_car")],
+    "gondola":       [("aerialway", "gondola")],
+}
+
+
+def _keyword_match_tags(user_interests: str) -> list[dict]:
+    """Deterministic pass: map known interest keywords to OSM tags."""
+    interests_lower = user_interests.lower()
+    seen: set[tuple[str, str]] = set()
+    result = []
+    # Longest keys first so "live music" matches before "music"
+    for keyword in sorted(_KEYWORD_TAGS, key=len, reverse=True):
+        if keyword in interests_lower:
+            for key, value in _KEYWORD_TAGS[keyword]:
+                pair = (key, value)
+                if pair not in seen:
+                    seen.add(pair)
+                    result.append({"key": key, "value": value})
+    return result
+
+
 
 def _post_filter_tags(tags: list[dict], user_interests: str) -> list[dict]:
     interests_lower = user_interests.lower()
@@ -118,13 +255,22 @@ def _post_filter_tags(tags: list[dict], user_interests: str) -> list[dict]:
 
 # --- Main Groq Call ---
 def call_groq_for_tags(user_interests: str, valid_tags: dict, time_of_day: Optional[str] = None) -> list[dict]:
-    """Generate Overpass tags from user interests using Groq LLM."""
+    """Generate Overpass tags from user interests using Groq LLM.
+
+    Pipeline:
+      1. Deterministic keyword match → seed tags
+      2. LLM (llama-3.3-70b, constrained JSON schema) → additional tags
+      3. Merge + deduplicate
+      4. Post-filter (contextual exclusions)
+    """
+    # 1. Deterministic keyword pass
+    keyword_tags = _keyword_match_tags(user_interests)
+    keyword_pairs: set[tuple[str, str]] = {(t["key"], t["value"]) for t in keyword_tags}
 
     formatted_tags = [
         f"{key}={val}" for key, values in valid_tags.items() for val in values
     ]
     readable_tag_list = "\n- ".join(formatted_tags)
-
     time_of_day_context = _TIME_OF_DAY_HINTS.get(time_of_day or "", "") if time_of_day else ""
 
     prompt = USER_PROMPT_TEMPLATE.format(
@@ -133,33 +279,54 @@ def call_groq_for_tags(user_interests: str, valid_tags: dict, time_of_day: Optio
         time_of_day_context=time_of_day_context,
     )
 
+    # Build valid-pair lookup for LLM output validation
+    valid_pairs: set[tuple[str, str]] = {
+        (key, val) for key, values in valid_tags.items() for val in values
+    }
+
     last_exc: Exception | None = None
     for attempt in range(2):
         try:
             response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.2,
-                max_tokens=200,
+                max_tokens=300,
                 response_format={"type": "json_object"},
             )
-
             raw_output = response.choices[0].message.content
             parsed = json.loads(raw_output)
-            tags = parsed.get("tags", [])
-            if not isinstance(tags, list):
-                raise ValueError(f"Expected 'tags' list, got {type(tags)}")
-            raw_tags = [t for t in tags if isinstance(t, dict) and t.get("key") and t.get("value")]
-            return _post_filter_tags(raw_tags, user_interests)
+            llm_tags = parsed.get("tags", [])
+            if not isinstance(llm_tags, list):
+                raise ValueError(f"Expected 'tags' list, got {type(llm_tags)}")
+
+            # Validate LLM tags against known-valid OSM tag list
+            llm_tags = [
+                t for t in llm_tags
+                if isinstance(t, dict) and t.get("key") and t.get("value")
+                and (t["key"], t["value"]) in valid_pairs
+            ]
+
+            # 3. Merge: keyword tags first, then LLM additions not already covered
+            merged = list(keyword_tags)
+            for t in llm_tags:
+                pair = (t["key"], t["value"])
+                if pair not in keyword_pairs:
+                    merged.append(t)
+                    keyword_pairs.add(pair)
+
+            # 4. Post-filter contextual exclusions
+            result = _post_filter_tags(merged, user_interests)
+            logging.debug(f"Tags: {len(keyword_tags)} keyword + {len(llm_tags)} LLM → {len(result)} final")
+            return result
 
         except Exception as e:
             last_exc = e
             if attempt == 0:
                 logging.warning(f"Groq attempt 1 failed ({e}), retrying")
-                time.sleep(0.5)
 
     logging.error("❌ Groq call failed after 2 attempts", exc_info=True)
     raise HTTPException(
