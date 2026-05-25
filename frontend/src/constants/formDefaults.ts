@@ -1,9 +1,15 @@
-export const FORM_VERSION = 7;
+export const FORM_VERSION = 8;
+
+export const RADIUS_BY_MODE: Record<string, number> = {
+    walking: 3,
+    cycling: 8,
+    driving: 15,
+};
 
 export const DEFAULT_FORM = {
     interests: "",
     location: "",
-    radius_km: 5,
+    radius_km: 3,
     num_routes: 2,
     num_pois: 6,
     travel_mode: "walking",

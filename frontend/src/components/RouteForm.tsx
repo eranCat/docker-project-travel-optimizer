@@ -14,13 +14,17 @@ import {
     IconButton,
     Tooltip,
     MenuItem,
-    Select,
     Slider,
 } from "@mui/material";
 import DirectionsWalkIcon from "@mui/icons-material/DirectionsWalk";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
 import RouteIcon from "@mui/icons-material/Route";
+import ScheduleIcon from "@mui/icons-material/Schedule";
+import WbTwilightIcon from "@mui/icons-material/WbTwilight";
+import WbSunnyIcon from "@mui/icons-material/WbSunny";
+import Brightness4Icon from "@mui/icons-material/Brightness4";
+import NightsStayIcon from "@mui/icons-material/NightsStay";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import CancelIcon from "@mui/icons-material/Cancel";
 import TuneIcon from "@mui/icons-material/Tune";
@@ -102,6 +106,14 @@ const RouteForm: React.FC<Props> = ({
         { value: "walking", label: t("form.walk"), icon: <DirectionsWalkIcon sx={{ fontSize: 18 }} /> },
         { value: "driving", label: t("form.drive"), icon: <DirectionsCarIcon sx={{ fontSize: 18 }} /> },
         { value: "cycling", label: t("form.cycle"), icon: <DirectionsBikeIcon sx={{ fontSize: 18 }} /> },
+    ];
+
+    const TIME_OF_DAY = [
+        { value: "",          label: t("form.anyTime"),   icon: <ScheduleIcon    sx={{ fontSize: 18 }} /> },
+        { value: "morning",   label: t("form.morning"),   icon: <WbTwilightIcon  sx={{ fontSize: 18 }} /> },
+        { value: "afternoon", label: t("form.afternoon"), icon: <WbSunnyIcon     sx={{ fontSize: 18 }} /> },
+        { value: "evening",   label: t("form.evening"),   icon: <Brightness4Icon sx={{ fontSize: 18 }} /> },
+        { value: "night",     label: t("form.night"),     icon: <NightsStayIcon  sx={{ fontSize: 18 }} /> },
     ];
 
     // Compact summary bar shown after search is initiated
@@ -362,20 +374,6 @@ const RouteForm: React.FC<Props> = ({
 
                     <Collapse in={showAdvanced} unmountOnExit>
                         <Stack spacing={1.5} sx={{ mt: 1.25 }}>
-                            <Box>
-                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-                                    {(isTrip ? t("form.corridor") : t("form.radius"))}: {form.radius_km}
-                                </Typography>
-                                <Slider
-                                    size="small"
-                                    name="radius_km"
-                                    min={1} max={20} step={1}
-                                    value={Number(form.radius_km)}
-                                    onChange={(_, v) => onChange({ target: { name: "radius_km", value: String(v) } } as any)}
-                                    valueLabelDisplay="auto"
-                                    sx={{ mt: 0.5 }}
-                                />
-                            </Box>
                             {!isTrip && (
                                 <Box>
                                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
@@ -413,21 +411,41 @@ const RouteForm: React.FC<Props> = ({
                             <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block", fontWeight: 500 }}>
                                 {t("form.timeOfDay")}
                             </Typography>
-                            <Select
-                                name="time_of_day"
-                                size="small"
-                                fullWidth
-                                displayEmpty
+                            <ToggleButtonGroup
                                 value={form.time_of_day}
-                                onChange={(e) => onChange({ target: { name: "time_of_day", value: e.target.value } } as any)}
-                                sx={{ fontSize: "0.85rem" }}
+                                exclusive
+                                onChange={(_, val) => {
+                                    if (val !== null) onChange({ target: { name: "time_of_day", value: val } } as any);
+                                }}
+                                fullWidth
+                                size="small"
+                                aria-label="Time of day"
+                                sx={{
+                                    gap: 0.5,
+                                    "& .MuiToggleButton-root": {
+                                        flex: 1,
+                                        borderRadius: "8px !important",
+                                        border: "1px solid",
+                                        borderColor: "divider",
+                                        minHeight: 36,
+                                        color: "text.secondary",
+                                        "&.Mui-selected": {
+                                            bgcolor: "primary.main",
+                                            color: "primary.contrastText",
+                                            borderColor: "primary.main",
+                                            "&:hover": { bgcolor: "primary.dark" },
+                                        },
+                                    },
+                                }}
                             >
-                                <MenuItem value=""><em>{t("form.anyTime")}</em></MenuItem>
-                                <MenuItem value="morning">{t("form.morning")}</MenuItem>
-                                <MenuItem value="afternoon">{t("form.afternoon")}</MenuItem>
-                                <MenuItem value="evening">{t("form.evening")}</MenuItem>
-                                <MenuItem value="night">{t("form.night")}</MenuItem>
-                            </Select>
+                                {TIME_OF_DAY.map(({ value, label, icon }) => (
+                                    <Tooltip key={value} title={label} arrow>
+                                        <ToggleButton value={value} aria-label={label}>
+                                            {icon}
+                                        </ToggleButton>
+                                    </Tooltip>
+                                ))}
+                            </ToggleButtonGroup>
                         </Box>
 
                         <Box>

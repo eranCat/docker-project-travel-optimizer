@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { usePersistedState } from "./usePersistedState";
 import { RouteData } from "../models/RouteData";
 import { POI } from "../models/POI";
-import { DEFAULT_FORM, FORM_VERSION } from "../constants/formDefaults";
+import { DEFAULT_FORM, FORM_VERSION, RADIUS_BY_MODE } from "../constants/formDefaults";
 import { getLatestRoutes, routeProgress, logToServer, replacePOI as replacePOICall, ReplacePOIError } from "../services/API";
 import { setGenerationActive } from "../services/generationState";
 
@@ -84,6 +84,10 @@ export function useRouteGenerator() {
         const { name, value } = e.target;
         if (name === "location") setLocationSelected(false);
         if (name === "dest_location") setDestSelected(false);
+        if (name === "travel_mode") {
+            setFormData(prev => ({ ...prev, travel_mode: value, radius_km: RADIUS_BY_MODE[value] ?? 5 }));
+            return;
+        }
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -288,7 +292,6 @@ export function useRouteGenerator() {
         const params = new URLSearchParams({
             interests: form.interests,
             location: form.location,
-            radius_km: String(form.radius_km),
             num_routes: String(form.num_routes),
             num_pois: String(form.num_pois),
             travel_mode: form.travel_mode,
@@ -308,7 +311,6 @@ export function useRouteGenerator() {
             ...prev,
             interests: p.get("interests") ?? prev.interests,
             location: p.get("location") ?? prev.location,
-            radius_km: Number(p.get("radius_km") ?? prev.radius_km),
             num_routes: Number(p.get("num_routes") ?? prev.num_routes),
             num_pois: Number(p.get("num_pois") ?? prev.num_pois),
             travel_mode: p.get("travel_mode") ?? prev.travel_mode,
