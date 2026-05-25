@@ -122,7 +122,6 @@ export function useRouteGenerator() {
                 latitude: form.latitude,
                 longitude: form.longitude,
             }),
-            wheelchair: form.wheelchair,
             time_of_day: form.time_of_day || undefined,
             ...(form.mode === "trip" && {
                 dest_location: form.dest_location,
@@ -296,7 +295,6 @@ export function useRouteGenerator() {
         });
         if (form.latitude !== undefined) params.set("lat", String(form.latitude));
         if (form.longitude !== undefined) params.set("lon", String(form.longitude));
-        if (form.wheelchair) params.set("wheelchair", "true");
         if (form.time_of_day) params.set("time_of_day", form.time_of_day);
         const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
         navigator.clipboard.writeText(url).catch(() => {});
@@ -316,7 +314,6 @@ export function useRouteGenerator() {
             travel_mode: p.get("travel_mode") ?? prev.travel_mode,
             latitude: p.get("lat") ? Number(p.get("lat")) : prev.latitude,
             longitude: p.get("lon") ? Number(p.get("lon")) : prev.longitude,
-            wheelchair: p.get("wheelchair") === "true",
             time_of_day: p.get("time_of_day") ?? prev.time_of_day,
         }));
         if (p.get("location")) setLocationSelected(true);

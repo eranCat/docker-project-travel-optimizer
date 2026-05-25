@@ -13,8 +13,6 @@ import {
     Collapse,
     IconButton,
     Tooltip,
-    FormControlLabel,
-    Switch,
     MenuItem,
     Select,
     Slider,
@@ -28,7 +26,6 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import TuneIcon from "@mui/icons-material/Tune";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import AccessibleIcon from "@mui/icons-material/Accessible";
 import CasinoIcon from "@mui/icons-material/Casino";
 import ExploreIcon from "@mui/icons-material/Explore";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
@@ -44,7 +41,6 @@ interface FormData {
     travel_mode: string;
     latitude?: number;
     longitude?: number;
-    wheelchair: boolean;
     time_of_day: string;
     num_days: number;
     mode: "explore" | "trip";
@@ -449,22 +445,6 @@ const RouteForm: React.FC<Props> = ({
                             />
                         </Box>
 
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    size="small"
-                                    checked={form.wheelchair}
-                                    onChange={(e) => onChange({ target: { name: "wheelchair", value: e.target.checked } } as any)}
-                                />
-                            }
-                            label={
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                    <AccessibleIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                                    <Typography variant="caption" color="text.secondary">{t("form.wheelchair")}</Typography>
-                                </Box>
-                            }
-                            sx={{ ml: 0, mt: 0.5 }}
-                        />
                     </Collapse>
                 </Box>
             </Stack>

@@ -162,7 +162,6 @@ async def test_route(
         travel_mode=travel_mode,
         latitude=lat,
         longitude=lon,
-        wheelchair=False,
         time_of_day=time_of_day,
         lang=lang,
     )

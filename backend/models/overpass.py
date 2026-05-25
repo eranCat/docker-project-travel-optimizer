@@ -25,7 +25,6 @@ class OverpassQueryParams(BaseModel):
     lat: float
     lon: float
     radius_m: int = Field(..., gt=0)
-    wheelchair: bool = False
     # Optional bounding box (south, west, north, east). When set, the query uses
     # a bbox filter instead of `around:` — used for A→B corridor searches that
     # must cover the rectangle spanning both endpoints.
@@ -36,8 +35,6 @@ class OverpassQueryParams(BaseModel):
         for tag in self.tags:
             grouped_tags[tag.key].add(tag.value)
 
-        wheelchair_filter = '["wheelchair"~"^(yes|limited)$"]' if self.wheelchair else ""
-
         if self.bbox is not None:
             south, west, north, east = self.bbox
             spatial = f"({south},{west},{north},{east})"
@@ -47,7 +44,7 @@ class OverpassQueryParams(BaseModel):
         # Anchored alternation: "^(v1|v2|v3)$" — avoid accidental substring matches
         # Relations omitted — they are almost never tourist POIs (admin boundaries, routes).
         filters = [
-            f'{element}["{key}"~"^({"|".join(sorted(values))})$"]{wheelchair_filter}{spatial};'
+            f'{element}["{key}"~"^({"|".join(sorted(values))})$"]{spatial};'
             for key, values in grouped_tags.items()
             for element in ("node", "way")
         ]

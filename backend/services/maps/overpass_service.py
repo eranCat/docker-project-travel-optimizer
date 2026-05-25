@@ -442,7 +442,7 @@ async def get_pois_from_overpass(
     """
     # TTL cache lookup
     cache_key = (
-        request.location, request.radius_km, request.num_pois, tags, request.wheelchair,
+        request.location, request.radius_km, request.num_pois, tags,
         request.dest_latitude, request.dest_longitude, request.lang,
     )
     now = time.time()
@@ -473,11 +473,11 @@ async def get_pois_from_overpass(
         bbox = _corridor_bbox((lat, lon), (dest_lat, dest_lon), pad_m=radius_m)
         qp = OverpassQueryParams(
             tags=list(tags), lat=lat, lon=lon, radius_m=radius_m,
-            wheelchair=request.wheelchair, bbox=bbox,
+            bbox=bbox,
         )
     else:
         dest_lat = dest_lon = None
-        qp = OverpassQueryParams(tags=list(tags), lat=lat, lon=lon, radius_m=radius_m, wheelchair=request.wheelchair)
+        qp = OverpassQueryParams(tags=list(tags), lat=lat, lon=lon, radius_m=radius_m)
     query = qp.to_query()
     logging.debug(f"Overpass query:\n{query}\n")
 
@@ -631,7 +631,6 @@ async def get_pois_from_overpass(
         )
         supp_qp = OverpassQueryParams(
             tags=_SUPPLEMENTARY_TAGS, lat=lat, lon=lon, radius_m=radius_m,
-            wheelchair=request.wheelchair,
         )
         try:
             supp_elements = await asyncio.get_running_loop().run_in_executor(
@@ -703,13 +702,12 @@ def save_poi_cache() -> None:
         for key, (expires_at, pois) in _poi_cache.items():
             if expires_at <= now:
                 continue  # skip already-expired entries
-            location, radius_km, num_pois, tags, wheelchair, dest_lat, dest_lon, lang = key
+            location, radius_km, num_pois, tags, dest_lat, dest_lon, lang = key
             entries.append({
                 "location": location,
                 "radius_km": radius_km,
                 "num_pois": num_pois,
                 "tags": [{"key": t.key, "value": t.value} for t in tags],
-                "wheelchair": wheelchair,
                 "dest_lat": dest_lat,
                 "dest_lon": dest_lon,
                 "lang": lang,
@@ -739,7 +737,7 @@ def load_poi_cache() -> None:
             key = (
                 entry["location"], entry["radius_km"], entry["num_pois"],
                 tuple(OverpassTag(key=t["key"], value=t["value"]) for t in entry["tags"]),
-                entry["wheelchair"], entry["dest_lat"], entry["dest_lon"], entry["lang"],
+                entry["dest_lat"], entry["dest_lon"], entry["lang"],
             )
             pois = [LLMPOISuggestion(**p) for p in entry["pois"]]
             _poi_cache[key] = (expires_at, pois)

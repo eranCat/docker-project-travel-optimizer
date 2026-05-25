@@ -64,7 +64,6 @@ export function routeProgress(params: {
   travel_mode: string;
   latitude?: number;
   longitude?: number;
-  wheelchair?: boolean;
   time_of_day?: string;
   dest_location?: string;
   dest_latitude?: number;
@@ -83,7 +82,6 @@ export function routeProgress(params: {
 
   if (params.latitude !== undefined) searchParams.latitude = String(params.latitude);
   if (params.longitude !== undefined) searchParams.longitude = String(params.longitude);
-  if (params.wheelchair) searchParams.wheelchair = "true";
   if (params.time_of_day) searchParams.time_of_day = params.time_of_day;
   if (params.dest_location) searchParams.dest_location = params.dest_location;
   if (params.dest_latitude !== undefined) searchParams.dest_latitude = String(params.dest_latitude);

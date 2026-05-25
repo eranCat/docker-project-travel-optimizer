@@ -1,4 +1,4 @@
-export const FORM_VERSION = 6;
+export const FORM_VERSION = 7;
 
 export const DEFAULT_FORM = {
     interests: "",
@@ -9,7 +9,6 @@ export const DEFAULT_FORM = {
     travel_mode: "walking",
     latitude: undefined as number | undefined,
     longitude: undefined as number | undefined,
-    wheelchair: false,
     time_of_day: "" as string,
     num_days: 1,
     // "explore" = POIs around one location; "trip" = A→B route through a corridor
