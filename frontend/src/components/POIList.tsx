@@ -16,8 +16,11 @@ import AutorenewIcon from "@mui/icons-material/Autorenew";
 import PlaceIcon from "@mui/icons-material/Place";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import AccessibleIcon from "@mui/icons-material/Accessible";
-import { CATEGORY_ICONS, CATEGORY_COLORS, DARK_CATEGORY_COLORS } from "../styles/icons";
 import { useTheme } from "@mui/material";
+import { CATEGORY_ICONS } from "../styles/icons";
+
+const POI_COLOR_LIGHT = '#4f46e5';
+const POI_COLOR_DARK = '#818cf8';
 import { detectDirectionFromText } from "../utils/detectDirectionFromText";
 import { createSearchQuery } from "../utils/createSearchQuery";
 import { usePOIThumbnail } from "../hooks/usePOIThumbnail";
@@ -44,17 +47,16 @@ interface POICardProps {
     onReplacePOI: (idx: number) => void;
     replacingPoiIndex: number | null;
     canReplace: boolean;
-    colorMap: Record<string, string>;
 }
 
-function POICard({ poi, idx, isActive, activeRef, onFocusPOI, onReplacePOI, replacingPoiIndex, canReplace, colorMap }: POICardProps) {
+function POICard({ poi, idx, isActive, activeRef, onFocusPOI, onReplacePOI, replacingPoiIndex, canReplace }: POICardProps) {
     const { t, i18n } = useTranslation();
+    const theme = useTheme();
     const { url: thumbnail, loading: thumbnailLoading } = usePOIThumbnail(poi.wiki_title, poi.wikidata_id);
     const canFocus = Number.isFinite(poi.latitude) && Number.isFinite(poi.longitude);
     const isHe = i18n.language === "he";
     const displayName = (isHe && poi.name_he) ? poi.name_he : poi.name;
-    const catKey = poi.categories?.[0]?.toLowerCase() ?? "default";
-    const accentColor = colorMap[catKey] || colorMap["default"];
+    const accentColor = theme.palette.mode === "dark" ? POI_COLOR_DARK : POI_COLOR_LIGHT;
 
     return (
         <Box
@@ -263,8 +265,6 @@ function POICard({ poi, idx, isActive, activeRef, onFocusPOI, onReplacePOI, repl
 
 export default function POIList({ pois, focusedPOI, onFocusPOI, onReplacePOI, replacingPoiIndex, canReplace }: POIListProps) {
     const activeRef = useRef<HTMLDivElement | null>(null);
-    const theme = useTheme();
-    const colorMap = theme.palette.mode === "dark" ? CATEGORY_COLORS : DARK_CATEGORY_COLORS;
 
     useEffect(() => {
         activeRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -283,7 +283,6 @@ export default function POIList({ pois, focusedPOI, onFocusPOI, onReplacePOI, re
                     onReplacePOI={onReplacePOI}
                     replacingPoiIndex={replacingPoiIndex}
                     canReplace={canReplace}
-                    colorMap={colorMap}
                 />
             ))}
         </Box>
