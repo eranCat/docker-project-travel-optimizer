@@ -115,11 +115,9 @@ def _is_permanently_closed(tags_el: dict) -> bool:
 # Broad fallback tags added when main query yields < 3 distinct categories.
 # Generic tourist POIs that complement almost any route interest.
 _SUPPLEMENTARY_TAGS = [
-    OverpassTag(key="tourism", value="attraction"),
     OverpassTag(key="tourism", value="museum"),
-    OverpassTag(key="leisure", value="park"),
+    OverpassTag(key="tourism", value="viewpoint"),
     OverpassTag(key="historic", value="monument"),
-    OverpassTag(key="amenity", value="cafe"),
 ]
 
 # Configuration
@@ -626,7 +624,7 @@ async def get_pois_from_overpass(
     # with broad tourist POIs so the route builder has more categories to work
     # with. Supplementary POIs are appended after main results (lower priority).
     distinct_cats = {cat for p in pois for cat in p.categories}
-    if len(distinct_cats) < 3 and not request.is_point_to_point:
+    if len(pois) < 6 and not request.is_point_to_point:
         logging.info(
             f"Category starvation ({len(distinct_cats)} distinct cats) — "
             "running supplementary broad-tag query"

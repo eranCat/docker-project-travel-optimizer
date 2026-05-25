@@ -86,6 +86,8 @@ _REQUIRE_KEYWORDS: dict[tuple[str, str | None], set[str]] = {
     ("shop", "antiques"): {"antiques", "vintage", "shopping", "shop"},
     ("shop", "music"): {"music", "shopping", "shop"},
     ("shop", "musical_instrument"): {"music", "instrument", "shopping", "shop"},
+    ("amenity", "restaurant"): {"restaurant", "food", "eat", "eating", "dining", "dinner", "lunch", "brunch", "tapas", "cuisine", "street food", "snack", "bistro", "steakhouse"},
+    ("craft", "winery"): {"wine", "winery", "vineyard", "vino", "tapas"},
     ("amenity", "community_centre"): {"community", "social", "local", "neighbourhood", "neighborhood", "centre", "center"},
     ("tourism", "attraction"): {"sightseeing", "tourism", "tourist", "attraction", "attractions", "culture", "cultural", "landmark", "landmarks", "sight", "sights"},
 }
