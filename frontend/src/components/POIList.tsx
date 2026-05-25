@@ -104,6 +104,11 @@ function POICard({ poi, idx, isActive, activeRef, onFocusPOI, onReplacePOI, repl
                         objectFit: "cover",
                         display: "block",
                         flexShrink: 0,
+                        animation: "poi-fade-in 0.4s ease-out",
+                        "@keyframes poi-fade-in": {
+                            from: { opacity: 0 },
+                            to: { opacity: 1 },
+                        },
                     }}
                 />
             )}
