@@ -27,6 +27,7 @@ If the user mentions specific venue types (bar, pub, nightclub, restaurant, cafe
 DO NOT add tourism=attraction, tourism=museum, tourism=gallery, or any other generic sightseeing tag unless the interests explicitly include words like "sightseeing", "tourism", "attractions", or "culture".
 DO NOT add amenity=cafe unless the interests explicitly include "cafe", "coffee", or "brunch". Cafes are NOT wine venues, NOT tapas venues, NOT nightlife venues, NOT sports venues.
 Example: interests="nightlife, bars, clubs" → amenity=bar, amenity=pub, amenity=nightclub. DO NOT add amenity=theatre. DO NOT add amenity=cafe. amenity=theatre is performing arts (plays, opera) — it is NEVER a nightlife venue.
+Example: interests="live music, jazz, concert venues" → amenity=bar, amenity=nightclub, amenity=music_venue, shop=music. DO NOT add amenity=community_centre. DO NOT add tourism=attraction.
 Example: interests="wine, tapas" → amenity=bar, amenity=restaurant, craft=winery. NOT amenity=cafe.
 Example: interests="art, culture" → amenity=arts_centre, tourism=gallery, tourism=museum. tourism=attraction is OK here.
 Example: interests="street food, food" → amenity=restaurant, amenity=fast_food, amenity=food_court. NOT amenity=bar.
@@ -41,6 +42,8 @@ RULE 2 — EXCLUDE non-destinations:
 - NEVER include amenity=theatre for nightlife, bars, clubs, or music interests. amenity=theatre is ONLY for interests that explicitly mention theatre, performing arts, opera, or shows.
 - DO NOT include leisure=stadium, leisure=fitness_centre, or leisure=sports_centre unless interests explicitly mention sports, gym, or fitness.
 - DO NOT include amenity=public_bookcase — this is a street book exchange for residents, not a tourist destination.
+- DO NOT include amenity=community_centre unless interests explicitly mention community, social spaces, or neighbourhood activities.
+- DO NOT include tourism=attraction unless interests explicitly mention sightseeing, tourism, attractions, culture, or landmarks. It is a catch-all that pollutes music, food, nightlife, and sport results.
 
 RULE 3 — PREFER specific over generic:
 Prefer: amenity (bars/restaurants), leisure (parks/nature_reserve), historic, natural landmarks, craft (brewery/winery).
@@ -83,6 +86,8 @@ _REQUIRE_KEYWORDS: dict[tuple[str, str | None], set[str]] = {
     ("shop", "antiques"): {"antiques", "vintage", "shopping", "shop"},
     ("shop", "music"): {"music", "shopping", "shop"},
     ("shop", "musical_instrument"): {"music", "instrument", "shopping", "shop"},
+    ("amenity", "community_centre"): {"community", "social", "local", "neighbourhood", "neighborhood", "centre", "center"},
+    ("tourism", "attraction"): {"sightseeing", "tourism", "tourist", "attraction", "attractions", "culture", "cultural", "landmark", "landmarks", "sight", "sights"},
 }
 
 
