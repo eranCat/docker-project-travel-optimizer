@@ -80,16 +80,17 @@ export default function DevToolbar() {
                 borderColor: "warning.main",
                 borderRadius: 2,
                 bgcolor: "background.paper",
-                maxWidth: expanded ? 520 : 380,
-                minWidth: 260,
+                width: 160,
             }}
         >
             {/* Collapsed bar */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1, px: 1.5, py: 0.5 }}>
-                <BugReportIcon sx={{ fontSize: 16, color: "warning.main" }} />
-                <Typography variant="caption" fontWeight={700} sx={{ color: "warning.main", mr: 0.5 }}>
-                    DEV
-                </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, px: 1, py: 0.5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <BugReportIcon sx={{ fontSize: 14, color: "warning.main" }} />
+                    <Typography variant="caption" fontWeight={700} sx={{ color: "warning.main", fontSize: "0.7rem" }}>
+                        DEV
+                    </Typography>
+                </Box>
 
                 {["groq", "overpass", "ors"].map(key => (
                     <Chip
