@@ -77,15 +77,14 @@ def _select_route_pois(
     cluster_radius_m: float,
 ) -> List[LLMPOISuggestion]:
     """
-    One-POI-per-category selection.
+    One-POI-per-category selection with category-repeat fallback.
 
-    Hard rule: each OSM category appears at most once in the route. We pick the
-    nearest available POI from each unused category, walking outward from the
-    starting point. If the area has fewer distinct categories than num_pois,
-    the route will be shorter than requested (rather than padded with repeats).
+    Prefer fresh categories: pick nearest POI from each unused category. Once
+    fresh categories are exhausted, allow category repeats to reach num_pois.
+    This ensures routes are filled to the requested length.
 
-    A small cluster-jump penalty still discourages zigzagging when there are
-    multiple POIs of the same fresh category to choose from.
+    A small cluster-jump penalty discourages zigzagging when choosing between
+    equivalent POIs.
     """
     if start_poi not in pool:
         pool = [start_poi] + list(pool)
@@ -105,15 +104,13 @@ def _select_route_pois(
     CLUSTER_JUMP_PENALTY_M = 400.0  # mild — only breaks ties between equivalents
 
     while remaining and len(selected) < num_pois:
-        # Hard filter: only POIs whose categories haven't been used yet
+        # Try fresh categories first; fall back to repeats if exhausted
         fresh = [p for p in remaining if not used_cats.intersection(p.categories)]
         if not fresh:
-            # No unused categories left — stop rather than repeat.
             logging.debug(
-                f"  Stopping at {len(selected)} POIs: no more fresh categories "
-                f"(used: {used_cats})"
+                f"  No more fresh categories (used: {used_cats}); selecting from repeats"
             )
-            break
+            fresh = remaining
 
         def score(p: LLMPOISuggestion) -> float:
             d = _dist(current, p)
