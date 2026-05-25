@@ -15,3 +15,4 @@ class LLMPOISuggestion(BaseModel):
     wheelchair_accessible: Optional[bool] = None
     wiki_title: Optional[str] = None
     wikidata_id: Optional[str] = None
+    osm_type: Optional[str] = None

@@ -10,6 +10,8 @@ export interface POI {
     wheelchair_accessible?: boolean;
     wiki_title?: string;
     wikidata_id?: string;
+    id?: string;
+    osm_type?: string;
 }
 
 export interface Props {

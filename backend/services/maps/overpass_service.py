@@ -579,6 +579,7 @@ async def get_pois_from_overpass(
                 wheelchair_accessible=wheelchair_accessible,
                 wiki_title=wiki_title,
                 wikidata_id=wikidata_id,
+                osm_type=el.type,
             ),
         ))
 
@@ -670,6 +671,7 @@ async def get_pois_from_overpass(
                         opening_hours=tags_el.get("opening_hours") or None,
                         wheelchair_accessible=(lambda w: w in ("yes", "limited") if w else None)(tags_el.get("wheelchair")),
                         wiki_title=wiki_title, wikidata_id=wikidata_id,
+                        osm_type=el.type,
                     ),
                 ))
             supp_scored.sort(key=lambda x: x[0], reverse=True)
