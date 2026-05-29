@@ -1,4 +1,4 @@
-export const FORM_VERSION = 8;
+export const FORM_VERSION = 9;
 
 export const RADIUS_BY_MODE: Record<string, number> = {
     walking: 3,
@@ -22,7 +22,6 @@ export const DEFAULT_FORM = {
     latitude: undefined as number | undefined,
     longitude: undefined as number | undefined,
     time_of_day: "" as string,
-    num_days: 1,
     // "explore" = POIs around one location; "trip" = A→B route through a corridor
     mode: "explore" as "explore" | "trip",
     dest_location: "",

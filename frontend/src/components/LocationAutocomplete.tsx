@@ -6,6 +6,7 @@ import {
     ListItemButton,
     ListItemText,
     ListItemIcon,
+    ListSubheader,
     Paper,
     Fade,
     Box,
@@ -14,6 +15,8 @@ import {
 } from "@mui/material";
 import PlaceIcon from "@mui/icons-material/Place";
 import SearchIcon from "@mui/icons-material/Search";
+import HistoryIcon from "@mui/icons-material/History";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { fetchLocationSuggestions } from "../services/API";
 
 interface Props {
@@ -32,6 +35,35 @@ interface Suggestion {
     lon: string;
 }
 
+const RECENTS_KEY = "location-recents";
+const MAX_RECENTS = 5;
+
+const POPULAR: { nameKey: string; lat: number; lon: number }[] = [
+    { nameKey: "city.telAviv", lat: 32.0853, lon: 34.7818 },
+    { nameKey: "city.jerusalem", lat: 31.7683, lon: 35.2137 },
+    { nameKey: "city.haifa", lat: 32.794, lon: 34.9896 },
+    { nameKey: "city.beerSheva", lat: 31.2518, lon: 34.7913 },
+    { nameKey: "city.eilat", lat: 29.5577, lon: 34.9519 },
+];
+
+function loadRecents(): Suggestion[] {
+    try {
+        const raw = localStorage.getItem(RECENTS_KEY);
+        return raw ? (JSON.parse(raw) as Suggestion[]) : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveRecent(s: Suggestion) {
+    const next = [s, ...loadRecents().filter((r) => r.display_name !== s.display_name)].slice(0, MAX_RECENTS);
+    try {
+        localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
+    } catch {
+        /* ignore quota */
+    }
+}
+
 const LocationAutocomplete: React.FC<Props> = ({
     value,
     onChange,
@@ -41,9 +73,11 @@ const LocationAutocomplete: React.FC<Props> = ({
     label = "Location",
     placeholder = "e.g. Tel Aviv",
 }) => {
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [showEmpty, setShowEmpty] = useState(false);
+    const [recents, setRecents] = useState<Suggestion[]>([]);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [fetching, setFetching] = useState(false);
     const [disableFetch, setDisableFetch] = useState(false);
@@ -60,12 +94,14 @@ const LocationAutocomplete: React.FC<Props> = ({
             return;
         }
 
-        if (!value || value.trim().length < 3) {
+        if (!value || value.trim().length < 2) {
             setSuggestions([]);
             setShowDropdown(false);
             setFetching(false);
             return;
         }
+
+        setShowEmpty(false);
 
         setFetching(true);
         const controller = new AbortController();
@@ -89,12 +125,23 @@ const LocationAutocomplete: React.FC<Props> = ({
 
     const handleSelect = (name: string, lat?: number, lon?: number) => {
         onSelect(name, lat, lon);
+        if (lat != null && lon != null) {
+            saveRecent({ display_name: name, lat: String(lat), lon: String(lon) });
+        }
         setDisableFetch(true);
         setShowDropdown(false);
+        setShowEmpty(false);
         setSuggestions([]);
         requestAnimationFrame(() => {
             document.getElementById(id)?.blur();
         });
+    };
+
+    const handleFocus = () => {
+        if (value.trim().length < 2) {
+            setRecents(loadRecents());
+            setShowEmpty(true);
+        }
     };
 
     return (
@@ -124,7 +171,8 @@ const LocationAutocomplete: React.FC<Props> = ({
                         setShowDropdown(false);
                     }
                 }}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                onFocus={handleFocus}
+                onBlur={() => setTimeout(() => { setShowDropdown(false); setShowEmpty(false); }, 150)}
                 fullWidth
                 placeholder={placeholder}
                 autoComplete="off"
@@ -144,7 +192,10 @@ const LocationAutocomplete: React.FC<Props> = ({
                 }}
             />
 
-            <Fade in={showDropdown && suggestions.length > 0} unmountOnExit>
+            <Fade
+                in={(showDropdown && suggestions.length > 0) || (showEmpty && (recents.length > 0 || POPULAR.length > 0))}
+                unmountOnExit
+            >
                 <Paper
                     elevation={4}
                     sx={{
@@ -155,42 +206,83 @@ const LocationAutocomplete: React.FC<Props> = ({
                         left: 0,
                         mt: 0.5,
                         borderRadius: 2,
-                        maxHeight: 260,
+                        maxHeight: 320,
                         overflowY: "auto",
                         border: "1px solid",
                         borderColor: "divider",
                     }}
                 >
-                    <List dense disablePadding sx={{ p: 0.75 }}>
-                        {suggestions.map((s, i) => (
-                            <ListItemButton
-                                key={i}
-                                onClick={() => handleSelect(s.display_name, parseFloat(s.lat), parseFloat(s.lon))}
-                                selected={i === highlightedIndex}
-                                sx={{
-                                    borderRadius: 1.5,
-                                    minHeight: 44,
-                                    px: 1.25,
-                                    "&.Mui-selected": {
-                                        bgcolor: "primary.main",
-                                        color: "primary.contrastText",
-                                        "& .MuiListItemIcon-root": { color: "primary.contrastText" },
-                                        "&:hover": { bgcolor: "primary.dark" },
-                                    },
-                                }}
-                            >
-                                <ListItemIcon sx={{ minWidth: 30, color: "text.disabled" }}>
-                                    <PlaceIcon fontSize="small" />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary={s.display_name}
-                                    slotProps={{
-                                        primary: { variant: "body2", noWrap: true },
+                    {showDropdown && suggestions.length > 0 ? (
+                        <List dense disablePadding sx={{ p: 0.75 }}>
+                            {suggestions.map((s, i) => (
+                                <ListItemButton
+                                    key={i}
+                                    onClick={() => handleSelect(s.display_name, parseFloat(s.lat), parseFloat(s.lon))}
+                                    selected={i === highlightedIndex}
+                                    sx={{
+                                        borderRadius: 1.5,
+                                        minHeight: 44,
+                                        px: 1.25,
+                                        "&.Mui-selected": {
+                                            bgcolor: "primary.main",
+                                            color: "primary.contrastText",
+                                            "& .MuiListItemIcon-root": { color: "primary.contrastText" },
+                                            "&:hover": { bgcolor: "primary.dark" },
+                                        },
                                     }}
-                                />
-                            </ListItemButton>
-                        ))}
-                    </List>
+                                >
+                                    <ListItemIcon sx={{ minWidth: 30, color: "text.disabled" }}>
+                                        <PlaceIcon fontSize="small" />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={s.display_name}
+                                        slotProps={{ primary: { variant: "body2", noWrap: true } }}
+                                    />
+                                </ListItemButton>
+                            ))}
+                        </List>
+                    ) : (
+                        <List dense disablePadding sx={{ p: 0.75 }}>
+                            {recents.length > 0 && (
+                                <ListSubheader disableSticky sx={{ lineHeight: "28px", bgcolor: "transparent", fontSize: "0.7rem" }}>
+                                    {t("form.recentLocations")}
+                                </ListSubheader>
+                            )}
+                            {recents.map((s, i) => (
+                                <ListItemButton
+                                    key={`r-${i}`}
+                                    onClick={() => handleSelect(s.display_name, parseFloat(s.lat), parseFloat(s.lon))}
+                                    sx={{ borderRadius: 1.5, minHeight: 40, px: 1.25 }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: 30, color: "text.disabled" }}>
+                                        <HistoryIcon fontSize="small" />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={s.display_name}
+                                        slotProps={{ primary: { variant: "body2", noWrap: true } }}
+                                    />
+                                </ListItemButton>
+                            ))}
+                            <ListSubheader disableSticky sx={{ lineHeight: "28px", bgcolor: "transparent", fontSize: "0.7rem" }}>
+                                {t("form.popularLocations")}
+                            </ListSubheader>
+                            {POPULAR.map((p, i) => (
+                                <ListItemButton
+                                    key={`p-${i}`}
+                                    onClick={() => handleSelect(t(p.nameKey), p.lat, p.lon)}
+                                    sx={{ borderRadius: 1.5, minHeight: 40, px: 1.25 }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: 30, color: "text.disabled" }}>
+                                        <StarBorderIcon fontSize="small" />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={t(p.nameKey)}
+                                        slotProps={{ primary: { variant: "body2", noWrap: true } }}
+                                    />
+                                </ListItemButton>
+                            ))}
+                        </List>
+                    )}
                 </Paper>
             </Fade>
         </Box>

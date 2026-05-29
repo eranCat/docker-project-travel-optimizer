@@ -47,7 +47,6 @@ interface FormData {
     latitude?: number;
     longitude?: number;
     time_of_day: string;
-    num_days: number;
     mode: "explore" | "trip";
     dest_location: string;
     dest_latitude?: number;
@@ -450,21 +449,6 @@ const RouteForm: React.FC<Props> = ({
                                     </Tooltip>
                                 ))}
                             </ToggleButtonGroup>
-                        </Box>
-
-                        <Box>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-                                {t("form.days", { count: form.num_days })}
-                            </Typography>
-                            <Slider
-                                size="small"
-                                min={1} max={5} step={1}
-                                value={Number(form.num_days)}
-                                onChange={(_, v) => onChange({ target: { name: "num_days", value: String(v) } } as any)}
-                                marks
-                                valueLabelDisplay="auto"
-                                sx={{ mt: 0.5 }}
-                            />
                         </Box>
 
                     </Collapse>

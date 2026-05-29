@@ -1,4 +1,4 @@
-import { Box, Typography, Fade, Chip, IconButton, Tooltip, Tabs, Tab } from "@mui/material";
+import { Box, Typography, Fade, Chip, IconButton, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import RouteSelector from "./RouteSelector";
 import POIList from "./POIList";
@@ -26,7 +26,6 @@ interface RouteSidebarProps {
     onReplacePOI?: (idx: number) => void;
     replacingPoiIndex?: number | null;
     canReplace?: boolean;
-    numDays?: number;
     stage?: number;
     stages?: string[];
     detail?: { tags?: number; pois?: number; routes?: number };
@@ -54,20 +53,12 @@ export default function RouteSidebar({
     onReplacePOI,
     replacingPoiIndex = null,
     canReplace = false,
-    numDays = 1,
     stage = 0,
     stages = [],
     detail,
 }: RouteSidebarProps) {
     const { t } = useTranslation();
     const showSkeleton = loading && pois.length === 0;
-    const routesPerDay = numDays > 1 ? Math.ceil(routesCount / numDays) : routesCount;
-    const currentDay = numDays > 1 ? Math.floor(selectedIndex / routesPerDay) : 0;
-    const dayRouteOffset = currentDay * routesPerDay;
-    const dayRouteCount = Math.min(routesPerDay, routesCount - dayRouteOffset);
-    const handleDayChange = (_: React.SyntheticEvent, day: number) => { onSelectRoute(day * routesPerDay); };
-    const handleRouteInDay = (idxInDay: number) => { onSelectRoute(dayRouteOffset + idxInDay); };
-    const selectedInDay = selectedIndex - dayRouteOffset;
     const hasDuration = currentRoute?.duration_seconds != null && currentRoute.duration_seconds > 0;
     const vibe = currentRoute?.vibe;
     const gmapsUrl = pois.length > 0 ? buildGoogleMapsUrl(pois) : null;
@@ -165,26 +156,11 @@ export default function RouteSidebar({
                     </Box>
                 )}
 
-                {!loading && numDays > 1 && routesCount > 0 && (
-                    <Tabs
-                        value={currentDay}
-                        onChange={handleDayChange}
-                        variant="scrollable"
-                        scrollButtons="auto"
-                        sx={{ minHeight: 32, mb: 0.5, "& .MuiTab-root": { minHeight: 32, py: 0, fontSize: "0.75rem" } }}
-                    >
-                        {Array.from({ length: numDays }, (_, i) => (
-                            <Tab key={i} label={t("sidebar.day", { n: i + 1 })} value={i}
-                                disabled={i * routesPerDay >= routesCount} />
-                        ))}
-                    </Tabs>
-                )}
-
                 {!loading && (
                     <RouteSelector
-                        selectedIndex={selectedInDay}
-                        routeCount={dayRouteCount}
-                        onSelect={handleRouteInDay}
+                        selectedIndex={selectedIndex}
+                        routeCount={routesCount}
+                        onSelect={onSelectRoute}
                     />
                 )}
             </Box>

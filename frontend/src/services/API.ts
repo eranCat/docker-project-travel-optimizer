@@ -42,7 +42,7 @@ export const fetchLocationSuggestions = async (
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("q", query);
   url.searchParams.set("format", "json");
-  url.searchParams.set("limit", "5");
+  url.searchParams.set("limit", "8");
   url.searchParams.set("addressdetails", "1");
   if (lang === "he") {
     url.searchParams.set("accept-language", "he,en");

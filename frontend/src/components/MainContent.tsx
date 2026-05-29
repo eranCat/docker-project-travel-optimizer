@@ -167,7 +167,6 @@ export default function MainContent({ backendHealthy }: { backendHealthy?: boole
                 onReplacePOI={handleReplacePOI}
                 replacingPoiIndex={replacingPOI}
                 canReplace={canReplace}
-                numDays={form.num_days}
                 stage={stage}
                 stages={stages}
                 detail={detail}

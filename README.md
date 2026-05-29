@@ -8,7 +8,6 @@ A fullstack app that generates optimized multi-stop travel itineraries using LLM
 
 - **Intelligent POI discovery** — interests free-text → Groq LLM → OSM tags → Overpass API
 - **Optimized routes** — greedy one-POI-per-category builder + 2-opt improvement, multiple route variants
-- **Multi-day itineraries** — up to 5 days, day tabs in sidebar
 - **POI quality filtering** — removes non-tourist venues (errands, infrastructure), permanently closed places, name-pattern blocklist (cemeteries, shelters)
 - **Rich POI cards** — opening hours, wheelchair accessibility badge, category chips, direct Google/OSM search links
 - **Route metadata** — walk/drive/cycle duration from ORS, vibe label per route
