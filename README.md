@@ -2,49 +2,45 @@
 
 A fullstack app that generates optimized multi-stop travel itineraries using LLM-suggested OpenStreetMap tags and real-world routing from OpenRouteService.
 
-> **Why a monolith?** The backend serves the prebuilt React frontend from a single port, so the whole app runs as **one** service instead of two. This is deliberate: Render's free tier bills per service, and a second always-on web service would cost money — bundling frontend + backend keeps the deploy free. For the original Docker/microservices architecture, see the [`main`](https://github.com/erank/travel-optimizer/tree/main) branch.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7?logo=render&logoColor=white)](https://docker-project-travel-optimizer.onrender.com)
+
+> **Why a monolith?** The backend serves the prebuilt React frontend from a single port, keeping the whole app as **one** service. Render's free tier bills per service — bundling frontend + backend keeps the deploy free. For the original Docker/microservices architecture, see the [`main`](https://github.com/eranCat/docker-project-travel-optimizer/tree/main) branch.
+
+---
 
 ## Screenshots
 
 ### Desktop
 
-<div style="display: flex; gap: 2rem; margin: 1rem 0;">
-  <figure style="flex: 1;">
-    <img src="docs/screenshots/app-overview.png" alt="Light mode overview" style="max-width: 100%; border-radius: 8px;" />
-    <figcaption><em>Light mode — form, POI sidebar with thumbnails, and map.</em></figcaption>
-  </figure>
-  <figure style="flex: 1;">
-    <img src="docs/screenshots/app-dark.png" alt="Dark mode overview" style="max-width: 100%; border-radius: 8px;" />
-    <figcaption><em>Dark mode — same layout for nighttime use.</em></figcaption>
-  </figure>
-</div>
+| Light mode | Dark mode |
+|:---:|:---:|
+| ![Light mode](docs/screenshots/app-overview.png) | ![Dark mode](docs/screenshots/app-dark.png) |
+| *Form, POI sidebar with thumbnails, and map* | *Same layout for nighttime use* |
 
 ### Mobile
 
-<div style="display: flex; gap: 1rem;">
-  <figure>
-    <img src="docs/screenshots/mobile-pois.png" width="200" alt="Mobile POI list" />
-    <figcaption><em>Plan tab — POI cards on tap.</em></figcaption>
-  </figure>
-  <figure>
-    <img src="docs/screenshots/mobile-map.png" width="200" alt="Mobile map view" />
-    <figcaption><em>Map tab — full-screen interactive route.</em></figcaption>
-  </figure>
-</div>
+| POI list | Map view |
+|:---:|:---:|
+| <img src="docs/screenshots/mobile-pois.png" width="200" alt="Mobile POI list"> | <img src="docs/screenshots/mobile-map.png" width="200" alt="Mobile map view"> |
+| *Plan tab — POI cards on tap* | *Map tab — full-screen interactive route* |
+
+---
 
 ## Features
 
-- **Intelligent POI discovery** — interests free-text → Groq LLM → OSM tags → Overpass API
+- **Intelligent POI discovery** — free-text interests → Groq LLM → OSM tags → Overpass API
 - **Optimized routes** — greedy one-POI-per-category builder + 2-opt improvement, multiple route variants
-- **POI quality filtering** — removes non-tourist venues (errands, infrastructure), permanently closed places, name-pattern blocklist (cemeteries, shelters)
-- **Rich POI cards** — opening hours, wheelchair accessibility badge, category chips, direct Google/OSM search links
+- **POI quality filtering** — removes non-tourist venues, permanently closed places, name-pattern blocklist
+- **Rich POI cards** — opening hours, wheelchair badge, category chips, Google/OSM search links
 - **Route metadata** — walk/drive/cycle duration from ORS, vibe label per route
-- **Export & share** — open route in Google Maps, copy shareable URL (form state encoded in query params)
+- **Export & share** — open in Google Maps, copy shareable URL (form state encoded in query params)
 - **Surprise Me** — randomize interests with one click
-- **Time-of-day biasing** — morning/evening/night hints adjust which POI types Groq suggests
+- **Time-of-day biasing** — morning/evening/night hints adjust Groq's POI suggestions
 - **Wheelchair filter** — Overpass `wheelchair=yes/limited` query constraint
 - **Dark mode** — MUI theme toggle
-- **Per-IP rate limiting** — 5 route-generation requests/60 s
+- **Per-IP rate limiting** — 5 route-generation requests / 60 s
+
+---
 
 ## Tech Stack
 
@@ -52,8 +48,10 @@ A fullstack app that generates optimized multi-stop travel itineraries using LLM
 |----------|------------|
 | Frontend | React 18, TypeScript, Vite, MUI, Leaflet (react-leaflet) |
 | Backend  | FastAPI (Python), SSE streaming |
-| LLM      | Groq (OpenAI-compatible) — converts free-text interests to OSM tags |
-| Maps     | Overpass API (POIs), OpenRouteService (routing geometry + duration), Nominatim (geocoding) |
+| LLM      | Groq (OpenAI-compatible) — free-text interests → OSM tags |
+| Maps     | Overpass API (POIs), OpenRouteService (routing + duration), Nominatim (geocoding) |
+
+---
 
 ## Architecture
 
@@ -70,11 +68,14 @@ A fullstack app that generates optimized multi-stop travel itineraries using LLM
                         └──────────────────────────────────────┘
 ```
 
-SSE stream emits `stage` events (progress) then a `complete` event carrying a `route_id`. The frontend fetches the full result from `/get-latest-routes/{id}`.
+SSE stream emits `stage` progress events, then a `complete` event with a `route_id`. The frontend fetches the full result from `/get-latest-routes/{id}`.
+
+---
 
 ## Getting Started
 
 ### Prerequisites
+
 - Python 3.10+
 - Node.js 18+
 - [Groq API key](https://console.groq.com)
@@ -113,6 +114,7 @@ npm run dev        # http://localhost:5173
 ### Environment Variables
 
 `backend/.env`:
+
 ```env
 GROQ_API_KEY=your_groq_key_here
 ORS_API_KEY=your_openrouteservice_key_here
@@ -121,9 +123,12 @@ ORS_API_KEY=your_openrouteservice_key_here
 ```
 
 `frontend/.env`:
+
 ```env
 VITE_API_BASE_URL=http://localhost:8000
 ```
+
+---
 
 ## Project Structure
 
@@ -150,6 +155,8 @@ frontend/
     utils/
 ```
 
+---
+
 ## Tests
 
 Integration tests require a running backend:
@@ -160,15 +167,17 @@ uvicorn main:app --port 8000   # terminal 1
 pytest                          # terminal 2
 ```
 
+---
+
 ## Deployment
 
-Deployed on [Render](https://render.com) as a **single web service** — the FastAPI backend serves the pre-built React app, so one URL covers both frontend and backend (port 8000). Config lives in `render.yaml`.
+Deployed on [Render](https://render.com) as a **single web service** — FastAPI serves the pre-built React app, so one URL covers both frontend and backend. Config lives in `render.yaml`.
 
-Live: `https://docker-project-travel-optimizer.onrender.com`
+**Live:** https://docker-project-travel-optimizer.onrender.com
 
 ### Keepalive
 
-Render's free tier **spins a service down after 15 minutes of inactivity**, adding a cold-start delay (~30–60 s) to the next request. The GitHub Actions workflow `.github/workflows/keepalive.yml` pings `/health` every 10 minutes to keep the single service (and therefore both frontend and backend) warm:
+Render's free tier spins down after 15 minutes of inactivity (~30–60 s cold start). The GitHub Actions workflow `.github/workflows/keepalive.yml` pings `/health` every 10 minutes:
 
 ```yaml
 on:
@@ -177,10 +186,9 @@ on:
   workflow_dispatch:          # manual trigger for testing
 ```
 
-Notes:
-- One `/health` ping keeps the whole service alive — there is no separate frontend service to ping.
-- GitHub-scheduled crons are **best-effort**: ticks can be delayed several minutes or dropped entirely under load, so this is not a hard uptime guarantee. For reliable warming use an external pinger (e.g. UptimeRobot, cron-job.org) hitting `/health` every 5 minutes.
-- Keepalive only prevents idle-sleep; it does not affect Render's monthly free instance-hour cap or cold restarts on deploy.
+> **Note:** GitHub-scheduled crons are best-effort and can be delayed or dropped under load. For reliable warming, use an external pinger (e.g. UptimeRobot, cron-job.org) hitting `/health` every 5 minutes.
+
+---
 
 ## Author
 
