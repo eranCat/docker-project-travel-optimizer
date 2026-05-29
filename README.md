@@ -2,7 +2,7 @@
 
 A fullstack app that generates optimized multi-stop travel itineraries using LLM-suggested OpenStreetMap tags and real-world routing from OpenRouteService.
 
-> **Why a monolith?** The backend serves the prebuilt React frontend from a single port, so the whole app runs as **one** service instead of two. This is deliberate: Render's free tier bills per service, and a second always-on web service would cost money — bundling frontend + backend keeps the deploy free. A Docker/microservices variant exists for setups where the split is worth paying for.
+> **Why a monolith?** The backend serves the prebuilt React frontend from a single port, so the whole app runs as **one** service instead of two. This is deliberate: Render's free tier bills per service, and a second always-on web service would cost money — bundling frontend + backend keeps the deploy free. For the original Docker/microservices architecture, see the [`main`](https://github.com/erank/travel-optimizer/tree/main) branch.
 
 ## Screenshots
 
