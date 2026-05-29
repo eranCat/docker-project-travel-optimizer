@@ -8,13 +8,16 @@ A fullstack app that generates optimized multi-stop travel itineraries using LLM
 
 ### Desktop
 
-![Route overview — light mode](docs/screenshots/app-overview.png)
-
-*Walking route through Lower Manhattan from "museums, parks, landmarks" — form on left, POI list, route variants, live map.*
-
-![Detailed route map](docs/screenshots/route-map.png)
-
-*Route 2 in light mode — numbered stops across Manhattan with Washington Square Park, Yeshiva University Museum, and Battery Park.*
+<div style="display: flex; gap: 2rem; margin: 1rem 0;">
+  <figure style="flex: 1;">
+    <img src="docs/screenshots/app-overview.png" alt="Light mode overview" style="max-width: 100%; border-radius: 8px;" />
+    <figcaption><em>Light mode — form, POI sidebar with thumbnails, and map.</em></figcaption>
+  </figure>
+  <figure style="flex: 1;">
+    <img src="docs/screenshots/app-dark.png" alt="Dark mode overview" style="max-width: 100%; border-radius: 8px;" />
+    <figcaption><em>Dark mode — same layout for nighttime use.</em></figcaption>
+  </figure>
+</div>
 
 ### Mobile
 
