@@ -2,7 +2,32 @@
 
 A fullstack app that generates optimized multi-stop travel itineraries using LLM-suggested OpenStreetMap tags and real-world routing from OpenRouteService.
 
-> **Branch:** `monolith` — plain two-folder fullstack, no Docker. For the original Docker/microservices layout see `main`.
+> **Why a monolith?** The backend serves the prebuilt React frontend from a single port, so the whole app runs as **one** service instead of two. This is deliberate: Render's free tier bills per service, and a second always-on web service would cost money — bundling frontend + backend keeps the deploy free. A Docker/microservices variant exists for setups where the split is worth paying for.
+
+## Screenshots
+
+### Desktop
+
+![Route overview — light mode](docs/screenshots/app-overview.png)
+
+*Walking route through Lower Manhattan from "museums, parks, landmarks" — form on left, POI list, route variants, live map.*
+
+![Detailed route map](docs/screenshots/route-map.png)
+
+*Route 2 in light mode — numbered stops across Manhattan with Washington Square Park, Yeshiva University Museum, and Battery Park.*
+
+### Mobile
+
+<div style="display: flex; gap: 1rem;">
+  <figure>
+    <img src="docs/screenshots/mobile-pois.png" width="200" alt="Mobile POI list" />
+    <figcaption><em>Plan tab — POI cards on tap.</em></figcaption>
+  </figure>
+  <figure>
+    <img src="docs/screenshots/mobile-map.png" width="200" alt="Mobile map view" />
+    <figcaption><em>Map tab — full-screen interactive route.</em></figcaption>
+  </figure>
+</div>
 
 ## Features
 
